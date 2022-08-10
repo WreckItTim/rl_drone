@@ -1,0 +1,194 @@
+{
+  "time_stamp": "2022_8_9_20_4_22",
+  "log": true,
+  "log_path": "D:\\repo/log/",
+  "components": {
+    "AirSimMap__1": {
+      "type": "Map.AirSimMap",
+      "settings": {
+        "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
+        "SettingsVersion": 1.2,
+        "SimMode": "Multirotor",
+        "ViewMode": "SpringArmChase",
+        "SubWindows": [
+          {
+            "WindowID": 0,
+            "CameraName": "0",
+            "ImageType": 3,
+            "Visible": true
+          },
+          {
+            "WindowID": 2,
+            "CameraName": "0",
+            "ImageType": 0,
+            "Visible": true
+          }
+        ]
+      },
+      "setting_files": [
+        "base"
+      ],
+      "release_file": "Blocks",
+      "release_directory": "D:/airsim_releases/",
+      "settings_directory": "maps/airsim_settings/"
+    },
+    "AirSimDrone__1": {
+      "type": "Drone.AirSimDrone"
+    },
+    "AirSimCamera__1": {
+      "type": "Sensor.AirSimCamera",
+      "camera_view": "0",
+      "image_type": 2,
+      "as_float": true,
+      "compress": false,
+      "is_gray": true
+    },
+    "ResizeImage__1": {
+      "type": "Transformer.ResizeImage",
+      "image_shape": [
+        288,
+        512
+      ]
+    },
+    "NormalizeDepth__1": {
+      "type": "Transformer.NormalizeDepth",
+      "min_depth": 0,
+      "max_depth": 100
+    },
+    "Single__1": {
+      "type": "Observer.Single",
+      "sensor_name": "AirSimCamera__1",
+      "transformer_names": [
+        "ResizeImage__1",
+        "NormalizeDepth__1"
+      ],
+      "please_write": true,
+      "write_directory": "temp/"
+    },
+    "FixedMove__1": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 5,
+      "y_distance": 0,
+      "z_distance": 0,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__2": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": -5,
+      "y_distance": 0,
+      "z_distance": 0,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__3": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 0,
+      "y_distance": 5,
+      "z_distance": 0,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__4": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 0,
+      "y_distance": -5,
+      "z_distance": 0,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__5": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 0,
+      "y_distance": 0,
+      "z_distance": 5,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__6": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 0,
+      "y_distance": 0,
+      "z_distance": -5,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__7": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": 5,
+      "y_distance": 5,
+      "z_distance": 0,
+      "speed": 4,
+      "front_facing": true
+    },
+    "FixedMove__8": {
+      "type": "Action.FixedMove",
+      "drone_name": "AirSimDrone__1",
+      "x_distance": -5,
+      "y_distance": -5,
+      "z_distance": 5,
+      "speed": 4,
+      "front_facing": true
+    },
+    "DiscreteActor__1": {
+      "type": "Actor.DiscreteActor",
+      "action_names": [
+        "FixedMove__1",
+        "FixedMove__2",
+        "FixedMove__3",
+        "FixedMove__4",
+        "FixedMove__5",
+        "FixedMove__6",
+        "FixedMove__7",
+        "FixedMove__8"
+      ]
+    },
+    "Avoid__1": {
+      "type": "Reward.Avoid",
+      "drone_name": "AirSimDrone__1"
+    },
+    "Point__1": {
+      "type": "Reward.Point",
+      "drone_name": "AirSimDrone__1",
+      "xyz_point": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_distance": 5,
+      "max_distance": 50
+    },
+    "Schema__1": {
+      "type": "Rewarder.Schema",
+      "reward_names": [
+        "Avoid__1",
+        "Point__1"
+      ],
+      "reward_weights": [
+        4,
+        2
+      ]
+    },
+    "Collision__1": {
+      "type": "Terminator.Collision",
+      "drone_name": "AirSimDrone__1"
+    },
+    "Point__2": {
+      "type": "Terminator.Point",
+      "drone_name": "AirSimDrone__1",
+      "xyz_point": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min_distance": 5
+    }
+  }
+}

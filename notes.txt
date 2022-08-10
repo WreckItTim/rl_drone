@@ -1,0 +1,8 @@
+update airsim python package dependency (i think it's just tornado<5):
+pip install --upgrade msgpack-rpc-python
+
+run airsim with settings:
+./map.exe -settings="settings.json"
+
+drone pw cloud:
+bustersword

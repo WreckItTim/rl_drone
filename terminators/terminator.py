@@ -1,0 +1,11 @@
+# abstract class used to handle rewards in an RL enivornment
+from component import Component
+
+class Terminator(Component):
+    # constructor
+    def __init__(self):
+        pass
+
+    # evaluates if termination criteria is met, ruturns done=True if so otherwise done=False
+    def evaluate(self, state):
+        raise NotImplementedError
