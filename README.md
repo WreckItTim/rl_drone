@@ -42,7 +42,7 @@ Similarily, any list of components can be passed as either a list of strings or 
 
 EXAMPLE
 
-You want to create a new component base-class callsed "Base"...
+You want to create a new component base-class called "Base"...
 1. Add a new folder named bases to master
 2. Add a new file base.py to the bases folder
 3. Have the Base class derive the Component class, such as: class Base(Component)
