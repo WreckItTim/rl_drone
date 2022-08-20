@@ -1,8 +1,8 @@
 USING BASE REPO WITH AIRSIM
 
 Install Microsoft AirSim for Unreal Engine following the tutorial in their GitHub: https://github.com/microsoft/AirSim
-Set path(s) to the AirSim release executable and/or settings file(s) as needed, see main.py
-Run main.py to either read a configuration file or create new configuration, see main.py
+, Set path(s) to the AirSim release executable and/or settings file(s) as needed (see main.py or any configuration file)
+, Run main.py to either read a configuration file or create new configuration (see main.py or any configuration file)
 
 
 MAKING A NEW DRONE CLASS
@@ -24,11 +24,11 @@ Arguments with either '_component' or '_components' tag can be passed as either 
 THE INIT WRAPPER
 
 The @_init_wrapper can be found in the component.py file in master.
-The @_init_wrapper will automagically set all public arguments whose names do not start with a leading '_'
-The @_init_wrapper will save the self instance on creation to the global dictionary of components, and assign a unique name to it if not given during construction
-The @_init_wrapper will fetch any _component(s) arguments and set them private variables
-The @_init_wrapper will also wrap all public class methods in a timer method for benchmarking
-Any of the above can be turned off by setting a bool in the constructor (see component.py). Though it is not advised.
+The @_init_wrapper will automagically set all public arguments whose names do not start with a leading '_'.
+The @_init_wrapper will save the self instance on creation to the global dictionary of components, and assign a unique name to it if not given during construction.
+The @_init_wrapper will fetch any _component(s) arguments and set them private variables.
+The @_init_wrapper will also wrap all public class methods in a timer method for benchmarking.
+Any of the above can be turned off by setting a bool in the constructor (see component.py), though it is not advised.
 
 
 MAKING A NEW COMPONENT CLASS
