@@ -20,7 +20,7 @@ The Component base-class can be found in the component.py file in master. All cl
 THE INIT WRAPPER
 
 The @_init_wrapper can be found in the component.py file in master.
-The @_init_wrapper will automagically set all public arguments whose names do not start with a leading '_'.
+The @_init_wrapper will automagically set all public arguments whose names do not start with a leading underscore.
 The @_init_wrapper will save the self instance on creation to the global dictionary of components, and assign a unique name to it if not given during construction.
 The @_init_wrapper will fetch any _component(s) arguments and set them private variables.
 The @_init_wrapper will also wrap all public class methods in a timer method for benchmarking.
