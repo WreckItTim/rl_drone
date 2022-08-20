@@ -1,16 +1,19 @@
 USING BASE REPO WITH AIRSIM
+
 Install Microsoft AirSim for Unreal Engine following the tutorial in their GitHub: https://github.com/microsoft/AirSim
 Set path(s) to the AirSim release executable and/or settings file(s) as needed, see main.py
 Run main.py to either read a configuration file or create new configuration, see main.py
 
 
 MAKING A NEW DRONE CLASS
+
 1. overwrite all class methods for your NewDrone class as defined in the Drone base class, found at drones/drone.py
 2. derive the Drone base class, such as: class NewDrone(Drone)
 3. decorate your NewDrone.__init__() method with the @_init_wrapper found in the component.py file (see below sections)  
 
 
 THE COMPONENT CLASS
+
 The Component base-class can be found in the component.py file in master. All classes derive from Component. This will allow components to be serializable for loading/saving configuration files, able to be seen by other components, benchmarkable, and have all class attributes automagically set. See bottom below for a full example of making a new component class.
 
 To set another component as a class-attribute during construction, name the argument to the appropriate .__init__() method with a trailing tag of '_component'
@@ -19,6 +22,7 @@ Arguments with either '_component' or '_components' tag can be passed as either 
 
 
 THE INIT WRAPPER
+
 The @_init_wrapper can be found in the component.py file in master.
 The @_init_wrapper will automagically set all public arguments whose names do not start with a leading '_'
 The @_init_wrapper will save the self instance on creation to the global dictionary of components, and assign a unique name to it if not given during construction
@@ -28,6 +32,7 @@ Any of the above can be turned off by setting a bool in the constructor (see com
 
 
 MAKING A NEW COMPONENT CLASS
+
 See example at bottom.
 
 Create a new BaseComponent base-class by creating a new folder with the base-class name followed by an 's', a baseclass.py file, and inherit the Component class (see example)
