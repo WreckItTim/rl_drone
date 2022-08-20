@@ -3,21 +3,26 @@ from utils import *
 from component import *
 
 
-# PARAMS
-time_stamp = get_time_stamp()
-read_configuration = False
-read_configuration_path = 'log/old_configuration.json'
+# USER PARAMETERS
+timestamp = get_timestamp()
+write_folder = f'temp/{timestamp}/'
+if not os.path.exists(write_folder):
+    os.makedirs(write_folder)
+read_configuration = True
+read_configuration_path = 'configurations/configuration.json'
 write_configuration = True
-write_configuration_path = 'log/new_configuration.json'
+write_configuration_path = write_folder + '/overwrite_configuration.json'
 
 
-# READ CONFIGURATION FILE
+# READ OLD CONFIGURATION FILE ??
 if read_configuration:
     configuration = read_json(read_configuration_path)
-    components = deserialize_components(configuration)
+    controller, components, timestamp = deserialize_configuration(configuration)
+
+    # OVERWRITE ANY CONFIGURATION ARGUMENTS HERE
 
 
-# NEW CONFIGURATION
+# OR MAKE NEW CONFIGURATION ??
 else:
     map_type = 'AirSim' # AirSim Field
     drone_type = 'AirSim' # AirSim Tello
@@ -44,8 +49,8 @@ else:
             settings=None,
             setting_files=['base'],
             release_file='Blocks',
-            release_directory='D:/airsim_releases/',
-            settings_directory='maps/airsim_settings/',
+            release_directory='resources/airsim_maps/',
+            settings_directory='resources/airsim_settings/',
         )
     elif map_type == 'Field':
         from maps.field import Field
@@ -195,7 +200,7 @@ else:
             observer_component=observer, 
             rewarder_component=rewarder, 
             terminator_components=terminator_components,
-            #other_components=[],
+            other_components=[],
         )
 
     # MODEL
@@ -382,6 +387,7 @@ else:
         controller = TrainRL(
             model_component=model,
         )
+print('configuration loaded!')
 
 
 # FETCH COMPONENTS
@@ -390,17 +396,18 @@ components = get_all_components()
 
 # WRITE CONFIGURATION
 if write_configuration:
-    configuration = serialize_components(components)
+    configuration = serialize_configuration(controller, components, timestamp)
     write_json(configuration, write_configuration_path)
  
 
 # CONNECT COMPONENTS
-print('connecting components...')
 for component in components:
     component.connect()
+print('components connected!')
 
 
 # RUN CONTROLLER
+print('running controller...')
 controller.run()
 
 
@@ -408,13 +415,13 @@ controller.run()
 components = get_all_components()
 for component in reversed(components):
     log_memory(component)
-write_json(benchmarks, 'log/benchmarks')
+write_json(benchmarks, write_folder + 'benchmarks.json')
 
 
 # DISCONNECT COMPONENTS
-print('disconnecting components...')
 for component in reversed(components):
     component.disconnect()
+print('components disconnected!')
 
 
 # ALL DONE

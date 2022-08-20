@@ -7,7 +7,7 @@ from component import _init_wrapper
 class ResizeImage(Transformer):
     # constructor
     @_init_wrapper
-    def __init__(self, image_shape=(288, 512)):
+    def __init__(self, image_shape=(64, 64)):
         super().__init__()
 
     # if observation type is valid, applies transformation

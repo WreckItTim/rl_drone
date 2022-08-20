@@ -24,14 +24,14 @@ def moveTo_to_string(point):
 def error(msg):
 	raise Exception(msg)
 
-def get_time_stamp():
+def get_timestamp():
 	secondsSinceEpoch = time()
 	time_obj = localtime(secondsSinceEpoch)
-	time_stamp = '%d_%d_%d_%d_%d_%d' % (
+	timestamp = '%d_%d_%d_%d_%d_%d' % (
 		time_obj.tm_year, time_obj.tm_mon, time_obj.tm_mday,  
 		time_obj.tm_hour, time_obj.tm_min, time_obj.tm_sec
 	)
-	return time_stamp
+	return timestamp
 
 def fix_directory(directory):
 	if '\\' in directory:

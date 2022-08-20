@@ -11,13 +11,10 @@ class DiscreteActor(Actor):
         super().__init__()
 
     # interpret action from RL
-    def act(self, rl_output=None):
-        if rl_output is None:
-            rl_output = random.randint(0, len(self._actions)-1)
+    def act(self, rl_output):
         self._actions[rl_output].act()
-
-    # act on a random rl_output
-    def test(self):
-        random_rl_output = randint(0, len(self._actions)-1)
-        print(f'randomly taking action:{self._actions[random_rl_output]._name} at index:{random_rl_output}')
-        self.act(random_rl_output)
+        return self._actions[rl_output]._name
+        
+    def activate(self):
+        rl_output = random.randint(0, len(self._actions)-1)
+        self.act(rl_output)

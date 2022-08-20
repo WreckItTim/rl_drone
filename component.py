@@ -1,30 +1,38 @@
 import numpy as np
 from time import time
-import inspect
 from sys import getsizeof
 from utils import error
-from functools import wraps
+import inspect
+from functools import wraps, partialmethod
 
 # all my classes are children of this Component class 
 # I use alot of overlapping logic for serialization, connecting, running, logging...
 
 # serializes a list of components into a configuration file
-def serialize_components(components):
-	configuration = {}
+def serialize_configuration(controller, components, timestamp):
+	configuration = {
+		'controller':controller._to_json(),
+		'timestamp':timestamp,
+	}
 	for component in components:
 		configuration[component._name] = component._to_json()
 	return configuration
 
 # deserializes a configuration file into a list of components
-def deserialize_components(configuration):
+def deserialize_configuration(configuration):
+	controller_arguments = configuration['controller']
+	timestamp = configuration['timestamp']
 	components = []
 	for component_name in configuration:
+		if component_name in ['controller', 'timestamp']:
+			continue
 		component_arguments = configuration[component_name]
 		component = deserialize_component(component_name, component_arguments)
 		components.append(component)
-	return components
+	controller = deserialize_component('controller', controller_arguments)
+	return controller, components, timestamp
 
-# deserializes a json file to a component
+# deserializes a dictionary to a component
 def deserialize_component(component_name, component_arguments):
 	# get parent and child types
 	types = component_arguments['type'].split('.')
@@ -33,18 +41,19 @@ def deserialize_component(component_name, component_arguments):
 	child_module = __import__(import_component, fromlist=[child_type])
 	child_class = getattr(child_module, child_type)
 	# create a child object
-	del component_arguments['type']
-	component_arguments['_name'] = component_name
-	component = child_class(**component_arguments)
+	component_arguments_copy = component_arguments.copy()
+	del component_arguments_copy['type']
+	component_arguments_copy['name'] = component_name
+	component = child_class(**component_arguments_copy)
 	return component
 
 # keeps track of global components
 component_list = {}
-def get_component(_name, is_type=None):
-	if _name not in component_list:
-		print('component named', _name, 'does not exist')
+def get_component(component_name, is_type=None):
+	if component_name not in component_list:
+		print('component named', component_name, 'does not exist')
 		return None
-	component = component_list[_name]
+	component = component_list[component_name]
 	if is_type is not None:
 		component.check(is_type)
 	return component
@@ -83,22 +92,41 @@ def _timer_wrapper(method):
 		return method_output
 	return _wrapper
 
-
 # sets intialization values
 def _init_wrapper(init_method):
 	sig = inspect.signature(init_method)
 
 	@wraps(init_method)
 	def _wrapper(self, *args, **kwargs):
-		# update arguments with defaults and make one giant dictionary of all args
+
+		# SET UNIQUE NAME 
+		clone_id = 1
+		arg_name = kwargs['name']
+		del kwargs['name']
+		if arg_name is None:
+			partial_name = f'{self._child().__name__}'
+			try_name = f'{partial_name}__{clone_id}' 
+		else:
+			partial_name = arg_name
+			try_name = partial_name
+		clone_id = 2
+		while try_name in component_list:
+			try_name = f'{partial_name}__{clone_id}'
+			clone_id = clone_id + 1
+		self._name = try_name
+
+		# UPDATE ALL ARGS
 		bound = sig.bind(self, *args, **kwargs)
 		bound.apply_defaults()
 		all_args = bound.arguments
-        del all_args['name']
 
 		# SET ALL PUBLIC PASSED IN ARGUMENTS AS CLASS ATTRIBUTES
+		# make an argument private with a leading underscore such as: '_argument'
+		# make an argument a componet with a trailing tag of '_component' such as: 'sensor_component'
+		# a _component argument can be read as a string name or as an object (used in serialization)
+		# similarily, make a list of components with a trailing tag of '_components'
 		for key in all_args:
-			# convert public list of component _names to private list of components
+			# convert (list of) components to private (list of) components without '_component' tag
 			# skip over private arguments
 			if key[0] == '_' or key == 'self':
 				continue
@@ -106,6 +134,7 @@ def _init_wrapper(init_method):
 			elif 'components' in key:
 				values = all_args[key]
 				components = []
+				component_names = []
 				for value in values:
 					if isinstance(value, str):
 						component = get_component(value)
@@ -114,7 +143,9 @@ def _init_wrapper(init_method):
 					else:
 						error('passed in argument as _component in _components list, but argument is not str or component type')
 					components.append(component)
+					component_names.append(component._name)
 				setattr(self, '_' + key.replace('_components', 's'), components)
+				setattr(self, key, component_names)
 			# parse and set component
 			elif 'component' in key:
 				value = all_args[key]
@@ -125,62 +156,39 @@ def _init_wrapper(init_method):
 				else:
 					error('passed in argument as _component but is not str or component type')
 				setattr(self, '_' + key.replace('_component', ''), component)
-			# set all public arguments
+				if component is None:
+					setattr(self, key, None)
+				else:
+					setattr(self, key, component._name)
+			# set all (other) public arguments
 			else:
 				setattr(self, key, all_args[key])
 
-		# ADD TIMER TO EACH PUBLIC CLASS METHOD
-		for method in dir(self):
-			if callable(getattr(self, method)) and method[0] != '_':
-				setattr(self, method, _timer_wrapper(getattr(self, method)))
-
-		# SET UNIQUE _name 
-		clone_id = 1
-		if '_name' not in all_args:
-			_name = f'{self._child().__name__}'
-			try_name = f'{_name}__{clone_id}' 
-		else:
-			_name = all_args['_name']
-			try_name = _name
-		clone_id = 2
-		while try_name in component_list:
-			try_name = f'{_name}__{clone_id}'
-			clone_id = clone_id + 1
-		self._name = try_name
-
 		# CALL BASE INIT
+		self._add_to_list = True # change in base init method to false to not add
+		self._add_timers = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
 
+		# ADD TIMER TO EACH PUBLIC CLASS METHOD
+		if self._add_timers:
+			for method in dir(self):
+				if callable(getattr(self, method)) and method[0] != '_':
+					setattr(self, method, _timer_wrapper(getattr(self, method)))
+
 		# ADD TO LIST OF COMPONENTS
-		component_list[self._name] = self
+		if self._add_to_list:
+			component_list[self._name] = self
 		
-    return partial(_wrapper, name=None)
+	return partialmethod(_wrapper, name=None)
 
 # the component class itself
 class Component():
-	# WRAP ALL __INIT__ WITH THIS or call super() to not set class attributes automatically
+	# WRAP ALL child sub-Component classes __init__() like this (wihtout the comment):
     #@_init_wrapper
 	def __init__(self):
-	
-		# ADD TIMER TO EACH PUBLIC CLASS METHOD
-		for method in dir(self):
-			if callable(getattr(self, method)) and method[0] != '_':
-				setattr(self, method, _timer_wrapper(getattr(self, method)))
+		pass
 
-		# SET UNIQUE _name 
-		clone_id = 1
-		if _name is None:
-			_name = f'{self._child().__name__}'
-			try_name = f'{_name}__{clone_id}' 
-		else:
-			try_name = _name
-		clone_id = 2
-		while try_name in component_list:
-			try_name = f'{_name}__{clone_id}'
-			clone_id = clone_id + 1
-		self._name = try_name
-
-	# gets bytes of all components
+	# estimate memory used by this component (in bytes)
 	def __sizeof__(self):
 		total_memory = 0
 		variables = vars(self)
@@ -198,7 +206,7 @@ class Component():
 	def connect(self):
 		pass
 
-	# activates whatever to do whatever
+	# activates whatever to do whatever (used for debugging)
 	def activate(self):
 		pass
 
@@ -210,17 +218,9 @@ class Component():
 	def reset(self):
 		pass
 
-	# checks to insure component is running properly
-	def test(self):
-		pass
-
 	# stops component - if error is reached
 	def stop(self):
 		self.disconnect()
-
-	# called every step in RL, and updates state dictionary
-	def step(self, state):
-		pass
 	
 	# throws error if not correct child type
 	def check(self, child_type):

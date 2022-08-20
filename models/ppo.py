@@ -7,8 +7,8 @@ class PPO(Model):
     # constructor
     @_init_wrapper
     def __init__(self, 
-            train_environment_component = '',
-            evaluate_environment_component = '',
+            train_environment_component = None,
+            evaluate_environment_component = None,
             policy = 'CnnPolicy',
             learning_rate = 1e-3,
             n_steps = 1, #2048

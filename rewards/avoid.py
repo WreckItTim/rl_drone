@@ -5,7 +5,7 @@ from component import _init_wrapper
 class Avoid(Reward):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_component=''):
+    def __init__(self, drone_component):
         super().__init__()
 
     # -1 for a collision, +1 for dodging collision
@@ -17,9 +17,3 @@ class Avoid(Reward):
         if has_collided:
             total_reward = -1
         return total_reward
-
-    def test(self):
-        print(f'reward before collision:{self.evaluate({})}')
-        print('attempting collision...')
-        self._drone.move(40, 0, 0, 4, front_facing=False)
-        print(f'reward after collision:{self.evaluate({})}')

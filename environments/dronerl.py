@@ -5,6 +5,7 @@ import numpy as np
 
 
 def show_state(state):
+    action = state['transcribed_action']
     x = int(state['drone_position'][0])
     y = int(state['drone_position'][1])
     z = int(state['drone_position'][2])
@@ -14,14 +15,15 @@ def show_state(state):
     for key in state:
         if 'reward_from_' in key:
             rewards.append(round(state[key], 4))
-    print(f'pos:({x},{y},{z})  distance:{distance}  total_reward:{total_reward}  rewards:{rewards}')
+    print(f'action:{action}  position:({x},{y},{z})  distance:{distance}  total_reward:{total_reward}  rewards:{rewards}')
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3
 class DroneRL(Environment):
     metadata = {"render.modes": ["rgb_array"]}
 
     @_init_wrapper
-    def __init__(self, drone_component='', actor_component='', observer_component='', rewarder_component='', terminator_components=[], other_components=[]):
+    def __init__(self, drone_component, actor_component, observer_component, rewarder_component
+                    , terminator_components=[], other_components=[], show_states=True):
         super().__init__()
         self.observation_space = spaces.Box(0, 255, shape=self._observer.output_shape, dtype=np.uint8)
         self.action_space = spaces.Discrete(len(self._actor._actions))
@@ -38,17 +40,19 @@ class DroneRL(Environment):
     # everything is done from component
     def step(self, rl_output):
         state = {'rl_output':rl_output}
-        self._actor.act(rl_output)
+        transcribed_action = self._actor.act(rl_output)
+        state['transcribed_action'] = transcribed_action
         observation = self._observer.observe()
         state['observation_component'] = observation._name
         self._rewarder.evaluate(state)
         done = False
         for terminator in self._terminators:
             done = done or terminator.evaluate(state)
+        state['done'] = done
         for other in self._others:
             other.activate()
-        state['done'] = done
-        show_state(state)
+        if self.show_states:
+            show_state(state)
         return observation.to_numpy(), state['total_reward'], done, state
 
     # called at end of episode to prepare for next, when step() returns done=True

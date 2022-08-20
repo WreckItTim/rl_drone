@@ -1,0 +1,170 @@
+{
+  "AirSimMap__1": {
+    "type": "Map.AirSimMap",
+    "settings": {
+      "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
+      "SettingsVersion": 1.2,
+      "SimMode": "Multirotor",
+      "ViewMode": "SpringArmChase",
+      "SubWindows": [
+        {
+          "WindowID": 0,
+          "Camera_name": "0",
+          "ImageType": 3,
+          "Visible": true
+        },
+        {
+          "WindowID": 2,
+          "Camera_name": "0",
+          "ImageType": 0,
+          "Visible": true
+        }
+      ]
+    },
+    "setting_files": [
+      "base"
+    ],
+    "release_file": "Blocks",
+    "release_directory": "C:/Users/Tim/Desktop/repo/airsim_maps/",
+    "settings_directory": "maps/airsim_settings/"
+  },
+  "AirSimDrone__1": {
+    "type": "Drone.AirSimDrone"
+  },
+  "AirSimCamera__1": {
+    "type": "Sensor.AirSimCamera",
+    "camera_view": "0",
+    "image_type": 2,
+    "as_float": true,
+    "compress": false,
+    "is_gray": true
+  },
+  "ResizeImage__1": {
+    "type": "Transformer.ResizeImage",
+    "image_shape": [
+      84,
+      84,
+      1
+    ]
+  },
+  "NormalizeDepth__1": {
+    "type": "Transformer.NormalizeDepth",
+    "min_depth": 0,
+    "max_depth": 100
+  },
+  "Single__1": {
+    "type": "Observer.Single",
+    "output_shape": [
+      84,
+      84,
+      1
+    ],
+    "please_write": true,
+    "write_directory": "temp/"
+  },
+  "up": {
+    "type": "Action.FixedMove",
+    "x_distance": 0,
+    "y_distance": 0,
+    "z_distance": 5,
+    "speed": 4,
+    "front_facing": true
+  },
+  "down": {
+    "type": "Action.FixedMove",
+    "x_distance": 0,
+    "y_distance": 0,
+    "z_distance": -5,
+    "speed": 4,
+    "front_facing": true
+  },
+  "forward": {
+    "type": "Action.FixedMove",
+    "x_distance": 5,
+    "y_distance": 0,
+    "z_distance": 0,
+    "speed": 4,
+    "front_facing": true
+  },
+  "backward": {
+    "type": "Action.FixedMove",
+    "x_distance": -5,
+    "y_distance": 0,
+    "z_distance": 0,
+    "speed": 4,
+    "front_facing": true
+  },
+  "DiscreteActor__1": {
+    "type": "Actor.DiscreteActor"
+  },
+  "Avoid__1": {
+    "type": "Reward.Avoid"
+  },
+  "Point__1": {
+    "type": "Reward.Point",
+    "xyz_point": [
+      100.0,
+      0.0,
+      0.0
+    ],
+    "min_distance": 5,
+    "max_distance": 110
+  },
+  "Schema__1": {
+    "type": "Rewarder.Schema",
+    "reward_weights": [
+      1,
+      2
+    ]
+  },
+  "Collision__1": {
+    "type": "Terminator.Collision"
+  },
+  "Point__2": {
+    "type": "Terminator.Point",
+    "xyz_point": [
+      100.0,
+      0.0,
+      0.0
+    ],
+    "min_distance": 5,
+    "max_distance": 110
+  },
+  "MaxSteps__1": {
+    "type": "Terminator.MaxSteps",
+    "max_steps": 40
+  },
+  "DroneRL__1": {
+    "type": "Environment.DroneRL"
+  },
+  "DQN__1": {
+    "type": "Model.DQN",
+    "policy": "CnnPolicy",
+    "learning_rate": 0.0001,
+    "buffer_size": 1000000,
+    "learning_starts": 50000,
+    "batch_size": 32,
+    "tau": 1.0,
+    "gamma": 0.99,
+    "train_freq": 4,
+    "gradient_steps": 1,
+    "replay_buffer_class": null,
+    "replay_buffer_kwargs": null,
+    "optimize_memory_usage": false,
+    "target_update_interval": 10000,
+    "exploration_fraction": 0.1,
+    "exploration_initial_eps": 1.0,
+    "exploration_final_eps": 0.05,
+    "max_grad_norm": 10,
+    "tensorboard_log": null,
+    "create_eval_env": false,
+    "policy_kwargs": null,
+    "verbose": 0,
+    "seed": null,
+    "device": "auto",
+    "init_setup_model": true
+  },
+  "TrainRL__1": {
+    "type": "Controller.TrainRL"
+  }
+}

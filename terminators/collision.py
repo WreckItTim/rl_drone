@@ -5,7 +5,7 @@ from component import _init_wrapper
 class Collision(Terminator):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_component=''):
+    def __init__(self, drone_component):
         super().__init__()
 
     # check for collision
@@ -14,9 +14,3 @@ class Collision(Terminator):
             state['has_collided'] = self._drone.check_collision()
         has_collided = state['has_collided']
         return has_collided
-
-    def test(self):
-        print(f'did collide?:{self.evaluate({})}')
-        print('attempting collision...')
-        self._drone.move(40, 0, 0, 4, front_facing=False)
-        print(f'did collide?:{self.evaluate({})}')

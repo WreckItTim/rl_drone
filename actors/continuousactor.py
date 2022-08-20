@@ -9,6 +9,7 @@ class ContinuousActor(Actor):
         super().__init__()
         
     # interpret action from RL
-    def act(self, rl_output=None):
+    def act(self, rl_output):
         for idx in range(len(rl_output)):
             self._actions[idx].act(rl_output)
+        return 'TODO:continuous'

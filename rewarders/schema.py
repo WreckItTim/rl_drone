@@ -5,8 +5,9 @@ from component import _init_wrapper
 class Schema(Rewarder):
     # constructor
     @_init_wrapper
-    def __init__(self, reward_components=[], reward_weights=[]):
+    def __init__(self, reward_components, reward_weights):
         super().__init__()
+        assert len(reward_components) == len(reward_weights), 'not equal number of reward components and weights'
         self._min_reward = -1. * sum(reward_weights)
         self._max_reward = sum(reward_weights)
         self._diff = self._max_reward - self._min_reward
@@ -21,11 +22,3 @@ class Schema(Rewarder):
         # normalize total reward between [-1, 1]
         total_reward = 2 * (total_reward - self._min_reward) / self._diff - 1
         state['total_reward'] = total_reward
-
-    def test(self):
-        state = {}
-        print('getting state from schema.evaluate()...')
-        self.evaluate(state)
-        print('*** begin state ***')
-        print(state)
-        print('***  end state  ***')

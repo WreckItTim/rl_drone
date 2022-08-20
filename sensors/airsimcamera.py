@@ -60,14 +60,6 @@ class AirSimCamera(Sensor):
         )
         return image
 
-    def test(self):
-        print('taking picture...')
-        image = self.sense()
-        print('writing picture...')
-        image.write('temp/')
-        print('displaying picture...')
-        image.display()
-
 
 # junk:
 '''

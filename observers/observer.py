@@ -12,7 +12,6 @@ class Observer(Component):
 
     def activate(self):
         self.observe().display()
-            
 
     # returns observation transcribed for input into RL model
     def observe(self):

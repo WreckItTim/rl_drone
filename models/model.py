@@ -11,16 +11,25 @@ class Model(Component):
         self._train_environment = VecTransposeImage(DummyVecEnv([lambda: Monitor(self._train_environment)]))
         self._evaluate_environment = VecTransposeImage(DummyVecEnv([lambda: Monitor(self._evaluate_environment)]))
 
-    def learn(self, total_timesteps=100):
+    def learn(self, 
+        total_timesteps=10,
+        callback = None,
+        log_interval = 1,
+        eval_env = None,
+        eval_freq = -1,
+        n_eval_episodes = 5,
+        eval_log_path = None,
+        reset_num_timesteps = False,
+        ):
         self._sb3model.learn(
             total_timesteps=total_timesteps,
-            callback = None,
-            log_interval = 1,
-            eval_env = None,
-            eval_freq = -1,
-            n_eval_episodes = 5,
-            eval_log_path = None,
-            reset_num_timesteps = False,
+            callback=callback,
+            log_interval=log_interval,
+            eval_env=eval_env,
+            eval_freq=eval_freq,
+            n_eval_episodes=n_eval_episodes,
+            eval_log_path=eval_log_path,
+            reset_num_timesteps=reset_num_timesteps,
         )
 
     def evaluate(self, 

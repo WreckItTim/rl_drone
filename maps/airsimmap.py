@@ -11,14 +11,14 @@ class AirSimMap(Map):
     @_init_wrapper
     def __init__(self, settings=None, setting_files=['base'], release_file='Blocks',
                     release_directory='D:/airsim_releases/', settings_directory='maps/airsim_settings/',
-                    _name=None):
+                    ):
         super().__init__()
         self._release_path = release_directory + release_file + '/' + release_file + '.exe'
         if settings is None:
             self.settings = self._read_settings(settings_directory, setting_files)
         else:
             self.settings = settings
-        self._settings_path = getcwd() + '/settings.json'
+        self._settings_path = getcwd() + '/temp/overwrite_settings.json'
         self._write_settings(self.settings, self._settings_path)
 
     # launch airsim map

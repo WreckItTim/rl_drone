@@ -11,8 +11,8 @@ class Image(Observation):
 
     # constructor
     @_init_wrapper
-    def __init__(self, _data=None, data_path=None, is_gray=False, time_stamp=None):
-        super().__init__(_data=_data, data_path=data_path, time_stamp=time_stamp)
+    def __init__(self, _data, data_path=None, is_gray=False, timestamp=None):
+        super().__init__(_data=_data, data_path=data_path, timestamp=timestamp)
 
     # displays observation to console
     def display(self):

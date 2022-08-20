@@ -9,7 +9,7 @@ from transformers.transformer import Transformer
 class Single(Observer):
     # constructor
     @_init_wrapper
-    def __init__(self, sensor_component='', transformer_components=[], please_write=False, write_directory=None, output_shape=None):
+    def __init__(self, sensor_component, output_shape, transformer_components=[], please_write=False, write_directory=None):
         super().__init__(please_write=please_write, write_directory=write_directory)
         
     # gets observations than transcribes for input into RL model
@@ -18,15 +18,3 @@ class Single(Observer):
         for transformer in self._transformers:
             transformer.transform(observation)
         return observation
-
-    # tests this component
-    def test(self):
-        print('making observation...')
-        observation = self._sensor.sense()
-        observation.write('temp/', 'observation')
-        for transformer in self._transformers:
-            print(f'transforming observation with {transformer._child().__name__}...')
-            transformer.transform(observation)
-            observation.write('temp/', transformer._child().__name__ + '_observation')
-        print('displaying observation...')
-        observation.display()

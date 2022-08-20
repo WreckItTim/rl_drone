@@ -6,7 +6,7 @@ import numpy as np
 class Point(Terminator):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_component='', xyz_point=[], min_distance=1, max_distance=99999,_name=None):
+    def __init__(self, drone_component, xyz_point, min_distance=5, max_distance=99999):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
 
@@ -19,11 +19,3 @@ class Point(Terminator):
             state['distance'] = np.linalg.norm(drone_position - self.xyz_point)
         distance = state['distance']
         return distance < self.min_distance or distance > self.max_distance
-
-    def test(self):
-        print(f'moving away from goal...')
-        self._drone.move(0, 0, 20, 4, front_facing=True)
-        print(f'position:{self._drone.get_position()} reached goal?:{self.evaluate({})}')
-        print(f'moving toward goal...')
-        self._drone.move(0, 0, -30, 4, front_facing=True)
-        print(f'position:{self._drone.get_position()} reached goal?:{self.evaluate({})}')

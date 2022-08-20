@@ -1,27 +1,27 @@
 # abstract class used to handle observations - sensor responses
 from component import Component, _init_wrapper
-from utils import get_time_stamp, write_json, fix_directory
+from utils import get_timestamp, write_json, fix_directory
 from os import mkdir
 from os.path import exists
 import numpy as np
 
 class Observation(Component):
     # constructor
-    def __init__(self, _data=None, data_path=None, time_stamp=None):
-        if time_stamp is None:
-            self.time_stamp = get_time_stamp()
+    def __init__(self, _data, data_path=None, timestamp=None):
+        if timestamp is None:
+            self.timestamp = get_timestamp()
         if data_path is not None:
             _data = self.read_data(data_path)
         self._data = np.array(_data)
         self.transformations = []
-        self._name = 'Observation_' + self.time_stamp
+        self._name = 'Observation_' + self.timestamp
 
     # writes observation metadata to given dir path
-    def write(self, directory_path, file_component=None):
+    def write(self, directory_path, file_name=None):
         directory_path = fix_directory(directory_path)
-        if file_component is None:
-            file_component = f'{type(self).__name__}__{self.time_stamp}'
-        file_path = directory_path + '/' + file_component
+        if file_name is None:
+            file_name = f'{type(self).__name__}__{self.timestamp}'
+        file_path = directory_path + '/' + file_name
         if not exists(directory_path):
             mkdir(directory_path)
         serialized = self._to_json()
@@ -30,7 +30,6 @@ class Observation(Component):
 
     def activate(self):
         self.display()
-
 
     # displays observation to console
     def display(self):

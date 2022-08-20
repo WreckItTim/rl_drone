@@ -8,8 +8,6 @@ class Actor(Component):
         pass
 
     # interprets output from an RL model to take action, then takes it
-    def act(self, rl_output=None):
+    # returns transcribed action as string (for logging purposes only)
+    def act(self, rl_output):
         raise NotImplementedError
-        
-    def activate(self):
-        self.act()

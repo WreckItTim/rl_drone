@@ -42,16 +42,6 @@ class AirSimDrone(Drone):
             self._client.enableApiControl(False)
             self._client = None
 
-    # will take off, move to a near by point, then land
-    # WARNING TAKE SAFETY PRECAUTIONS
-    def test(self):
-        print('drone take off...')
-        self.take_off()
-        print('drone move(1, -1, 1, 4)...')
-        self.move(2, 2, 2, 2)
-        print('drone hover...')
-        self.hover()
-
     def take_off(self):
         self._client.takeoffAsync().join()
         self.check_collision()
