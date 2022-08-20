@@ -24,8 +24,8 @@ class Image(Observation):
         close('all')
 
     # also will write an image to folder
-    def write(self, directory_path, file_name=None, as_img=True):
-        file_path = super().write(directory_path, file_name)
+    def write(self, directory_path, file_component=None, as_img=True):
+        file_path = super().write(directory_path, file_component)
         if as_img:
             if self.is_gray:
                 imsave(file_path + '.png', self._data, cmap='gray')

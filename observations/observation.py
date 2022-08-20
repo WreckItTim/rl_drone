@@ -14,18 +14,22 @@ class Observation(Component):
             _data = self.read_data(data_path)
         self._data = np.array(_data)
         self.transformations = []
+        self._name = 'Observation_' + self.time_stamp
 
     # writes observation metadata to given dir path
-    def write(self, directory_path, file_name=None):
+    def write(self, directory_path, file_component=None):
         directory_path = fix_directory(directory_path)
-        if file_name is None:
-            file_name = f'{type(self).__name__}__{self.time_stamp}'
-        file_path = directory_path + '/' + file_name
+        if file_component is None:
+            file_component = f'{type(self).__name__}__{self.time_stamp}'
+        file_path = directory_path + '/' + file_component
         if not exists(directory_path):
             mkdir(directory_path)
         serialized = self._to_json()
         write_json(serialized, file_path)
         return file_path
+
+    def activate(self):
+        self.display()
 
 
     # displays observation to console

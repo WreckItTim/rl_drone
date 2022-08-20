@@ -23,32 +23,32 @@ action_spaces['color_image'] = spaces.Box(-1, 1, shape=(256,256,3))
 action_spaces['multimodal'] = spaces.Box(-1, 1, shape=(256,256,5))
 
 
-for observation_name in observation_spaces:
-	observation_space = observation_spaces[observation_name]
+for observation_component in observation_spaces:
+	observation_space = observation_spaces[observation_component]
 
-	for action_name in action_spaces:
-		action_space = action_spaces[action_name]
+	for action_component in action_spaces:
+		action_space = action_spaces[action_component]
 
-		print('checking', observation_name + '_observation_space', action_name + '_action_space')
+		print('checking', observation_component + '_observation_space', action_component + '_action_space')
 			
 		print('Observation Sample:')
 		observation = observation_space.sample()
-		if 'image' in observation_name:
+		if 'image' in observation_component:
 			print('see opencv window')
 			cv2.imshow('observation', observation)
 			cv2.waitKey(0)
-		elif 'multimodal' in observation_name:
+		elif 'multimodal' in observation_component:
 			print('multimodal of size', observation.shape)
 		else:
 			print('value', observation)
 
 		print('Action Sample:')
 		action = action_space.sample()
-		if 'image' in action_name:
+		if 'image' in action_component:
 			print('see opencv window')
 			cv2.imshow('action', (255 * (action+1)/2).astype(np.uint8))
 			cv2.waitKey(0)
-		elif 'multimodal' in action_name:
+		elif 'multimodal' in action_component:
 			print('multimodal of size', action.shape)
 		else:
 			print('value', action)

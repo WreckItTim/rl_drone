@@ -9,7 +9,7 @@ from component import _init_wrapper
 class PortCamera(Sensor):
     # constructor
     @_init_wrapper
-    def __init__(self, port='udp://0.0.0.0:11111', is_gray=False, name=None):
+    def __init__(self, port='udp://0.0.0.0:11111', is_gray=False):
         super().__init__()
         self._camera = None
 

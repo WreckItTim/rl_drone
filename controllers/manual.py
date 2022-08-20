@@ -1,17 +1,35 @@
-from modes.mode import Mode
+# abstract class used to handle all components
+from controllers.controller import Controller
+from component import get_component, component_list, _init_wrapper
 
-# user inputs commands one at a time
-class Manual(Mode):
+class Manual(Controller):
+    # constructor
+    @_init_wrapper
+    def __init__(self):
+        super().__init__()
 
-    def __init__(self, drone, log=False, log_path=None):
-        super().__init__(drone, log, log_path)
-
+    # runs control on components
     def run(self):
-        # user inputs commands through prompt
-        timestep = 0
-        while (True):
-            cmd = input()
-            if cmd == 'quit':
+        component_names = list(component_list.keys())
+        while(True):
+            print('Enter component _name to activate')
+            user_input = input().lower()
+            if user_input == 'quit':
                 break
-            timestep += 1
-            self.command(timestep, cmd)
+            elif user_input == 'list':
+                component_names = list(component_list.keys())
+                for idx, component_name in enumerate(component_names):
+                    print(idx, ':', component_name)
+            elif user_input == 'reset':
+                for component_name in component_names:
+                    get_component(component_name).reset()
+            else:
+                if user_input in component_list: 
+                    print(get_component(user_input).activate())
+                else:
+                    try:
+                        idx = int(user_input)
+                        component_name = component_names[idx]
+                        print(get_component(component_name).activate())
+                    except Exception as e:
+                        print('invalid entry')

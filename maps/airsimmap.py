@@ -11,7 +11,7 @@ class AirSimMap(Map):
     @_init_wrapper
     def __init__(self, settings=None, setting_files=['base'], release_file='Blocks',
                     release_directory='D:/airsim_releases/', settings_directory='maps/airsim_settings/',
-                    name=None):
+                    _name=None):
         super().__init__()
         self._release_path = release_directory + release_file + '/' + release_file + '.exe'
         if settings is None:
@@ -37,8 +37,8 @@ class AirSimMap(Map):
     @staticmethod
     def _read_settings(settings_directory, setting_files):
         merged_settings = {}
-        for setting_name in setting_files:
-            setting_path = settings_directory + setting_name + '.json'
+        for setting_component in setting_files:
+            setting_path = settings_directory + setting_component + '.json'
             setting = read_json(setting_path)
             merged_settings.update(setting)
         return merged_settings

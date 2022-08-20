@@ -24,10 +24,8 @@ def recv():
 class Tello(Drone):
 
   @_init_wrapper
-  def __init__(self, wifi_name = 'cloud', wifi_password = 'bustersword', name=None):
+  def __init__(self, wifi_name = 'cloud', wifi_password = 'bustersword'):
     super().__init__()
-    self.wifi_name = wifi_name
-    self.wifi_password = wifi_password
     self._pos = np.array([0, 0, 0]).astype(int)
 
     # if something goes wrong
@@ -60,7 +58,7 @@ class Tello(Drone):
   def connect(self):
     # connect to wifi
     print('Connecting to WiFi, send any key when complete and ready to continue...')
-    system('cmd /c \"netsh wlan connect name=' + self.wifi_name + '\"')
+    system('cmd /c \"netsh wlan connect _name=' + self.wifi_component + '\"')
     x = input()
     # open sockets to send/receive commands/stream to/from drone
     host = ''

@@ -8,5 +8,8 @@ class Actor(Component):
         pass
 
     # interprets output from an RL model to take action, then takes it
-    def act(self):
+    def act(self, rl_output=None):
         raise NotImplementedError
+        
+    def activate(self):
+        self.act()

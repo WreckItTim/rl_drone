@@ -8,7 +8,7 @@ from component import _init_wrapper
 class NormalizeDepth(Transformer):
     # constructor, arbitrary units depend on drone (typically assume meters)
     @_init_wrapper
-    def __init__(self, min_depth=0, max_depth=100, name=None):
+    def __init__(self, min_depth=0, max_depth=100):
         super().__init__()
 
     # if observation type is valid, applies transformation

@@ -7,5 +7,10 @@ class Rewarder(Component):
         pass
 
     # calculates rewards from agent's current state (call to when taking a step)
-    def evalute(self, state):
+    def evaluate(self, state):
         raise NotImplementedError
+
+    def activate(self):
+        state = {}
+        self.evaluate(state)
+        return state

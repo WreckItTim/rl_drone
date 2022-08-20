@@ -10,12 +10,8 @@ class Observer(Component):
             if not exists(write_directory):
                 makedirs(write_directory)
 
-    # processes observation after captured by child
-    # returns as numpy for rl handling
-    def process(self, observation):
-        if self.please_write:
-            observation.write(self.write_directory)
-        return observation.to_numpy()
+    def activate(self):
+        self.observe().display()
             
 
     # returns observation transcribed for input into RL model

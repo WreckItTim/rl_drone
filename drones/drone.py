@@ -5,6 +5,9 @@ class Drone(Component):
     def __init__(self):
         pass
 
+    def activate(self):
+        self.take_off()
+
     # updates number of collisions and returns same 
     def check_collision(self):
         raise NotImplementedError

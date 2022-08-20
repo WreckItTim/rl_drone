@@ -1,7 +1,7 @@
 
 
-# set wifi name BEFORE playing with tello and run this script BEFORE using to be ready to kill with a key send
-wifi_name = ''
+# set wifi _name BEFORE playing with tello and run this script BEFORE using to be ready to kill with a key send
+wifi_component = ''
 import os
 import socket
 import time
@@ -21,7 +21,7 @@ while(True):
     while(True):
         try:
             time.sleep(10)
-            os.system('cmd /c \"netsh wlan connect name={' + self.wifi_name + '}\"')
+            os.system('cmd /c \"netsh wlan connect _name={' + self.wifi_component + '}\"')
             break
         except Exception as e:
             continue

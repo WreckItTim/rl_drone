@@ -1,9 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\rewards",
-    "\\sensors"
+    ""
   ],
-  "SelectedNode": "\\sensors\\airsimcamera.py",
+  "SelectedNode": "\\temp",
   "PreviewInSolutionExplorer": false
 }

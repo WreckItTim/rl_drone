@@ -5,7 +5,7 @@ from component import _init_wrapper
 class Collision(Terminator):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_name='', name=None):
+    def __init__(self, drone_component=''):
         super().__init__()
 
     # check for collision

@@ -6,7 +6,7 @@ class FixedMove(Action):
     # constructor takes 4d array where first 3 components are direction and 4th component is speed
     # note that speed is an arbitrary unit that is defined by the drone
     @_init_wrapper
-    def __init__(self, drone_name='', x_distance=0, y_distance=0, z_distance=0, speed=10, front_facing=True, name=None):
+    def __init__(self, drone_component='', x_distance=0, y_distance=0, z_distance=0, speed=10, front_facing=True):
         super().__init__()
 
     def act(self):
@@ -17,23 +17,24 @@ class FixedMove(Action):
         self.act()
 
     # uses a string to fetch a preset movement (left, right, ...)
-    # movements are addititve with underscores in move_name (to make diagnols)
+    # movements are addititve with underscores in move_component (to make diagnols)
     @staticmethod
-    def get_move(drone_name, move_type, step_size, speed, front_facing=True):
+    def get_move(drone_component, move_type, step_size, speed, front_facing=True):
         x_distance, y_distance, z_distance = 0, 0, 0
         moves = move_type.split('_')
         for move in moves:
-            if 'left' in move: x_distance += step_size
-            if 'right' in move: x_distance -= step_size
-            if 'up' in move: y_distance += step_size
-            if 'down' in move: y_distance -= step_size
-            if 'forward' in move: z_distance += step_size
-            if 'backward' in move: z_distance -= step_size
+            if 'left' in move: y_distance -= step_size
+            if 'right' in move: y_distance += step_size
+            if 'up' in move: z_distance += step_size
+            if 'down' in move: z_distance -= step_size
+            if 'forward' in move: x_distance += step_size
+            if 'backward' in move: x_distance -= step_size
         return FixedMove(
-            drone_name=drone_name, 
+            drone_component=drone_component, 
             x_distance=x_distance, 
             y_distance=y_distance, 
             z_distance=z_distance,
             speed=speed, 
-            front_facing=front_facing
+            front_facing=front_facing,
+            _name=move_type,
         )

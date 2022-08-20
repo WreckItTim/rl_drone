@@ -27,7 +27,7 @@ class AirSimCamera(Sensor):
         # OpticalFlowVis = 9
     # constructor
     @_init_wrapper
-    def __init__(self, camera_view='0', image_type=2, as_float=True, compress=False, is_gray=False, name=None):
+    def __init__(self, camera_view='0', image_type=2, as_float=True, compress=False, is_gray=False):
         super().__init__()
         self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
         self._client = None

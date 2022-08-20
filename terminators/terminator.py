@@ -9,3 +9,6 @@ class Terminator(Component):
     # evaluates if termination criteria is met, ruturns done=True if so otherwise done=False
     def evaluate(self, state):
         raise NotImplementedError
+
+    def activate(self):
+        return self.evaluate({})

@@ -2,44 +2,49 @@ import numpy as np
 from time import time
 import inspect
 from sys import getsizeof
+from utils import error
+from functools import wraps
 
 # all my classes are children of this Component class 
 # I use alot of overlapping logic for serialization, connecting, running, logging...
 
-# serializes a list of components into a parameter dictionary
+# serializes a list of components into a configuration file
 def serialize_components(components):
-	parameters = {}
+	configuration = {}
 	for component in components:
-		parameters[component._name] = component._to_json()
-	return parameters
+		configuration[component._name] = component._to_json()
+	return configuration
 
-# deserializes a parameter dictionary into a list of components
-def deserialize_components(parameters):
+# deserializes a configuration file into a list of components
+def deserialize_components(configuration):
 	components = []
-	for component_name in parameters:
-		component_parameters = parameters[component_name]
-		component = deserialize_component(component_name, component_parameters)
+	for component_name in configuration:
+		component_arguments = configuration[component_name]
+		component = deserialize_component(component_name, component_arguments)
 		components.append(component)
 	return components
 
 # deserializes a json file to a component
-def deserialize_component(component_name, params):
-	# get types
-	types = params['type'].split('.')
-	parent_name, child_name = types[0], types[1]
-	import_name = parent_name.lower() + 's.' + child_name.lower()
-	child_module = __import__(import_name, fromlist=[child_name])
-	child_type = getattr(child_module, child_name)
+def deserialize_component(component_name, component_arguments):
+	# get parent and child types
+	types = component_arguments['type'].split('.')
+	parent_type, child_type = types[0], types[1]
+	import_component = parent_type.lower() + 's.' + child_type.lower()
+	child_module = __import__(import_component, fromlist=[child_type])
+	child_class = getattr(child_module, child_type)
 	# create a child object
-	del params['type']
-	params['name'] = component_name
-	child = child_type(**params)
-	return child
+	del component_arguments['type']
+	component_arguments['_name'] = component_name
+	component = child_class(**component_arguments)
+	return component
 
-# keeps track of component instances
+# keeps track of global components
 component_list = {}
-def get_component(name, is_type=None):
-	component = component_list[name]
+def get_component(_name, is_type=None):
+	if _name not in component_list:
+		print('component named', _name, 'does not exist')
+		return None
+	component = component_list[_name]
 	if is_type is not None:
 		component.check(is_type)
 	return component
@@ -48,16 +53,16 @@ def get_component(name, is_type=None):
 def get_all_components():
 	components = []
 	for component_name in component_list:
-		components.append(component_list[component_name])
+		components.append(get_component(component_name))
 	return components
 
 # logs time and memory benchmarks
-diary = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}, 'event':{}}
+benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}, 'event':{}}
 def log_entry(master_key, key, value):
-	if key not in diary[master_key]:
-		diary[master_key][key] = [value]
+	if key not in benchmarks[master_key]:
+		benchmarks[master_key][key] = [value]
 	else:
-		diary[master_key][key].append(value)
+		benchmarks[master_key][key].append(value)
 
 # fetches memory stored in this object, as mega bytes
 def log_memory(component):
@@ -67,98 +72,113 @@ def log_memory(component):
 
 # times all funciton calls and saves to library (microseconds)
 def _timer_wrapper(method):
-	def _impl(*args, **kwargs):
+	def _wrapper(*args, **kwargs):
 		module_name = method.__module__
 		t1 = time()
 		method_output = method(*args, **kwargs)
-		if 'component' not in module_name:
-			t2 = time()
-			delta_t = (t2 - t1) * 1000000
-			entry_name = module_name + '.' + method.__name__
-			log_entry('time', entry_name, delta_t)
+		t2 = time()
+		delta_t = (t2 - t1) * 1000000
+		entry_name = module_name + '.' + method.__name__
+		log_entry('time', entry_name, delta_t)
 		return method_output
-	return _impl
+	return _wrapper
+
 
 # sets intialization values
 def _init_wrapper(init_method):
+	sig = inspect.signature(init_method)
 
-	def wrapper(self, *args, **kwargs):
-		# SET ALL PUBLIC PASSED IN ARGUMENTS AS CLASS ATTRIBUTES, FETCH COMPONENTS BY NAME
-		for key in kwargs:
-			# convert public list of component names to private list of components
+	@wraps(init_method)
+	def _wrapper(self, *args, **kwargs):
+		# update arguments with defaults and make one giant dictionary of all args
+		bound = sig.bind(self, *args, **kwargs)
+		bound.apply_defaults()
+		all_args = bound.arguments
+        del all_args['name']
+
+		# SET ALL PUBLIC PASSED IN ARGUMENTS AS CLASS ATTRIBUTES
+		for key in all_args:
+			# convert public list of component _names to private list of components
 			# skip over private arguments
-			if key[0] == '_' or key == 'self' or key == 'name':
+			if key[0] == '_' or key == 'self':
 				continue
-			elif 'names' in key:
-				component_names = kwargs[key]
+			# parse and set list of components
+			elif 'components' in key:
+				values = all_args[key]
 				components = []
-				for component_name in component_names:
-					component = get_component(component_name)
+				for value in values:
+					if isinstance(value, str):
+						component = get_component(value)
+					elif isinstance(value, Component):
+						component = value
+					else:
+						error('passed in argument as _component in _components list, but argument is not str or component type')
 					components.append(component)
-				setattr(self, '_' + key.replace('_names', 's'), components)
-				setattr(self, key, component_names)
-			# convert public component name to private component
-			elif 'name' in key:
-				component_name = kwargs[key]
-				component = get_component(component_name)
-				setattr(self, '_' + key.replace('_name', ''), component)
-				setattr(self, key, component_name)
+				setattr(self, '_' + key.replace('_components', 's'), components)
+			# parse and set component
+			elif 'component' in key:
+				value = all_args[key]
+				if isinstance(value, str):
+					component = get_component(value)
+				elif isinstance(value, Component):
+					component = value
+				else:
+					error('passed in argument as _component but is not str or component type')
+				setattr(self, '_' + key.replace('_component', ''), component)
 			# set all public arguments
 			else:
-				setattr(self, key, kwargs[key])
+				setattr(self, key, all_args[key])
 
 		# ADD TIMER TO EACH PUBLIC CLASS METHOD
 		for method in dir(self):
 			if callable(getattr(self, method)) and method[0] != '_':
 				setattr(self, method, _timer_wrapper(getattr(self, method)))
 
-		# SET UNIQUE NAME AND ADD TO LIST OF COMPONENTS
+		# SET UNIQUE _name 
 		clone_id = 1
-		if 'name' not in kwargs:
-			name = f'{self._child().__name__}'
-			try_name = f'{name}__{clone_id}' 
+		if '_name' not in all_args:
+			_name = f'{self._child().__name__}'
+			try_name = f'{_name}__{clone_id}' 
 		else:
-			name = kwargs['name']
-			try_name = name
+			_name = all_args['_name']
+			try_name = _name
 		clone_id = 2
 		while try_name in component_list:
-			try_name = f'{name}__{clone_id}'
+			try_name = f'{_name}__{clone_id}'
 			clone_id = clone_id + 1
-		name = try_name
-		component_list[name] = self
-		self._name = name
+		self._name = try_name
 
 		# CALL BASE INIT
 		init_method(self, *args, **kwargs)
-		print('created:', self._name)
 
-	return wrapper
+		# ADD TO LIST OF COMPONENTS
+		component_list[self._name] = self
+		
+    return partial(_wrapper, name=None)
 
 # the component class itself
 class Component():
 	# WRAP ALL __INIT__ WITH THIS or call super() to not set class attributes automatically
     #@_init_wrapper
-	def __init__(self, name=None):
-
+	def __init__(self):
+	
 		# ADD TIMER TO EACH PUBLIC CLASS METHOD
 		for method in dir(self):
-			if callable(getattr(self, method)) and '__' not in method:
+			if callable(getattr(self, method)) and method[0] != '_':
 				setattr(self, method, _timer_wrapper(getattr(self, method)))
 
-		# SET UNIQUE NAME AND ADD TO LIST OF COMPONENTS
+		# SET UNIQUE _name 
 		clone_id = 1
-		if name is None:
-			name = f'{self._child().__name__}'
-			try_name = f'{name}__{clone_id}' 
+		if _name is None:
+			_name = f'{self._child().__name__}'
+			try_name = f'{_name}__{clone_id}' 
 		else:
-			try_name = name
+			try_name = _name
 		clone_id = 2
 		while try_name in component_list:
-			try_name = f'{name}__{clone_id}'
+			try_name = f'{_name}__{clone_id}'
 			clone_id = clone_id + 1
-		name = try_name
-		component_list[name] = self
-		self._name = name
+		self._name = try_name
 
 	# gets bytes of all components
 	def __sizeof__(self):
@@ -178,8 +198,8 @@ class Component():
 	def connect(self):
 		pass
 
-	# runs whatever to do whatever
-	def run(self):
+	# activates whatever to do whatever
+	def activate(self):
 		pass
 
 	# kill connection, clean up as needed
@@ -187,7 +207,7 @@ class Component():
 		pass
 
 	# resets and end of episode to prepare for next
-	def reset(self, state):
+	def reset(self):
 		pass
 
 	# checks to insure component is running properly
@@ -216,9 +236,9 @@ class Component():
 	def _child(self):
 		return type(self)
 
-	# turns component into a dictionary/json format - auto gets class name and self-serializable parameters
+	# turns component into a dictionary/json format - auto gets class _name and self-serializable parameters
 	def _to_json(self):
-		params = {'type':f'{self._parent().__name__}.{self._child().__name__}'}
+		component_arguments = {'type':f'{self._parent().__name__}.{self._child().__name__}'}
 		variables = vars(self)
 		for key in variables:
 			variable = variables[key]
@@ -226,10 +246,12 @@ class Component():
 				continue
 			if key[0] == '_':
 				continue
+			if key == 'observation_space' or key == 'action_space':
+				continue
 			if type(variable) is np.ndarray:
 				variable = variable.tolist()
-			params[key] = variable
-		return params
+			component_arguments[key] = variable
+		return component_arguments
       
 	# checks json serialization for equality
 	def __eq__(self, other):

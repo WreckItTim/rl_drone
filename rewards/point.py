@@ -6,7 +6,7 @@ import numpy as np
 class Point(Reward):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_name='', xyz_point=[], min_distance=1, max_distance=1000, name=None):
+    def __init__(self, drone_component='', xyz_point=[], min_distance=1, max_distance=1000):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
         self._diff = max_distance - min_distance
@@ -16,7 +16,9 @@ class Point(Reward):
         if 'drone_position' not in state:
             state['drone_position'] = self._drone.get_position()
         drone_position = state['drone_position']
-        distance = np.linalg.norm(drone_position - self.xyz_point)
+        if 'distance' not in state:
+            state['distance'] = np.linalg.norm(drone_position - self.xyz_point)
+        distance = state['distance']
         if distance < self.min_distance:
             total_reward = 1
         elif distance > self.max_distance:

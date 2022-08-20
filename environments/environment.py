@@ -5,6 +5,9 @@ class Environment(Component):
     # constructor
     def __init__(self):
         pass
+
+    def activate(self):
+        return self.step(None)
         
     def step(self, rl_output):
         raise NotImplementedError

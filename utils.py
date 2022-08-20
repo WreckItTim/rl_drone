@@ -13,8 +13,6 @@ def read_json(path):
 	return json.load(open(path, 'r'))
 
 def write_json(dic, path):
-	if '.json' not in path:
-		path = path + '.json'
 	json.dump(dic, open(path, 'w'), indent=2)
 
 def move_to_string(point):

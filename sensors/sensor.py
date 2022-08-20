@@ -9,3 +9,7 @@ class Sensor(Component):
     # fetch a response from sensor
     def sense(self):
         raise NotImplementedError
+
+    def activate(self):
+        observation = self.sense()
+        observation.display()

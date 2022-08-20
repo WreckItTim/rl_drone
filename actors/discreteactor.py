@@ -2,15 +2,18 @@
 from actors.actor import Actor
 from random import randint
 from component import _init_wrapper
+import random
 
 class DiscreteActor(Actor):
     # constructor
     @_init_wrapper
-    def __init__(self, action_names=[], name=None):
+    def __init__(self, action_components=[]):
         super().__init__()
 
     # interpret action from RL
-    def act(self, rl_output):
+    def act(self, rl_output=None):
+        if rl_output is None:
+            rl_output = random.randint(0, len(self._actions)-1)
         self._actions[rl_output].act()
 
     # act on a random rl_output

@@ -9,7 +9,7 @@
   "ViewMode": "",
   "RpcEnabled": true,
   "EngineSound": true,
-  "PhysicsEngineName": "",
+  "PhysicsEngine_name": "",
   "SpeedUnitFactor": 1.0,
   "SpeedUnitLabel": "m/s",
   "Wind": { "X": 0, "Y": 0, "Z": 0 },
@@ -24,7 +24,7 @@
     "Folder": "",
     "Enabled": false,
     "Cameras": [
-        { "CameraName": "0", "ImageType": 0, "PixelsAsFloat": false,  "VehicleName": "", "Compress": true }
+        { "Camera_name": "0", "ImageType": 0, "PixelsAsFloat": false,  "Vehicle_name": "", "Compress": true }
     ]
   },
   "CameraDefaults": {
@@ -95,9 +95,9 @@
     "UpdateIntervalSecs": 60
   },
   "SubWindows": [
-    {"WindowID": 0, "CameraName": "0", "ImageType": 3, "VehicleName": "", "Visible": false, "External": false},
-    {"WindowID": 1, "CameraName": "0", "ImageType": 5, "VehicleName": "", "Visible": false, "External": false},
-    {"WindowID": 2, "CameraName": "0", "ImageType": 0, "VehicleName": "", "Visible": false, "External": false}
+    {"WindowID": 0, "Camera_name": "0", "ImageType": 3, "Vehicle_name": "", "Visible": false, "External": false},
+    {"WindowID": 1, "Camera_name": "0", "ImageType": 5, "Vehicle_name": "", "Visible": false, "External": false},
+    {"WindowID": 2, "Camera_name": "0", "ImageType": 0, "Vehicle_name": "", "Visible": false, "External": false}
   ],
   "SegmentationSettings": {
     "InitMethod": "",
@@ -125,7 +125,7 @@
         "AllowAPIWhenDisconnected": false
       },
       "Cameras": {
-        //same elements as CameraDefaults above, key as name
+        //same elements as CameraDefaults above, key as _name
       },
       "X": NaN, "Y": NaN, "Z": NaN,
       "Pitch": NaN, "Roll": NaN, "Yaw": NaN

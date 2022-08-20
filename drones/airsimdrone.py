@@ -22,6 +22,7 @@ class AirSimDrone(Drone):
         self._client.reset()
         self._client.enableApiControl(True)
         self._client.armDisarm(True)
+        self.check_collision()
 
     # if something goes wrong
     def stop(self):
@@ -53,6 +54,7 @@ class AirSimDrone(Drone):
 
     def take_off(self):
         self._client.takeoffAsync().join()
+        self.check_collision()
 
     # TODO: having problems with it landing sometimes - if done right after a move() command
     def land(self):
