@@ -14,7 +14,7 @@ MAKING A NEW DRONE CLASS
 
 THE COMPONENT CLASS
 
-The Component base-class can be found in the component.py file in master. All classes derive from Component. This will allow components to be serializable for loading/saving configuration files, able to be seen by other components, benchmarkable, and have all class attributes automagically set. See bottom below for a full example of making a new component class.
+The Component base-class can be found in the component.py file in master. All classes derive from Component. This will allow components to be serializable for loading/saving configuration files, able to be seen by other components, benchmarkable, and have all class attributes automagically set. See bottom for a full example of making a new component class.
 
 To set another component as a class-attribute during construction, name the argument to the appropriate .__init__() method with a trailing tag of '_component'
   for a list of components, trail with a tag of '_components'
