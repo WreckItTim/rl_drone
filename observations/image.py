@@ -21,7 +21,6 @@ class Image(Observation):
         else:
             imshow(self._data)
         show()
-        close('all')
 
     # also will write an image to folder
     def write(self, directory_path, file_component=None, as_img=True):

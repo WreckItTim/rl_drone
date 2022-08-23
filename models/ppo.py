@@ -7,8 +7,7 @@ class PPO(Model):
     # constructor
     @_init_wrapper
     def __init__(self, 
-            train_environment_component = None,
-            evaluate_environment_component = None,
+            environment_component,
             policy = 'CnnPolicy',
             learning_rate = 1e-3,
             n_steps = 1, #2048
@@ -32,31 +31,11 @@ class PPO(Model):
             seed = None,
             device = "auto",
             init_setup_model = True,
+            load_from_path=None,
         ):
-        super().__init__()
-        self._sb3model = sb3PPO(
-            self.policy,
-            self._train_environment,
-            self.learning_rate,
-            self.n_steps,
-            self.batch_size,
-            self.n_epochs,
-            self.gamma,
-            self.gae_lambda,
-            self.clip_range,
-            self.clip_range_vf,
-            self.normalize_advantage,
-            self.ent_coef,
-            self.vf_coef,
-            self.max_grad_norm,
-            self.use_sde,
-            self.sde_sample_freq,
-            self.target_kl,
-            self.tensorboard_log,
-            self.create_eval_env,
-            self.policy_kwargs,
-            self.verbose,
-            self.seed,
-            self.device,
-            self.init_setup_model,
-        )
+        kwargs = locals()
+        model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'load_from_path']}
+        model_arguments['env'] = kwargs['environment_component']
+        model_arguments['_init_setup_model'] = kwargs['init_setup_model']
+        self.sb3Type = sb3PPO
+        super().__init__(load_from_path=load_from_path, model_arguments=model_arguments)

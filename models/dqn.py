@@ -7,8 +7,6 @@ class DQN(Model):
     # constructor
     @_init_wrapper
     def __init__(self, 
-            train_environment_component = None,
-            evaluate_environment_component = None,
             policy = 'CnnPolicy',
             learning_rate = 1e-4,
             buffer_size = 1_000_000,
@@ -33,32 +31,10 @@ class DQN(Model):
             seed = None,
             device = "auto",
             init_setup_model = True,
+            write_path=None,
         ):
-        super().__init__()
-        self._sb3model = sb3DQN(
-            self.policy,
-            self._train_environment,
-            self.learning_rate,
-            self.buffer_size,
-            self.learning_starts,
-            self.batch_size,
-            self.tau,
-            self.gamma,
-            self.train_freq,
-            self.gradient_steps,
-            self.replay_buffer_class,
-            self.replay_buffer_kwargs,
-            self.optimize_memory_usage,
-            self.target_update_interval,
-            self.exploration_fraction,
-            self.exploration_initial_eps,
-            self.exploration_final_eps,
-            self.max_grad_norm,
-            self.tensorboard_log,
-            self.create_eval_env,
-            self.policy_kwargs,
-            self.verbose,
-            self.seed,
-            self.device,
-            self.init_setup_model,
-        )
+        kwargs = locals()
+        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'init_setup_model', 'write_path']}
+        _model_arguments['_init_setup_model'] = kwargs['init_setup_model']
+        self.sb3Type = sb3DQN
+        super().__init__(write_path=write_path, _model_arguments=_model_arguments)

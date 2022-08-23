@@ -28,12 +28,24 @@ class Drone(Component):
     def land(self):
         raise NotImplementedError
 
+    # teleports to exact position (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
+    def teleport(self, point):
+        raise NotImplementedError
+
+    # sets exact yaw (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
+    def set_yaw(self, degrees):
+        raise NotImplementedError
+
     # moves to relative position at given speed (units defined within drone) 
-    def move(self, x, y, z, speed, front_facing=True):
+    def move(self, point, speed):
         raise NotImplementedError
 
     # moves to absolute position at given speed (units defined within drone) 
-    def move_to(self, x, y, z, speed):
+    def move_to(self, point, speed):
+        raise NotImplementedError
+
+    # rotates along the z-axis
+    def rotate(self, degrees):
         raise NotImplementedError
 
     # return response from all active sensors

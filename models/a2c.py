@@ -2,13 +2,13 @@
 from models.model import Model
 from stable_baselines3 import A2C as sb3A2C
 from component import _init_wrapper
+from os.path import exists
 
 class A2C(Model):
     # constructor
     @_init_wrapper
     def __init__(self, 
-            train_environment_component = None,
-            evaluate_environment_component = None,
+            environment_component,
             policy = 'CnnPolicy',
             learning_rate = 7e-4,
             n_steps = 5,
@@ -29,28 +29,11 @@ class A2C(Model):
             seed = None,
             device = "auto",
             init_setup_model = True,
+            load_from_path=None,
         ):
-        super().__init__()
-        self._sb3model = sb3A2C(
-            self.policy,
-            self._train_environment,
-            self.learning_rate,
-            self.n_steps,
-            self.gamma,
-            self.gae_lambda,
-            self.ent_coef,
-            self.vf_coef,
-            self.max_grad_norm,
-            self.rms_prop_eps,
-            self.use_rms_prop,
-            self.use_sde,
-            self.sde_sample_freq,
-            self.normalize_advantage,
-            self.tensorboard_log,
-            self.create_eval_env,
-            self.policy_kwargs,
-            self.verbose,
-            self.seed,
-            self.device,
-            self.init_setup_model,
-        )
+        kwargs = locals()
+        model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'load_from_path']}
+        model_arguments['env'] = kwargs['environment_component']
+        model_arguments['_init_setup_model'] = kwargs['init_setup_model']
+        self.sb3Type = sb3A2C
+        super().__init__(load_from_path=load_from_path, model_arguments=model_arguments)

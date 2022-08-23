@@ -2,7 +2,7 @@
 import setup_path # need this in same directory as python code for airsim
 import airsim
 from drones.drone import Drone
-from math import sqrt
+import math
 from component import _init_wrapper
 
 class AirSimDrone(Drone):
@@ -10,6 +10,8 @@ class AirSimDrone(Drone):
     def __init__(self):
         super().__init__()
         self._client = None
+        self._yaw_radians = 0
+        self._yaw_degrees = 0
         
     # check if has collided
     def check_collision(self):
@@ -50,21 +52,39 @@ class AirSimDrone(Drone):
     def land(self):
         self._client.landAsync().join()
     
-    def move(self, x_distance, y_distance, z_distance, speed, front_facing=True):
-        distance = sqrt(x_distance**2 + y_distance**2 + z_distance**2)
+    # move to relative position
+    def move(self, point, speed):
+        x_distance, y_distance, z_distance = point[0], point[1], point[2]
+        distance = math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
         duration = distance / speed
         x_speed = x_distance/duration
         y_speed = y_distance/duration
         z_speed = z_distance/duration
-        drive_train = 1 if front_facing else 0
-        self._client.moveByVelocityAsync(x_speed, y_speed, -1*z_speed, duration, drivetrain=drive_train).join()
+        duration = distance / speed
+        #, yaw_mode={'is_rate':False,'yaw_or_rate':self._yaw_degrees}
+        self._client.moveByVelocityAsync(x_speed, y_speed, -1*z_speed, duration).join()
     
-    def move_to(self, x_position, y_position, z_position, speed, front_facing=True):
-        drive_train = 1 if front_facing else 0
-        self._client.moveToPositionAsync(x_position, y_position, -1*z_position, speed, drivetrain=drive_train).join()
+    # move to absolute position
+    def move_to(self, point, speed):
+        x_position, y_position, z_position = point[0], point[1], point[2]
+        self._client.moveToPositionAsync(x_position, y_position, -1*z_position, speed).join()
     
+    # teleports to position (ignores collisions)
+    def teleport(self, point):
+        pose = self._client.simGetVehiclePose()
+        pose.position.x_val = point[0] 
+        pose.position.y_val = point[1]  
+        pose.position.z_val = point[2]  
+        self._client.simSetVehiclePose(pose, ignore_collision=True)
+
+    # sets yaw (different than rotating)
+    def set_yaw(self, yaw_degrees):
+        self._client.rotateToYawAsync(yaw_degrees, timeout_sec=10).join()
+        self._yaw_degrees = yaw_degrees
+        self._yaw_radians = math.radians(yaw_degrees)
+
     def get_position(self):
-        return self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array()
+        return self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array().tolist()
 
     def hover(self):
         self._client.hoverAsync().join()

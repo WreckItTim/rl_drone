@@ -6,6 +6,7 @@ from drones.drone import Drone
 from os import system
 from time import sleep
 from component import _init_wrapper
+import utils
 
 # function that runs on another thread to constantly receive messages being sent from drone
 def recv():
@@ -60,12 +61,25 @@ class Tello(Drone):
     def disconnect(self):
         self._sock.close()
 
-    def move(self, x, y, z, speed):
+    # move to relative position
+    def move(self, point, speed, front_facing=False):
+        x, y, z = point[0], point[1], point[2]
+        if speed < 10 or speed > 100:
+            utils.error('speed out of range for tello')
+        if min(abs(x), abs(y), abs(z)) < 100 or max(abs(x), abs(y), abs(z)) > 1000:
+            utils.error('position out of range for tello')
         self.command(f'go {x} {y} {z} {speed}')
         self._pos += np.array([x, y, z])
-
-    def move_to(self, x, y, z):
-        self.command(f'go {x-self._pos[0]} {y-self._pos[1]} {z-self._pos[2]} {self.speed}')
+        
+    # move to absolute position
+    def move_to(self, point, speed, front_facing=False):
+        position = get_position()
+        x_diff, y_diff, z_diff = point[0]-position[0], point[1]-position[1], point[2]-position[2]
+        if speed < 10 or speed > 100:
+            utils.error('speed out of range for tello')
+        if min(abs(x_diff), abs(y_diff), abs(z_diff)) < 100 or max(abs(x_diff), abs(y_diff), abs(z_diff)) > 1000:
+            utils.error('position out of range for tello')
+        self.command(f'go {x_diff} {y_diff} {z_diff} {speed}')
         self._pos = np.array([x, y, z])
 
     def flip(self, direction=None):
@@ -81,7 +95,7 @@ class Tello(Drone):
         response = self.command('land')
 
     def get_position(self):
-        return self._pos
+        return self._pos.tolist()
 
     def hover(self):
         response = self.command('stop')

@@ -13,10 +13,10 @@ class Schema(Rewarder):
         self._diff = self._max_reward - self._min_reward
         
     # calculates rewards from agent's current state (call to when taking a step)
-    def evaluate(self, state):
+    def reward(self, state):
         total_reward = 0
         for idx, reward in enumerate(self._rewards):
-            value = reward.evaluate(state)
+            value = reward.reward(state)
             state['reward_from_' + reward._name] = value
             total_reward += self.reward_weights[idx] * value
         # normalize total reward between [-1, 1]

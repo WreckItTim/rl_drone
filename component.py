@@ -184,7 +184,7 @@ def _init_wrapper(init_method):
 # the component class itself
 class Component():
 	# WRAP ALL child sub-Component classes __init__() like this (wihtout the comment):
-    #@_init_wrapper
+	#@_init_wrapper
 	def __init__(self):
 		pass
 
@@ -212,6 +212,10 @@ class Component():
 
 	# kill connection, clean up as needed
 	def disconnect(self):
+		pass
+
+	# arbitrary step function taken at each step of rl train
+	def step(self):
 		pass
 
 	# resets and end of episode to prepare for next
@@ -252,7 +256,7 @@ class Component():
 				variable = variable.tolist()
 			component_arguments[key] = variable
 		return component_arguments
-      
+
 	# checks json serialization for equality
 	def __eq__(self, other):
 		if self._to_json()==other._to_json():

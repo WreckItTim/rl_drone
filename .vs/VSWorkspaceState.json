@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\models",
+    "\\temp\\2022_8_23_10_43_48"
   ],
-  "SelectedNode": "\\resources",
+  "SelectedNode": "\\models\\a2c.py",
   "PreviewInSolutionExplorer": false
 }

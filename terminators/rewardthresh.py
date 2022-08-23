@@ -9,8 +9,8 @@ class RewardThresh(Terminator):
         super().__init__()
 
     # check for collision
-    def evaluate(self, state):
-        done = False
+    def terminate(self, state):
         if state['total_reward'] < self.min_reward:
-            done = true
-        return done
+            state['termination_reason'] = 'min_reward'
+            return True
+        return False

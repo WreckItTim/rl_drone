@@ -5,14 +5,14 @@ from component import get_component, component_list, _init_wrapper
 class Manual(Controller):
     # constructor
     @_init_wrapper
-    def __init__(self):
+    def __init__(self, drone_component):
         super().__init__()
 
     # runs control on components
     def run(self):
         component_names = list(component_list.keys())
         while(True):
-            print('Enter component _name to activate')
+            print('Enter component _name or index to activate, list to see components, or reset')
             user_input = input().lower()
             if user_input == 'quit':
                 break
@@ -21,15 +21,13 @@ class Manual(Controller):
                 for idx, component_name in enumerate(component_names):
                     print(idx, ':', component_name)
             elif user_input == 'reset':
-                for component_name in component_names:
-                    get_component(component_name).reset()
+                _drone.reset()
             else:
                 if user_input in component_list: 
                     print(get_component(user_input).activate())
+                elif int(user_input) > 0 and int(user_input) < len(component_names):
+                    idx = int(user_input)
+                    component_name = component_names[idx]
+                    print(get_component(component_name).activate())
                 else:
-                    try:
-                        idx = int(user_input)
-                        component_name = component_names[idx]
-                        print(get_component(component_name).activate())
-                    except Exception as e:
-                        print('invalid entry')
+                    print('invalid entry')

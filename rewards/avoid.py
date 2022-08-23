@@ -9,7 +9,7 @@ class Avoid(Reward):
         super().__init__()
 
     # -1 for a collision, +1 for dodging collision
-    def evaluate(self, state):
+    def reward(self, state):
         if 'has_collided' not in state:
             state['has_collided'] = self._drone.check_collision()
         has_collided = state['has_collided']

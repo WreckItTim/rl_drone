@@ -24,7 +24,6 @@ class AirSimMap(Map):
     # launch airsim map
     def connect(self):
         terminal_command = f'{self._release_path} -settings=\"{self._settings_path}"'
-        print(terminal_command)
         subprocess.Popen(terminal_command, close_fds=True)
         print(f'Send any key when AirSim {self.release_file}.exe is fully launched, this make take several minutes....')
         x = input()

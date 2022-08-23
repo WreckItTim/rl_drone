@@ -9,8 +9,10 @@ class Collision(Terminator):
         super().__init__()
 
     # check for collision
-    def evaluate(self, state):
+    def terminate(self, state):
         if 'has_collided' not in state:
             state['has_collided'] = self._drone.check_collision()
         has_collided = state['has_collided']
+        if has_collided:
+            state['termination_reason'] = 'collided'
         return has_collided
