@@ -24,6 +24,14 @@ def fix_directory(directory):
 		directory += '/'
 	return directory
 
+def debug_json(dictionary):
+	print('debug json')
+	for key in dictionary:
+		if type(dictionary[key]) == dict:
+			debug_json(dictionary[key])
+		else:
+			print(key, dictionary[key], type(dictionary[key]))
+
 
 global_parameters = {}
 def read_global_parameters(path = 'global_parameters.json'):

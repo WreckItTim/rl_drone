@@ -6,13 +6,14 @@ import utils
 class ModelSaver(Other):
     # distance is meters in front point is set, spawns is optionally a tupple of spawn [position (x,y,z), yaw (degrees clockwise)] pairs
     @_init_wrapper
-    def __init__(self, model_component, save_every_nEpisodes=10, write_path=None):
+    def __init__(self, model_component, environment_component, save_every_nEpisodes=10, _write_path=None):
         self._nEpisodes = 0
-        if write_path is None:
-            self.write_path = utils.global_parameters['write_folder'] + 'model'
+        if _write_path is None:
+            self._write_path = utils.get_global_parameter('write_folder') + 'model'
 
     def reset(self):
-        self._nEpisodes += 1
-        if self._nEpisodes % self.save_every_nEpisodes == 0:
-            print('SAVE MODEL')
-            self._model.save(self.write_path)
+        if not self._environment._evaluating:
+            self._nEpisodes += 1
+            if self._nEpisodes % self.save_every_nEpisodes == 0:
+                print('SAVE MODEL')
+                self._model.save(self._write_path)

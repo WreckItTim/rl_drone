@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_26_1_12_19",
+  "timestamp": "2022_8_26_4_8_58",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -158,7 +158,7 @@
   },
   "MaxSteps__1": {
     "type": "Terminator.MaxSteps",
-    "max_steps": 40
+    "max_steps": 100
   },
   "DQN__1": {
     "type": "Model.DQN",
@@ -187,29 +187,17 @@
     "seed": null,
     "device": "auto",
     "init_setup_model": true,
-    "write_path": "temp/2022_8_26_1_12_19/model",
+    "write_path": "temp/2022_8_26_4_8_58/model",
     "connect_priority": -1
-  },
-  "RandomSpawnPoint__1": {
-    "type": "Other.RandomSpawnPoint",
-    "drone_component": "AirSimDrone__1",
-    "spawn_zones_components": [
-      "Zone__1"
-    ]
-  },
-  "RandomSpawnYaw__1": {
-    "type": "Other.RandomSpawnYaw",
-    "drone_component": "AirSimDrone__1",
-    "yaw_min": 0,
-    "yaw_max": 360
   },
   "SpawnEvaluator__1": {
     "type": "Other.SpawnEvaluator",
     "model_component": "DQN__1",
     "drone_component": "AirSimDrone__1",
+    "environment_component": "DroneRL",
     "evaluate_every_nEpisodes": 10,
     "distance": 100,
-    "nTimes": 3,
+    "nTimes": 4,
     "spawns": [
       [
         [
@@ -225,7 +213,7 @@
           0,
           0
         ],
-        120
+        135
       ],
       [
         [
@@ -233,15 +221,38 @@
           0,
           0
         ],
-        240
+        180
+      ],
+      [
+        [
+          0,
+          0,
+          0
+        ],
+        225
       ]
     ]
+  },
+  "RandomSpawnPoint__1": {
+    "type": "Other.RandomSpawnPoint",
+    "drone_component": "AirSimDrone__1",
+    "environment_component": "DroneRL",
+    "spawn_zones_components": [
+      "Zone__1"
+    ]
+  },
+  "RandomSpawnYaw__1": {
+    "type": "Other.RandomSpawnYaw",
+    "drone_component": "AirSimDrone__1",
+    "environment_component": "DroneRL",
+    "yaw_min": 0,
+    "yaw_max": 360
   },
   "ModelSaver__1": {
     "type": "Other.ModelSaver",
     "model_component": "DQN__1",
-    "save_every_nEpisodes": 5,
-    "write_path": "temp/2022_8_26_1_12_19/model"
+    "environment_component": "DroneRL",
+    "save_every_nEpisodes": 5
   },
   "DroneRL": {
     "type": "Environment.DroneRL",
@@ -255,9 +266,9 @@
       "MaxSteps__1"
     ],
     "others_components": [
+      "SpawnEvaluator__1",
       "RandomSpawnPoint__1",
       "RandomSpawnYaw__1",
-      "SpawnEvaluator__1",
       "ModelSaver__1"
     ],
     "show_states": true

@@ -9,13 +9,14 @@ class RandomSpawnPoint(Other):
         # note you can shrink this to a point by setting min=max
 
     @_init_wrapper
-    def __init__(self, drone_component, spawn_zones_components):
+    def __init__(self, drone_component, environment_component, spawn_zones_components):
         pass
 
     def reset(self):
-        _spawn_zone = random.choice(self._spawn_zones)
-        spawn_point = _spawn_zone.random_point()
-        self._drone.teleport(spawn_point)
+        if not self._environment._evaluating:
+            _spawn_zone = random.choice(self._spawn_zones)
+            spawn_point = _spawn_zone.random_point()
+            self._drone.teleport(spawn_point)
 
     def activate(self):
         self.reset()

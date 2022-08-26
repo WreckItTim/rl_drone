@@ -1,31 +1,31 @@
 # abstract class used to handle observations - sensor responses
 from component import Component, _init_wrapper
-from utils import get_timestamp, write_json, fix_directory
-from os import mkdir
-from os.path import exists
+import utils
+import os
 import numpy as np
 
 class Observation(Component):
     # constructor
     def __init__(self, _data, data_path=None, timestamp=None):
         if timestamp is None:
-            self.timestamp = get_timestamp()
+            self.timestamp = utils.get_timestamp()
         if data_path is not None:
             _data = self.read_data(data_path)
         self._data = np.array(_data)
         self.transformations = []
-        self._name = 'Observation_' + self.timestamp
+        self._name = self._child().__name__ + '_' + self.timestamp
 
     # writes observation metadata to given dir path
-    def write(self, directory_path, file_name=None):
-        directory_path = fix_directory(directory_path)
+    def write(self, directory_path=None, file_name=None):
+        if directory_path is None:
+            directory_path = utils.get_global_parameter('write_folder') + '/observations/'
         if file_name is None:
-            file_name = f'{type(self).__name__}__{self.timestamp}'
+            file_name = self._name
         file_path = directory_path + '/' + file_name
-        if not exists(directory_path):
-            mkdir(directory_path)
-        serialized = self._to_json()
-        write_json(serialized, file_path)
+        if not os.path.exists(directory_path):
+            os.mkdir(directory_path)
+        #serialized = self._to_json()
+        #utils.write_json(serialized, file_path + '.json')
         return file_path
 
     def activate(self):

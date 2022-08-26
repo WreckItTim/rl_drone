@@ -18,7 +18,7 @@ class RelativePoint(Reward):
             state['drone_position'] = self._drone.get_position()
         drone_position = np.array(state['drone_position'], dtype=float)
         if 'distance' not in state:
-            state['distance'] = np.linalg.norm(drone_position - self.xyz_point)
+            state['distance'] = float(np.linalg.norm(drone_position - self.xyz_point))
         distance = state['distance']
         if distance < self.min_distance:
             total_reward = 1

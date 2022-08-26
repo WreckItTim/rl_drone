@@ -16,6 +16,8 @@ class DroneRL(Environment):
         super().__init__()
         self._nSteps = 0
         self._nEpisodes = 0
+        self._write_observations = False
+        self._evaluating = False
 
     def connect(self):
         super().connect()
@@ -25,13 +27,15 @@ class DroneRL(Environment):
             
     # activate needed components
     def step(self, rl_output):
-        state = {'rl_output':rl_output}
+        state = {'rl_output':float(rl_output)}
         # take action
         transcribed_action = self._actor.act(rl_output)
         state['transcribed_action'] = transcribed_action
         # get observation
         observation = self._observer.observe()
         state['observation_component'] = observation._name
+        if self._write_observations:
+            observation.write()
         # set rewards in state dictionary
         self._rewarder.reward(state)
         # check for termination
@@ -40,8 +44,11 @@ class DroneRL(Environment):
         for terminator in self._terminators:
             done = done or terminator.terminate(state)
         state['done'] = done
+        if self._evaluating:
+            state['nEpisodes'] = 'evaluation'
+        else:
+            state['nEpisodes'] = self._nEpisodes
         state['nSteps'] = self._nSteps 
-        state['nEpisodes'] = self._nEpisodes
         # display state?
         if self.show_states:
             Environment.show_state(state)
@@ -55,7 +62,8 @@ class DroneRL(Environment):
     # returns first observation for new episode
     def reset(self):
         print('reset')
-        self._nEpisodes += 1
+        if not self._evaluating:
+            self._nEpisodes += 1
         self._nSteps = 0
         self._drone.reset()
         self._drone.take_off()

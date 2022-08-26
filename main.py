@@ -7,7 +7,7 @@ from component import *
 repo_version = 'alpha'
 timestamp = get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
 write_folder = f'temp/{timestamp}/' # will write any files to this folder
-read_configuration = True # True: read configuration file to create components
+read_configuration = False # True: read configuration file to create components
 read_configuration_path = 'configurations/last.json' # path to read configuration file if read_configuration=True
 write_configuration = True # True: writes new configuration file after creating all components
 write_configuration_path = write_folder + '/overwrite_configuration.json' # path to write a new configuration file if write_configuration=True
@@ -43,7 +43,7 @@ if read_configuration==False:
 	reward_types = ['Avoid', 'RelativePoint'] # Avoid RelativePoint
 	rewarder_type = 'Schema' # Schema
 	terminator_types = ['Collision', 'RelativePoint', 'MaxSteps'] # Collision RelativePoint RewardThresh MaxSteps
-	other_types = ['RandomSpawnPoint', 'RandomSpawnYaw', 'SpawnEvaluator', 'ModelSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver
+	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver
 	environment_type = 'DroneRL' # DroneRL
 	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
 	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
@@ -203,7 +203,7 @@ if read_configuration==False:
 		elif terminator_type == 'MaxSteps':
 			from terminators.maxsteps import MaxSteps
 			terminator = MaxSteps(
-				max_steps = 40,
+				max_steps = 100,
 			)
 		terminators_components.append(terminator)
 
@@ -383,12 +383,14 @@ if read_configuration==False:
 			from others.randomspawnpoint import RandomSpawnPoint
 			other = RandomSpawnPoint(
 				drone_component=drone, 
+				environment_component=environment,
 				spawn_zones_components=spawn_zones,
 			)
 		elif other_type == 'RandomSpawnYaw':
 			from others.randomspawnyaw import RandomSpawnYaw
 			other = RandomSpawnYaw(
 				drone_component=drone, 
+				environment_component=environment,
 				yaw_min=0, 
 				yaw_max=360,
 			)
@@ -397,14 +399,16 @@ if read_configuration==False:
 			other = SpawnEvaluator(
 				model_component=model,
 				drone_component=drone,
+				environment_component=environment,
 				evaluate_every_nEpisodes=10,
-				nTimes=3, 
-				spawns=([[0,0,0],0], [[0,0,0],120], [[0,0,0],240]),
+				nTimes=4, 
+				spawns=([[0,0,0],0], [[0,0,0],135], [[0,0,0],180], [[0,0,0],225]),
 			)
 		elif other_type == 'ModelSaver':
 			from others.modelsaver import ModelSaver
 			other = ModelSaver(
 				model_component=model,
+				environment_component=environment,
 				save_every_nEpisodes=5,
 			)
 		others_components.append(other)

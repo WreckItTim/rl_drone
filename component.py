@@ -345,7 +345,6 @@ class Component():
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed
 	# if you overwrite this make sure to call super()
 	def connect(self):
-		print('connect', self._name)
 		for components_pair in self._connect_components_list:
 			member_name, component_names = components_pair
 			components = []

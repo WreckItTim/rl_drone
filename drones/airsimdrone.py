@@ -85,7 +85,11 @@ class AirSimDrone(Drone):
         self._yaw_radians = math.radians(yaw_degrees)
 
     def get_position(self):
-        return self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array().tolist()
+        pos = self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array().tolist()
+        pos[0] = int(pos[0])
+        pos[1] = int(pos[1])
+        pos[2] = int(pos[2])
+        return pos
 
     def hover(self):
         self._client.hoverAsync().join()
