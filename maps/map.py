@@ -6,3 +6,6 @@ class Map(Component):
     # constructor
     def __init__(self):
         pass
+
+    def connect(self):
+        super().connect()

@@ -13,3 +13,6 @@ class Sensor(Component):
     def activate(self):
         observation = self.sense()
         observation.display()
+
+    def connect(self):
+        super().connect()

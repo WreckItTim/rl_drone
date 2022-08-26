@@ -7,13 +7,13 @@ from component import _init_wrapper
 
 class AirSimMap(Map):
 
-    # constructor
+    # constructor, pass in a dictionary for settings or file paths to merge multiple settings .json files
     @_init_wrapper
-    def __init__(self, settings=None, setting_files=['base'], release_file='Blocks',
-                    release_directory='D:/airsim_releases/', settings_directory='maps/airsim_settings/',
+    def __init__(self, settings=None, settings_directory='maps/airsim_settings/', setting_files=['base'], 
+                    release_directory='resources/airsim_maps/', release_relative_path='Blocks/', release_name='Blocks.exe', 
                     ):
         super().__init__()
-        self._release_path = release_directory + release_file + '/' + release_file + '.exe'
+        self._executable_path = release_directory + release_relative_path + release_name
         if settings is None:
             self.settings = self._read_settings(settings_directory, setting_files)
         else:
@@ -23,14 +23,15 @@ class AirSimMap(Map):
 
     # launch airsim map
     def connect(self):
-        terminal_command = f'{self._release_path} -settings=\"{self._settings_path}"'
+        super().connect()
+        terminal_command = f'{self._executable_path} -settings=\"{self._settings_path}"'
         subprocess.Popen(terminal_command, close_fds=True)
-        print(f'Send any key when AirSim {self.release_file}.exe is fully launched, this make take several minutes....')
+        print(f'Send any key when AirSim {self._executable_path} is fully launched, this make take several minutes....')
         x = input()
 
     # close airsim app
     def disconnect(self):
-        terminal_command = 'taskkill /f /im ' + self.release_file + '.exe'
+        terminal_command = 'taskkill /f /im ' + self.release_name
         subprocess.call(terminal_command)
 
     @staticmethod

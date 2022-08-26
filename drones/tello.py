@@ -39,6 +39,7 @@ class Tello(Drone):
         print(f'command:{msg}', f'response:{response}')
 
     def connect(self):
+        super().connect()
         # connect to wifi
         print('Connecting to WiFi, send any key when complete and ready to continue...')
         system('cmd /c \"netsh wlan connect _name=' + self.wifi_component + '\"')

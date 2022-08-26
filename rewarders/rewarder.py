@@ -14,3 +14,6 @@ class Rewarder(Component):
         state = {}
         self.reward(state)
         return state
+
+    def connect(self):
+        super().connect()

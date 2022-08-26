@@ -12,3 +12,6 @@ class Reward(Component):
 
     def activate(self):
         return self.reward({})
+
+    def connect(self):
+        super().connect()

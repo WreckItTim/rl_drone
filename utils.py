@@ -1,5 +1,4 @@
 import json
-import os
 from time import localtime, time
   
 
@@ -48,17 +47,24 @@ def get_global_parameter(key):
 		return global_parameters[key]
 
 
-def prompt(msg):
+def speak(msg):
 	print(msg)
-	return str(input()).lower()
+
+def prompt(msg):
+	speak(msg)
+	return str(get_user_input()).lower()
+
+def get_user_input():
+	return input()
 
 def error(msg):
 	raise Exception('ERROR:', msg)
 
 def warning(msg):
-	print('WARNING:', msg)
+	speak('WARNING:', msg)
 
 def alert(msg, key):
 	user_input = prompt('ALERT:', msg)
 	if user_input == 'stop':
 		set_global_parameter(key, False)
+		write_global_parameters()

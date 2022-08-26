@@ -13,3 +13,6 @@ class Other(Component):
 
     def activate(self):
         pass
+
+    def connect(self):
+        super().connect()

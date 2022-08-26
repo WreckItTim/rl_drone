@@ -5,7 +5,7 @@ from component import _init_wrapper
 class ContinuousActor(Actor):
     # constructor
     @_init_wrapper
-    def __init__(self, action_components=[]):
+    def __init__(self, actions_components=[]):
         super().__init__()
         
     # interpret action from RL

@@ -14,7 +14,7 @@ class Drone(Component):
 
     # setup anything that needs to be done to communicate with drone
     def connect(self):
-        raise NotImplementedError
+        super().connect()
 
     # clean up any resources as needed when done with communication
     def disconnect(self):

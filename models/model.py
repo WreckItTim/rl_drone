@@ -10,21 +10,20 @@ from component import _init_wrapper
 class Model(Component):
     # WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
     # NOTE: env=None as training and evaluation enivornments are handeled by controller
-    @_init_wrapper
     def __init__(self, write_path=None, _model_arguments={'policy':'CnnPolicy', 'env':None}):
-        self._sb3model = None
-        self._model_arguments= _model_arguments
+        self._model_arguments = _model_arguments
         # set up write path
         if write_path is None:
             self.write_path = utils.global_parameters['write_folder'] + 'model'
-            
-    # set model after init() - this is done for order of some components
-    def set(self, environment):
+        self._sb3model = None
+        self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
+
+    def connect(self):
+        super().connect()
         # wrap environment for sb3
-        wrapped_environment = VecTransposeImage(DummyVecEnv([lambda: Monitor(environment)])) 
-        self.environment_component = environment._name
-        self._environment = wrapped_environment
-        self._model_arguments['env'] = wrapped_environment
+        #wrapped_environment = VecTransposeImage(DummyVecEnv([lambda: Monitor(self._environment)]))
+        #self._model_arguments['env'] = wrapped_environment
+        self._model_arguments['env'] = self._environment
         # create model object if needs be
         if self._sb3model is None:
             if self.write_path is not None and exists(self.write_path):

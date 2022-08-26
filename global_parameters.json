@@ -1,4 +1,6 @@
 {
   "model_overwrite_warning": true,
-  "write_folder": "temp/2022_8_23_11_10_33/"
+  "write_folder": "temp/2022_8_25_23_41_46/",
+  "airsim_release_directory": "resources/airsim_maps/",
+  "airsim_settings_directory": "maps/airsim_settings/"
 }

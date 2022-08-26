@@ -12,3 +12,6 @@ class Terminator(Component):
 
     def activate(self):
         return self.terminate({})
+
+    def connect(self):
+        super().connect()

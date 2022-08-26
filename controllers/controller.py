@@ -11,3 +11,6 @@ class Controller(Component):
     # runs control on components
     def run(self):
         raise NotImplementedError
+
+    def connect(self):
+        super().connect()

@@ -11,3 +11,6 @@ class Actor(Component):
     # returns transcribed action as string (for logging purposes only)
     def act(self, rl_output):
         raise NotImplementedError
+
+    def connect(self):
+        super().connect()

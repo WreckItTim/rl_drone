@@ -9,3 +9,6 @@ class Action(Component):
 
 	def activate(self):
 		self.act()
+
+	def connect(self):
+		super().connect()

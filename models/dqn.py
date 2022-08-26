@@ -7,6 +7,7 @@ class DQN(Model):
     # constructor
     @_init_wrapper
     def __init__(self, 
+            environment_component,
             policy = 'CnnPolicy',
             learning_rate = 1e-4,
             buffer_size = 1_000_000,
@@ -30,11 +31,11 @@ class DQN(Model):
             verbose = 0,
             seed = None,
             device = "auto",
-            init_setup_model = True,
-            write_path=None,
+            init_setup_model = False,
+            write_path = None,
         ):
         kwargs = locals()
-        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'init_setup_model', 'write_path']}
+        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path']}
         _model_arguments['_init_setup_model'] = kwargs['init_setup_model']
         self.sb3Type = sb3DQN
         super().__init__(write_path=write_path, _model_arguments=_model_arguments)

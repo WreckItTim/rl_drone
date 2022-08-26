@@ -3,29 +3,34 @@ from utils import *
 from component import *
 
 
-# USER PARAMETERS
-timestamp = get_timestamp()
-write_folder = f'temp/{timestamp}/'
+# USER PARAMETERS and setup'
+repo_version = 'alpha'
+timestamp = get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
+write_folder = f'temp/{timestamp}/' # will write any files to this folder
+read_configuration = True # True: read configuration file to create components
+read_configuration_path = 'configurations/last.json' # path to read configuration file if read_configuration=True
+write_configuration = True # True: writes new configuration file after creating all components
+write_configuration_path = write_folder + '/overwrite_configuration.json' # path to write a new configuration file if write_configuration=True
+read_global_parameters() # True: sets all variables in the global_parameters.json file
+if not os.path.exists('temp/'):
+	os.makedirs('temp/')
 if not os.path.exists(write_folder):
 	os.makedirs(write_folder)
-read_configuration = False
-read_configuration_path = 'configurations/overwrite_configuration.json'
-write_configuration = True
-write_configuration_path = write_folder + '/overwrite_configuration.json'
-read_global_parameters()
-global_parameters['write_folder'] = write_folder
+global_parameters['write_folder'] = write_folder # all components will write files/sub_directories to this master folder, unless you otherwise specify an absolute path
 
 
-# READ OLD CONFIGURATION FILE ??
-if read_configuration:
+# READ OLD CONFIGURATION FILE, you need do nothing else if path is set correctly above
+if read_configuration==True:
+	speak('reading configuration...')
 	configuration = read_json(read_configuration_path)
-	controller, components, timestamp = deserialize_configuration(configuration)
+	controller, components, timestamp, repo_version = deserialize_configuration(configuration) # note that this timestamp is from when the configuration file was last updated (changed when written)
 
-	# OVERWRITE ANY CONFIGURATION ARGUMENTS HERE
+	# ALTER ANY READ-IN COMPONENTS as needed here
 
 
-# OR MAKE NEW CONFIGURATION ??
-else:
+# MAKE NEW CONFIGURATION, set parameters, and create component objects one by one by code, as needed below (all packaged components are listed below with __init__ args)
+if read_configuration==False:
+	speak('creating new configuration...')
 	# specify components to be used
 	map_type = 'AirSim' # AirSim Field
 	drone_type = 'AirSim' # AirSim Tello
@@ -33,17 +38,18 @@ else:
 	transformer_types = ['ResizeImage', 'NormalizeDepth'] # ResizeImage NormalizeDepth
 	observer_type = 'Single' # Single
 	action_type = 'FixedMove' # FixedMove
-	move_types = ['up', 'down', 'forward'] # up down forward backward left right (any combination-diagnol by using an '_' to seperate)
+	move_types = ['up', 'down', 'forward'] # up down forward backward left right (optional for fixed_move, also use any combination-diagnol by placing an '_' to seperate, example: forward_up)
 	actor_type = 'DiscreteActor' # DiscreteActor ContinuousActor
 	reward_types = ['Avoid', 'RelativePoint'] # Avoid RelativePoint
 	rewarder_type = 'Schema' # Schema
 	terminator_types = ['Collision', 'RelativePoint', 'MaxSteps'] # Collision RelativePoint RewardThresh MaxSteps
-	other_types = ['RandomSpawnPoint', 'RandomSpawnYaw', 'SpawnEvaluator', 'ModelSaver'] # RandomSpawnPoint RandomSpawnYaw ForwardEvaluator ModelSaver
+	other_types = ['RandomSpawnPoint', 'RandomSpawnYaw', 'SpawnEvaluator', 'ModelSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver
 	environment_type = 'DroneRL' # DroneRL
-	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3
-	controller_type = 'TrainRL' # TrainRL EvaluateRL Manual
+	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
+	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
 
-	# specify other parameters to be used by components
+	# specify any global parameters to be used by all components
+	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
 	image_shape=(84, 84, 1)
 	objective_point=(100, 0, 0)
 	from datastructs.zone import Zone
@@ -57,10 +63,11 @@ else:
 		from maps.airsimmap import AirSimMap
 		map_ = AirSimMap(
 			settings=None,
+			settings_directory='maps/airsim_settings/',
 			setting_files=['base'],
-			release_file='Blocks',
 			release_directory='resources/airsim_maps/',
-			settings_directory='resources/airsim_settings/',
+			release_relative_path='Blocks/',
+			release_name='Blocks.exe',
 		)
 	elif map_type == 'Field':
 		from maps.field import Field
@@ -97,7 +104,7 @@ else:
 		)
 
 	# TRANSFORMER
-	transformer_components=[] # robots in disguise! 
+	transformers_components=[] # robots in disguise! 
 	for transformer_type in transformer_types:
 		transformer = None
 		if transformer_type == 'ResizeImage':
@@ -111,21 +118,21 @@ else:
 				min_depth=0,
 				max_depth=100,
 			)
-		transformer_components.append(transformer)
+		transformers_components.append(transformer)
 
 	# OBSERVER
 	if observer_type == 'Single':
 		from observers.single import Single
 		observer = Single(
 			sensor_component=sensor, 
-			transformer_components=transformer_components,
+			transformers_components=transformers_components,
 			please_write=True, 
 			write_directory='temp/',
 			output_shape=image_shape,
 		)
 
 	# ACTION
-	action_components = []
+	actions_components = []
 	if action_type == 'FixedMove':
 		from actions.fixedmove import FixedMove 
 		for move_type in move_types:
@@ -135,17 +142,17 @@ else:
 				step_size=5,
 				speed=4,
 			)
-			action_components.append(fixed_move)
+			actions_components.append(fixed_move)
 
 	# ACTOR
 	if actor_type == 'DiscreteActor':
 		from actors.discreteactor import DiscreteActor
 		actor = DiscreteActor(
-			action_components=action_components,
+			actions_components=actions_components,
 		)
 
 	# REWARD
-	reward_components=[]
+	rewards_components=[]
 	for reward_type in reward_types:
 		reward = None
 		if reward_type == 'Avoid':
@@ -161,18 +168,18 @@ else:
 				min_distance = 5,
 				max_distance = 110,
 			)
-		reward_components.append(reward)
+		rewards_components.append(reward)
 
 	# REWARDER
 	if rewarder_type == 'Schema':
 		from rewarders.schema import Schema
 		rewarder = Schema(
-			reward_components=reward_components,
+			rewards_components=rewards_components,
 			reward_weights=[1, 2],
 		)
 
 	# TERMINATOR
-	terminator_components=[]
+	terminators_components=[]
 	for terminator_type in terminator_types:
 		terminator = None
 		if terminator_type == 'Collision':
@@ -198,12 +205,13 @@ else:
 			terminator = MaxSteps(
 				max_steps = 40,
 			)
-		terminator_components.append(terminator)
+		terminators_components.append(terminator)
 
 	# MODEL
 	if model_type == 'DQN':
 		from models.dqn import DQN
 		model = DQN(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-4,
 			buffer_size = 1_000_000,
@@ -232,6 +240,7 @@ else:
 	elif model_type == 'A2C':
 		from models.a2c import A2C
 		model = A2C(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 7e-4,
 			n_steps = 5,
@@ -256,6 +265,7 @@ else:
 	elif model_type == 'DDPG':
 		from models.ddpg import DDPG
 		model = DDPG(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -280,6 +290,7 @@ else:
 	elif model_type == 'PPO':
 		from models.ppo import PPO
 		model = PPO(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			n_steps = 2048,
@@ -307,6 +318,7 @@ else:
 	elif model_type == 'SAC':
 		from models.sac import SAC
 		model = SAC(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -337,6 +349,7 @@ else:
 	elif model_type == 'TD3':
 		from models.td3 import TD3
 		model = TD3(
+			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -363,14 +376,14 @@ else:
 		)
 
 	# OTHER
-	other_components = []
+	others_components = []
 	for other_type in other_types:
 		other = None
 		if other_type == 'RandomSpawnPoint':
 			from others.randomspawnpoint import RandomSpawnPoint
 			other = RandomSpawnPoint(
 				drone_component=drone, 
-				spawn_zone_components=spawn_zones,
+				spawn_zones_components=spawn_zones,
 			)
 		elif other_type == 'RandomSpawnYaw':
 			from others.randomspawnyaw import RandomSpawnYaw
@@ -394,7 +407,7 @@ else:
 				model_component=model,
 				save_every_nEpisodes=5,
 			)
-		other_components.append(other)
+		others_components.append(other)
 
 	# ENVIRONMENT
 	if environment_type == 'DroneRL':
@@ -404,10 +417,10 @@ else:
 			actor_component=actor, 
 			observer_component=observer, 
 			rewarder_component=rewarder, 
-			terminator_components=terminator_components,
-			other_components=other_components,
+			terminators_components=terminators_components,
+			others_components=others_components,
+			name = 'DroneRL'
 		)
-	model.set(environment)
 
 	# CONTROLLER
 	if controller_type == 'Manual':
@@ -425,46 +438,54 @@ else:
 		controller = EvaluateRL(
 			model_component=model,
 		)
-print('configuration loaded!')
+
+speak('configuration loaded!')
 
 
-# FETCH COMPONENTS
-components = get_all_components()
+# FETCH COMPONENTS (before any are created during run)
+configuration_components = get_all_components()
 
 
 # WRITE CONFIGURATION
 if write_configuration:
-	configuration = serialize_configuration(controller, components, timestamp)
+	configuration = serialize_configuration(controller, configuration_components, timestamp, repo_version)
 	write_json(configuration, write_configuration_path)
-write_global_parameters()
+	write_json(configuration, 'configurations/last.json')
  
 
 # CONNECT COMPONENTS
-for component in components:
-	component.connect()
-print('components connected!')
-write_global_parameters()
+connect_components(configuration_components)
+speak('components connected!')
+
+
+# CONNECT CONTROLLER
+controller.connect()
+speak('controller connected!')
 
 
 # RUN CONTROLLER
-print('running controller...')
+speak('running controller...')
 controller.run()
-write_global_parameters()
+
+
+# FETCH COMPONENTS (including any created during run)
+run_components = get_all_components()
 
 
 # LOG BENCHMARKS
-components = get_all_components()
-for component in reversed(components):
-	log_memory(component)
-write_json(benchmarks, write_folder + 'benchmarks.json')
-write_global_parameters()
+benchmark_components(run_components)
+speak('components benchmarked!')
 
 
 # DISCONNECT COMPONENTS
-for component in reversed(components):
-	component.disconnect()
-print('components disconnected!')
-write_global_parameters()
+disconnect_components(run_components)
+speak('components disconnected!')
+
+
+# DISCONNECT CONTROLLER
+controller.disconnect()
+speak('controller disconnected!')
+
 
 # ALL DONE
-print('Good bye!')
+speak('Good bye!')

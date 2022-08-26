@@ -9,7 +9,7 @@ from transformers.transformer import Transformer
 class Single(Observer):
     # constructor
     @_init_wrapper
-    def __init__(self, sensor_component, output_shape, transformer_components=[], please_write=False, write_directory=None):
+    def __init__(self, sensor_component, output_shape, transformers_components=[], please_write=False, write_directory=None):
         super().__init__(please_write=please_write, write_directory=write_directory)
         
     # gets observations than transcribes for input into RL model

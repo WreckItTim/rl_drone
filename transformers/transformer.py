@@ -9,3 +9,6 @@ class Transformer(Component):
     # if observation type is valid, applies transformation
     def transform(self, observation):
         raise NotImplementedError
+
+    def connect(self):
+        super().connect()

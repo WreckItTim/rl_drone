@@ -11,14 +11,17 @@ class DroneRL(Environment):
 
     # checkpoint every number of episodes - make evaluations and save model
     @_init_wrapper
-    def __init__(self, drone_component, actor_component, observer_component, rewarder_component, terminator_components, 
-                        other_components=[], show_states=True):
+    def __init__(self, drone_component, actor_component, observer_component, rewarder_component, terminators_components, 
+                        others_components=[], show_states=True):
         super().__init__()
+        self._nSteps = 0
+        self._nEpisodes = 0
+
+    def connect(self):
+        super().connect()
         # even though we do not directly use the observation or action space, these fields are necesary for sb3
         self.observation_space = spaces.Box(0, 255, shape=self._observer.output_shape, dtype=np.uint8)
         self.action_space = spaces.Discrete(len(self._actor._actions))
-        self._nSteps = 0
-        self._nEpisodes = 0
             
     # activate needed components
     def step(self, rl_output):

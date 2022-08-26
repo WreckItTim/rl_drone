@@ -7,7 +7,7 @@ import random
 class DiscreteActor(Actor):
     # constructor
     @_init_wrapper
-    def __init__(self, action_components=[]):
+    def __init__(self, actions_components=[]):
         super().__init__()
 
     # interpret action from RL

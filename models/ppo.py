@@ -30,12 +30,12 @@ class PPO(Model):
             verbose = 0,
             seed = None,
             device = "auto",
-            init_setup_model = True,
-            load_from_path=None,
+            init_setup_model = False,
+            load_from_path = None,
+            write_path = None,
         ):
         kwargs = locals()
-        model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'load_from_path']}
-        model_arguments['env'] = kwargs['environment_component']
+        model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path']}
         model_arguments['_init_setup_model'] = kwargs['init_setup_model']
         self.sb3Type = sb3PPO
         super().__init__(load_from_path=load_from_path, model_arguments=model_arguments)

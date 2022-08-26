@@ -14,6 +14,7 @@ class PortCamera(Sensor):
         self._camera = None
 
     def connect(self):
+        super().connect()
         self._camera = VideoCapture(self.port)
 
     def disconnect(self):

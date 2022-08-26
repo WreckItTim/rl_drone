@@ -1,0 +1,23 @@
+{
+  "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
+  "SettingsVersion": 1.2,
+
+  "SimMode": "Multirotor",
+
+  "ViewMode": "SpringArmChase",
+
+  "SubWindows": [
+    {
+      "WindowID": 0,
+      "Camera_name": "0",
+      "ImageType": 3,
+      "Visible": true
+    },
+    {
+      "WindowID": 2,
+      "Camera_name": "0",
+      "ImageType": 0,
+      "Visible": true
+    }
+  ]
+}

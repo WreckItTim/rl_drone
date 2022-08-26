@@ -40,6 +40,7 @@ class AirSimCamera(Sensor):
         self._client.armDisarm(True)
 
     def connect(self):
+        super().connect()
         self._client = airsim.MultirotorClient()
         self._client.confirmConnection()
 

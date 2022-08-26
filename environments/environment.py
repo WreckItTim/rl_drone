@@ -24,6 +24,9 @@ class Environment(Component):
     def __init__(self):
         pass
 
+    def connect(self):
+        super().connect()
+
     def activate(self):
         observation_array = self.reset()
         imshow(observation_array, cmap='gray')

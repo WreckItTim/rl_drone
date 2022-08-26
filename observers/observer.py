@@ -13,6 +13,9 @@ class Observer(Component):
     def activate(self):
         self.observe().display()
 
+    def connect(self):
+        super().connect()
+
     # returns observation transcribed for input into RL model
     def observe(self):
         raise NotImplementedError

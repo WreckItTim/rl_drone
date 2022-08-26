@@ -9,7 +9,7 @@ class RandomSpawnPoint(Other):
         # note you can shrink this to a point by setting min=max
 
     @_init_wrapper
-    def __init__(self, drone_component, spawn_zone_components):
+    def __init__(self, drone_component, spawn_zones_components):
         pass
 
     def reset(self):

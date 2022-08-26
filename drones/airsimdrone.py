@@ -31,6 +31,7 @@ class AirSimDrone(Drone):
         self.hover()
 
     def connect(self):
+        super().connect()
         self._client = airsim.MultirotorClient()
         self._client.confirmConnection()
         self._client.enableApiControl(True)
