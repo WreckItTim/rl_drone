@@ -1,7 +1,7 @@
 import numpy as np
 from time import time
 from sys import getsizeof
-from utils import error
+import utils
 import inspect
 from functools import wraps, partialmethod
 
@@ -124,7 +124,7 @@ def _init_wrapper(init_method):
 					elif isinstance(value, Component):
 						component_name = value._name
 					else:
-						error('passed in argument as _component in _components list, but argument is not str or component type')
+						utils.error('passed in argument as _component in _components list, but argument is not str or component type')
 					component_names.append(component_name)
 				self._connect_components_list.append((member_name, component_names))
 				setattr(self, key, component_names)
@@ -137,7 +137,7 @@ def _init_wrapper(init_method):
 				elif isinstance(value, Component):
 					component_name = value._name
 				else:
-					error('passed in argument as _component but is not str or component type')
+					utils.error('passed in argument as _component but is not str or component type')
 				self._connect_component_list.append((member_name, component_name))
 				setattr(self, key, component_name)
 			# set all (other) public arguments
@@ -297,7 +297,7 @@ def disconnect_components(components):
 			component.disconnect()
 
 # logs global time and memory benchmarks, to be written at end (or at intervals if using Other.BenchmarkWriter)
-benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}, 'event':{}}
+benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
 def log_entry(master_key, key, value):
 	if key not in benchmarks[master_key]:
 		benchmarks[master_key][key] = [value]
@@ -315,8 +315,8 @@ def benchmark_components(components, write_path=None):
 	for component in components:
 		log_memory(component)
 	if write_path is None:
-		write_path = write_folder + 'benchmarks.json'
-	write_json(benchmarks, write_path)
+		write_path = utils.get_global_parameter('write_folder') + 'benchmarks.json'
+	utils.write_json(benchmarks, write_path)
 
 # the component class itself
 class Component():
@@ -380,7 +380,7 @@ class Component():
 	def check(self, child_type):
 		ok = isinstance(self, child_type) 
 		if not ok:
-			error(f'Can not handle child type of {self._child().__name__}, requires {child_type.__name__}')
+			utils.error(f'Can not handle child type of {self._child().__name__}, requires {child_type.__name__}')
 
 	# return parent type
 	def _parent(self):

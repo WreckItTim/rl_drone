@@ -17,3 +17,7 @@ class Rewarder(Component):
 
     def connect(self):
         super().connect()
+
+    def reset(self):
+        for reward in self._rewards:
+            reward.reset()

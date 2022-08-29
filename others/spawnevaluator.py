@@ -11,16 +11,16 @@ class SpawnEvaluator(Other):
     @_init_wrapper
     def __init__(self, model_component, drone_component, environment_component, evaluate_every_nEpisodes=10, distance=100, nTimes=1, spawns=None
                     ,_write_folder=None):
-        self._nEpisodes = -1
-        self._evaluating = False
+        self._nEpisodes = 0
         if spawns is not None:
             self._nSpawns = 0
         if _write_folder is None:
             self._write_folder = utils.get_global_parameter('write_folder') + 'evaluations/'
         if not os.path.exists(self._write_folder):
             os.makedirs(self._write_folder)
-        self._nEvaluation_sets = 0
-        self._nEvaluations = -1
+        self._nEvaluations = 0
+        self._set_finished = False
+        self._states = {}
 
     def spawn(self):
         if self.spawns is not None:
@@ -32,32 +32,28 @@ class SpawnEvaluator(Other):
             self._nSpawns += 1
 
     def step(self, state):
-        if self._evaluating:
+        # save states while evaluating
+        if self._environment._evaluating:
             self._nSteps += 1
             freeze_state = state.copy()
-            self._states[self._nEvaluations][self._nSteps] = freeze_state
-
+            self._states[self._nEvaluations % self.nTimes][self._nSteps] = freeze_state
+            # check if last step in episode
+            if state['done']:
+                self._nEvaluations += 1
+                # if last reset, then log evaluations and prepare for next evaluation set (this is done in step() in case last reset is not called)
+                if self._nEvaluations % self.nTimes == 0:
+                    utils.write_json(self._states, self._write_folder + str(int(self._nEvaluations / self.nTimes)) + '.json')
+                    self._states = {}
+                    self._set_finished = True
+                
     def reset(self):
-        if self._evaluating and self._nEvaluations < self.nTimes:
-            self._nEvaluations += 1
+        # handle resets while evaluating
+        if self._environment._evaluating:
             self.spawn()
             self._nSteps = 0
-            self._states[self._nEvaluations] = {}
-        elif self._evaluating:
-            self._environment._evaluating = False
-        else:
-            if self._nEpisodes == -1 or (self._nEpisodes % self.evaluate_every_nEpisodes == 0 and self._nEpisodes > 0):
-                print('EVALUATE')
-                self._evaluating = True
-                self._environment._write_observations = True
-                self._environment._evaluating = True
-                self._states = {}
-                self._nEvaluations = 0
+            self._states[self._nEvaluations % self.nTimes] = {}
+        # otherwise check when to evaluate
+        if not self._environment._evaluating:
+            if self._nEpisodes % self.evaluate_every_nEpisodes == 0:
                 self._model.evaluate(self._model._environment, n_eval_episodes=self.nTimes)
-                utils.write_json(self._states, self._write_folder + str(self._nEvaluation_sets) + '.json')
-                self._nEvaluation_sets += 1
-                self._environment._evaluating = False
-                self._environment._write_observations = False
-                self._evaluating = False
-                print('LEARN')
             self._nEpisodes += 1

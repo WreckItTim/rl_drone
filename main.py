@@ -1,16 +1,16 @@
 import os
 from utils import *
 from component import *
-
+import random
 
 # USER PARAMETERS and setup'
 repo_version = 'alpha'
 timestamp = get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
-write_folder = f'temp/{timestamp}/' # will write any files to this folder
+write_folder = f'temp/alpha_train/' # f'temp/{timestamp}/' # will write any files to this folder
 read_configuration = False # True: read configuration file to create components
-read_configuration_path = 'configurations/last.json' # path to read configuration file if read_configuration=True
+read_configuration_path = 'temp/alpha_train/configuration.json' # path to read configuration file if read_configuration=True
 write_configuration = True # True: writes new configuration file after creating all components
-write_configuration_path = write_folder + '/overwrite_configuration.json' # path to write a new configuration file if write_configuration=True
+write_configuration_path = write_folder + '/configuration.json' # path to write a new configuration file if write_configuration=True
 read_global_parameters() # True: sets all variables in the global_parameters.json file
 if not os.path.exists('temp/'):
 	os.makedirs('temp/')
@@ -25,7 +25,12 @@ if read_configuration==True:
 	configuration = read_json(read_configuration_path)
 	controller, components, timestamp, repo_version = deserialize_configuration(configuration) # note that this timestamp is from when the configuration file was last updated (changed when written)
 
-	# ALTER ANY READ-IN COMPONENTS as needed here
+	# ALTER ANY READ-IN COMPONENTS or make a new controller as needed here
+	from controllers.evaluaterl import EvaluateRL
+	controller = EvaluateRL(
+		model_component='DQN__1',
+		n_eval_episodes=3,
+	)
 
 
 # MAKE NEW CONFIGURATION, set parameters, and create component objects one by one by code, as needed below (all packaged components are listed below with __init__ args)
@@ -43,7 +48,7 @@ if read_configuration==False:
 	reward_types = ['Avoid', 'RelativePoint'] # Avoid RelativePoint
 	rewarder_type = 'Schema' # Schema
 	terminator_types = ['Collision', 'RelativePoint', 'MaxSteps'] # Collision RelativePoint RewardThresh MaxSteps
-	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver
+	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver', 'ReplayBufferSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver ReplayBufferSaver
 	environment_type = 'DroneRL' # DroneRL
 	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
 	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
@@ -51,10 +56,11 @@ if read_configuration==False:
 	# specify any global parameters to be used by all components
 	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
 	image_shape=(84, 84, 1)
-	objective_point=(100, 0, 0)
+	relative_objective_point=(100, 0, 0)
+	start_z = -20
 	from datastructs.zone import Zone
 	spawn_zones = [
-		Zone(x_min=-5, x_max=5, y_min=-5, y_max=5, z_min=0, z_max=0),
+		Zone(x_min=-10, x_max=10, y_min=-10, y_max=10, z_min=start_z, z_max=start_z),
 	]
 
 
@@ -64,7 +70,7 @@ if read_configuration==False:
 		map_ = AirSimMap(
 			settings=None,
 			settings_directory='maps/airsim_settings/',
-			setting_files=['base'],
+			setting_files=['base', 'speedup'],
 			release_directory='resources/airsim_maps/',
 			release_relative_path='Blocks/',
 			release_name='Blocks.exe',
@@ -164,9 +170,9 @@ if read_configuration==False:
 			from rewards.relativepoint import RelativePoint
 			reward = RelativePoint(
 				drone_component = drone,
-				xyz_point = objective_point,
-				min_distance = 5,
-				max_distance = 110,
+				xyz_point = relative_objective_point,
+				min_distance = 10,
+				max_distance = 190,
 			)
 		rewards_components.append(reward)
 
@@ -191,8 +197,8 @@ if read_configuration==False:
 			from terminators.relativepoint import RelativePoint
 			terminator = RelativePoint(
 				drone_component = drone,
-				xyz_point = objective_point,
-				min_distance = 5,
+				xyz_point = relative_objective_point,
+				min_distance = 10,
 				max_distance = 110,
 			)
 		elif terminator_type == 'RewardThresh':
@@ -203,7 +209,7 @@ if read_configuration==False:
 		elif terminator_type == 'MaxSteps':
 			from terminators.maxsteps import MaxSteps
 			terminator = MaxSteps(
-				max_steps = 100,
+				max_steps = 50,
 			)
 		terminators_components.append(terminator)
 
@@ -214,8 +220,8 @@ if read_configuration==False:
 			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-4,
-			buffer_size = 1_000_000,
-			learning_starts = 50000,
+			buffer_size = 1000,
+			learning_starts = 100,
 			batch_size = 32,
 			tau = 1.0,
 			gamma = 0.99,
@@ -224,7 +230,7 @@ if read_configuration==False:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = 10000,
+			target_update_interval = 1000,
 			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.05,
@@ -236,6 +242,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 	elif model_type == 'A2C':
 		from models.a2c import A2C
@@ -261,6 +269,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 	elif model_type == 'DDPG':
 		from models.ddpg import DDPG
@@ -286,6 +296,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 	elif model_type == 'PPO':
 		from models.ppo import PPO
@@ -314,6 +326,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 	elif model_type == 'SAC':
 		from models.sac import SAC
@@ -345,6 +359,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 	elif model_type == 'TD3':
 		from models.td3 import TD3
@@ -373,6 +389,8 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
+            write_path = None,
+            replay_buffer_path = None,
 		)
 
 	# OTHER
@@ -400,16 +418,23 @@ if read_configuration==False:
 				model_component=model,
 				drone_component=drone,
 				environment_component=environment,
-				evaluate_every_nEpisodes=10,
+				evaluate_every_nEpisodes=50,
 				nTimes=4, 
-				spawns=([[0,0,0],0], [[0,0,0],135], [[0,0,0],180], [[0,0,0],225]),
+				spawns=([[0,0,start_z],0], [[0,0,start_z],135], [[0,0,start_z],180], [[0,0,start_z],225]),
 			)
 		elif other_type == 'ModelSaver':
 			from others.modelsaver import ModelSaver
 			other = ModelSaver(
 				model_component=model,
 				environment_component=environment,
-				save_every_nEpisodes=5,
+				save_every_nEpisodes=50,
+			)
+		elif other_type == 'ReplayBufferSaver':
+			from others.replaybuffersaver import ReplayBufferSaver
+			other = ReplayBufferSaver(
+				model_component=model,
+				environment_component=environment,
+				save_every_nEpisodes=100,
 			)
 		others_components.append(other)
 
@@ -438,9 +463,10 @@ if read_configuration==False:
 			model_component=model,
 		)
 	elif controller_type == 'EvaluateRL':
-		from controllers.trainrl import EvaluateRL
+		from controllers.evaluaterl import EvaluateRL
 		controller = EvaluateRL(
 			model_component=model,
+			n_eval_episodes=3,
 		)
 
 speak('configuration loaded!')

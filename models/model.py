@@ -10,11 +10,14 @@ from component import _init_wrapper
 class Model(Component):
     # WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
     # NOTE: env=None as training and evaluation enivornments are handeled by controller
-    def __init__(self, write_path=None, _model_arguments={'policy':'CnnPolicy', 'env':None}):
+    def __init__(self, write_path=None, replay_buffer_path=None, _model_arguments=None):
         self._model_arguments = _model_arguments
         # set up write path
         if write_path is None:
             self.write_path = utils.global_parameters['write_folder'] + 'model'
+        # set up replay buffer path
+        if replay_buffer_path is None:
+            self.replay_buffer_path = utils.global_parameters['write_folder'] + 'replay_buffer'
         self._sb3model = None
         self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
 
@@ -30,9 +33,11 @@ class Model(Component):
                 self.load()
             else:
                 self._sb3model = self.sb3Type(**self._model_arguments)
+        if self.replay_buffer_path is not None and exists(self.replay_buffer_path):
+            self._sb3model.load_replay_buffer(self.replay_buffer_path)
 
     def learn(self, 
-        total_timesteps=1000,
+        total_timesteps=1_000_000,
         callback = None,
         log_interval = -1,
         tb_log_name = None,
@@ -42,6 +47,7 @@ class Model(Component):
         eval_log_path = None,
         reset_num_timesteps = False,
         ):
+        utils.speak('LEARN')
         # call sb3 learn method
         self._sb3model.learn(
             total_timesteps,
@@ -54,6 +60,7 @@ class Model(Component):
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
         )
+        utils.speak('DONE LEARN')
 
     def save(self, path):
         self._sb3model.save(path)
@@ -79,6 +86,8 @@ class Model(Component):
         return_episode_rewards=False, 
         warn=False
         ):
+        utils.speak('EVALUATE')
+        evaluate_environment._evaluating = True
         # call sb3 evaluate method
         evaluate_policy(
             self._sb3model, 
@@ -91,3 +100,5 @@ class Model(Component):
             return_episode_rewards=return_episode_rewards, 
             warn=warn
         )
+        evaluate_environment._evaluating = False
+        utils.speak('DONE EVALUATE')

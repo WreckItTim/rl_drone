@@ -1,5 +1,4 @@
 # used to handle image observations saved as np arrays
-from component import _init_wrapper
 from observations.observation import Observation
 from matplotlib.image import imread, imsave
 from matplotlib.pyplot import imshow, show, close
@@ -10,9 +9,9 @@ import numpy as np
 class Image(Observation):
 
     # constructor
-    @_init_wrapper
-    def __init__(self, _data, data_path=None, is_gray=False, timestamp=None):
-        super().__init__(_data=_data, data_path=data_path, timestamp=timestamp)
+    def __init__(self, _data, data_path=None, is_gray=False):
+        super().__init__(_data=_data, data_path=data_path)
+        self.is_gray = is_gray
 
     # displays observation to console
     def display(self):
@@ -27,7 +26,7 @@ class Image(Observation):
         file_path = super().write(directory_path=directory_path, file_name=file_name)
         if as_img:
             if self.is_gray:
-                imsave(file_path + '.png', self._data.reshape([self._data.shape[0], self._data.shape[1]]), cmap='gray')
+                imsave(file_path + '.png', self._data.reshape([self._data.shape[0], self._data.shape[1]]), cmap='gray', vmin=0, vmax=255)
             else:
                 imsave(file_path + '.png', self._data)
         self.data_path = file_path + '.png'

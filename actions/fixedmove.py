@@ -13,7 +13,7 @@ class FixedMove(Action):
 
     def act(self):
         # must orient self with yaw
-        yaw = self._drone._yaw_radians # airsim does yaw counterclockwise
+        yaw = self._drone.get_yaw(radians=True) # yaw counterclockwise rotationa bout z-axis
         x = self.x_distance * math.cos(yaw) + self.y_distance * math.sin(yaw)
         y = self.y_distance * math.cos(yaw) + self.x_distance * math.sin(yaw)
         z = self.z_distance
@@ -28,8 +28,8 @@ class FixedMove(Action):
         for move in moves:
             if 'left' in move: y_distance -= step_size
             if 'right' in move: y_distance += step_size
-            if 'up' in move: z_distance += step_size
-            if 'down' in move: z_distance -= step_size
+            if 'up' in move: z_distance -= step_size
+            if 'down' in move: z_distance += step_size
             if 'forward' in move: x_distance += step_size
             if 'backward' in move: x_distance -= step_size
         return FixedMove(

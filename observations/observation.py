@@ -1,19 +1,19 @@
 # abstract class used to handle observations - sensor responses
-from component import Component, _init_wrapper
 import utils
 import os
 import numpy as np
 
-class Observation(Component):
+class Observation:
+    nObservations = 0
+
     # constructor
-    def __init__(self, _data, data_path=None, timestamp=None):
-        if timestamp is None:
-            self.timestamp = utils.get_timestamp()
+    def __init__(self, _data, data_path=None):
         if data_path is not None:
             _data = self.read_data(data_path)
         self._data = np.array(_data)
         self.transformations = []
-        self._name = self._child().__name__ + '_' + self.timestamp
+        Observation.nObservations += 1
+        self._name = 'Observation_' + str(Observation.nObservations)
 
     # writes observation metadata to given dir path
     def write(self, directory_path=None, file_name=None):
@@ -45,5 +45,5 @@ class Observation(Component):
 
     # saves transformation info (after transformation is done)
     def save_transformation(self, transformer, data):
-        self.transformations.append(transformer._to_json())
+        #self.transformations.append(transformer._to_json())
         self.set_data(data)

@@ -19,3 +19,7 @@ class Observer(Component):
     # returns observation transcribed for input into RL model
     def observe(self):
         raise NotImplementedError
+
+    def reset(self):
+        for transformer in self._transformers:
+            transformer.reset()

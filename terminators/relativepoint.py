@@ -10,6 +10,9 @@ class RelativePoint(Terminator):
     def __init__(self, drone_component, xyz_point, min_distance=5, max_distance=99999):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
+        self._x = self.xyz_point[0]
+        self._y = self.xyz_point[1]
+        self._z = self.xyz_point[2]
 
     # checks if within distance of point
     def terminate(self, state):
@@ -29,5 +32,9 @@ class RelativePoint(Terminator):
         return total_reward
 
     def reset(self):
-        yaw = self._drone._yaw_radians
-        self.xyz_point = np.array([self.xyz_point[0]*math.cos(yaw), self.xyz_point[1]*math.cos(yaw), self.xyz_point[2]], dtype=float)
+        position = self._drone.get_position()
+        yaw = self._drone.get_yaw(radians=True) # yaw counterclockwise rotationa bout z-axis
+        x = position[0] + self._x * math.cos(yaw) + self._y * math.sin(yaw)
+        y = position[1] + self._y * math.cos(yaw) + self._x * math.sin(yaw)
+        z = position[2] + self._z
+        self.xyz_point = np.array([x, y, z], dtype=float)

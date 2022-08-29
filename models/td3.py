@@ -32,9 +32,10 @@ class TD3(Model):
             device = "auto",
             init_setup_model = False,
             write_path = None,
+            replay_buffer_path = None,
         ):
         kwargs = locals()
-        model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path']}
+        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path', 'replay_buffer_path']}
         model_arguments['_init_setup_model'] = kwargs['init_setup_model']
         self.sb3Type = sb3TD3
         super().__init__(load_from_path=load_from_path, model_arguments=model_arguments)

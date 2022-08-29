@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_26_4_8_58",
+  "timestamp": "2022_8_29_1_53_29",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -7,12 +7,12 @@
   },
   "Zone__1": {
     "type": "DataStruct.Zone",
-    "x_min": -5,
-    "x_max": 5,
-    "y_min": -5,
-    "y_max": 5,
-    "z_min": 0,
-    "z_max": 0
+    "x_min": -10,
+    "x_max": 10,
+    "y_min": -10,
+    "y_max": 10,
+    "z_min": -20,
+    "z_max": -20
   },
   "AirSimMap__1": {
     "type": "Map.AirSimMap",
@@ -34,11 +34,13 @@
           "ImageType": 0,
           "Visible": true
         }
-      ]
+      ],
+      "ClockSpeed": 5
     },
     "settings_directory": "maps/airsim_settings/",
     "setting_files": [
-      "base"
+      "base",
+      "speedup"
     ],
     "release_directory": "resources/airsim_maps/",
     "release_relative_path": "Blocks/",
@@ -88,7 +90,7 @@
     "drone_component": "AirSimDrone__1",
     "x_distance": 0,
     "y_distance": 0,
-    "z_distance": 5,
+    "z_distance": -5,
     "speed": 4
   },
   "down": {
@@ -96,7 +98,7 @@
     "drone_component": "AirSimDrone__1",
     "x_distance": 0,
     "y_distance": 0,
-    "z_distance": -5,
+    "z_distance": 5,
     "speed": 4
   },
   "forward": {
@@ -127,8 +129,8 @@
       0.0,
       0.0
     ],
-    "min_distance": 5,
-    "max_distance": 110
+    "min_distance": 10,
+    "max_distance": 190
   },
   "Schema__1": {
     "type": "Rewarder.Schema",
@@ -153,20 +155,20 @@
       0.0,
       0.0
     ],
-    "min_distance": 5,
+    "min_distance": 10,
     "max_distance": 110
   },
   "MaxSteps__1": {
     "type": "Terminator.MaxSteps",
-    "max_steps": 100
+    "max_steps": 50
   },
   "DQN__1": {
     "type": "Model.DQN",
     "environment_component": "DroneRL",
     "policy": "CnnPolicy",
     "learning_rate": 0.0001,
-    "buffer_size": 1000000,
-    "learning_starts": 50000,
+    "buffer_size": 1000,
+    "learning_starts": 100,
     "batch_size": 32,
     "tau": 1.0,
     "gamma": 0.99,
@@ -175,7 +177,7 @@
     "replay_buffer_class": null,
     "replay_buffer_kwargs": null,
     "optimize_memory_usage": false,
-    "target_update_interval": 10000,
+    "target_update_interval": 1000,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
@@ -187,7 +189,8 @@
     "seed": null,
     "device": "auto",
     "init_setup_model": true,
-    "write_path": "temp/2022_8_26_4_8_58/model",
+    "write_path": "temp/alpha_train/model",
+    "replay_buffer_path": "temp/alpha_train/replay_buffer",
     "connect_priority": -1
   },
   "SpawnEvaluator__1": {
@@ -195,7 +198,7 @@
     "model_component": "DQN__1",
     "drone_component": "AirSimDrone__1",
     "environment_component": "DroneRL",
-    "evaluate_every_nEpisodes": 10,
+    "evaluate_every_nEpisodes": 50,
     "distance": 100,
     "nTimes": 4,
     "spawns": [
@@ -203,7 +206,7 @@
         [
           0,
           0,
-          0
+          -20
         ],
         0
       ],
@@ -211,7 +214,7 @@
         [
           0,
           0,
-          0
+          -20
         ],
         135
       ],
@@ -219,7 +222,7 @@
         [
           0,
           0,
-          0
+          -20
         ],
         180
       ],
@@ -227,7 +230,7 @@
         [
           0,
           0,
-          0
+          -20
         ],
         225
       ]
@@ -252,7 +255,13 @@
     "type": "Other.ModelSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 5
+    "save_every_nEpisodes": 50
+  },
+  "ReplayBufferSaver__1": {
+    "type": "Other.ReplayBufferSaver",
+    "model_component": "DQN__1",
+    "environment_component": "DroneRL",
+    "save_every_nEpisodes": 100
   },
   "DroneRL": {
     "type": "Environment.DroneRL",
@@ -269,7 +278,8 @@
       "SpawnEvaluator__1",
       "RandomSpawnPoint__1",
       "RandomSpawnYaw__1",
-      "ModelSaver__1"
+      "ModelSaver__1",
+      "ReplayBufferSaver__1"
     ],
     "show_states": true
   }

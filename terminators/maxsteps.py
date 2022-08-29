@@ -13,7 +13,7 @@ class MaxSteps(Terminator):
     # checks if within distance of point
     def terminate(self, state):
         self._nSteps += 1
-        if self._nSteps > self.max_steps:
+        if self._nSteps >= self.max_steps:
             state['termination_reason'] = 'max_steps'
             return True
         return False

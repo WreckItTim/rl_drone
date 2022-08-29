@@ -11,6 +11,9 @@ class RelativePoint(Reward):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
         self._diff = max_distance - min_distance
+        self._x = self.xyz_point[0]
+        self._y = self.xyz_point[1]
+        self._z = self.xyz_point[2]
 
     # -1 for a collision, +1 for dodging collision
     def reward(self, state):
@@ -30,5 +33,9 @@ class RelativePoint(Reward):
         return total_reward
 
     def reset(self):
-        yaw = self._drone._yaw_radians
-        self.xyz_point = np.array([xyz_point[0]*math.cos(yaw), xyz_point[1]*math.cos(yaw), xyz_point[2]], dtype=float)
+        position = self._drone.get_position()
+        yaw = self._drone.get_yaw(radians=True) # yaw counterclockwise rotationa bout z-axis
+        x = position[0] + self._x * math.cos(yaw) + self._y * math.sin(yaw)
+        y = position[1] + self._y * math.cos(yaw) + self._x * math.sin(yaw)
+        z = position[2] + self._z
+        self.xyz_point = np.array([x, y, z], dtype=float)

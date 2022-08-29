@@ -12,6 +12,6 @@ class ResizeImage(Transformer):
 
     # if observation type is valid, applies transformation
     def transform(self, observation):
-        observation.check(Image)
+        #observation.check(Image)
         resized = resize(observation.to_numpy(), self.image_shape)
         observation.save_transformation(self, resized)

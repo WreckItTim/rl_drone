@@ -33,9 +33,10 @@ class DQN(Model):
             device = "auto",
             init_setup_model = False,
             write_path = None,
+            replay_buffer_path = None,
         ):
         kwargs = locals()
-        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path']}
+        _model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in ['self', '__class__', 'environment_component', 'init_setup_model', 'write_path', 'replay_buffer_path']}
         _model_arguments['_init_setup_model'] = kwargs['init_setup_model']
         self.sb3Type = sb3DQN
         super().__init__(write_path=write_path, _model_arguments=_model_arguments)

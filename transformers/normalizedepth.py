@@ -13,7 +13,7 @@ class NormalizeDepth(Transformer):
 
     # if observation type is valid, applies transformation
     def transform(self, observation):
-        observation.check(Image)
+        #observation.check(Image)
         image = observation.to_numpy()
         normalized = np.interp(image, (self.min_depth, self.max_depth), (0, 255)).astype('uint8')
         observation.save_transformation(self, normalized)

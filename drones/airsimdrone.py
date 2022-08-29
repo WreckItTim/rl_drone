@@ -10,8 +10,6 @@ class AirSimDrone(Drone):
     def __init__(self):
         super().__init__()
         self._client = None
-        self._yaw_radians = 0
-        self._yaw_degrees = 0
         
     # check if has collided
     def check_collision(self):
@@ -63,12 +61,12 @@ class AirSimDrone(Drone):
         z_speed = z_distance/duration
         duration = distance / speed
         #, yaw_mode={'is_rate':False,'yaw_or_rate':self._yaw_degrees}
-        self._client.moveByVelocityAsync(x_speed, y_speed, -1*z_speed, duration).join()
+        self._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
     
     # move to absolute position
     def move_to(self, point, speed):
         x_position, y_position, z_position = point[0], point[1], point[2]
-        self._client.moveToPositionAsync(x_position, y_position, -1*z_position, speed).join()
+        self._client.moveToPositionAsync(x_position, y_position, z_position, speed).join()
     
     # teleports to position (ignores collisions)
     def teleport(self, point):
@@ -81,15 +79,28 @@ class AirSimDrone(Drone):
     # sets yaw (different than rotating)
     def set_yaw(self, yaw_degrees):
         self._client.rotateToYawAsync(yaw_degrees, timeout_sec=10).join()
-        self._yaw_degrees = yaw_degrees
-        self._yaw_radians = math.radians(yaw_degrees)
 
     def get_position(self):
         pos = self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array().tolist()
-        pos[0] = int(pos[0])
-        pos[1] = int(pos[1])
-        pos[2] = int(pos[2])
+        pos[0] = float(pos[0])
+        pos[1] = float(pos[1])
+        pos[2] = float(pos[2])
         return pos
+
+    # get rotation about the z-axis (yaw)
+    def get_yaw(self, radians=True):
+        q = self._client.getMultirotorState().kinematics_estimated.orientation
+        w, x, y, z = q.w_val, q.x_val, q.y_val, q.z_val, 
+        #yaw_radians = 2*math.acos(q.w_val)
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_radians = math.atan2(t3, t4)
+        # TODO: these two quads or off for somereason (current solution is a brute force quick fix, find real problem later)
+        #if yaw_radians < 0:
+        #    yaw_radians += 2*math.pi
+        if not radians:
+            return math.degrees(yaw_radians)
+        return yaw_radians
 
     def hover(self):
         self._client.hoverAsync().join()

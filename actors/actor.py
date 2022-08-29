@@ -14,3 +14,7 @@ class Actor(Component):
 
     def connect(self):
         super().connect()
+
+    def reset(self):
+        for action in self._actions:
+            action.reset()
