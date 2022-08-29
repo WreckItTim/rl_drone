@@ -74,7 +74,7 @@ MAKING A NEW COMPONENT CLASS
 		# the {member}_components argument to {Class}.__init__() is a mixed list of {member_instance} and {member_name} like variables
 		# let {member_instances} be the hypothetical list of all the desired {member_instance} variables
 		# all {member}_components arguments to {Class}.__init__() will automatically set a private class member after connect() is called, such as self._{member}={member_instances}
-# IF you followed steps 1-5 correctly, than your new component class will:
+# IF you followed steps 1-4 correctly, than your new component class will:
 	# a. be serializable (for configuration files)
 	# b. will avoid conflicts so the order of creation does not matter
 	# c. can be time/memory benchmarked
