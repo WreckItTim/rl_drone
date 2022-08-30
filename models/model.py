@@ -65,6 +65,9 @@ class Model(Component):
     def save(self, path):
         self._sb3model.save(path)
 
+    def save_replay_buffer(self, path):
+        self._sb3model.save_replay_buffer(path)
+
     # loading is class specific - so must specify the stable-baselines3, or whatever, model type from child
     def load(self, path):
         if exists(path):

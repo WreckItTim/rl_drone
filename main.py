@@ -48,7 +48,8 @@ if read_configuration==False:
 	reward_types = ['Avoid', 'RelativePoint'] # Avoid RelativePoint
 	rewarder_type = 'Schema' # Schema
 	terminator_types = ['Collision', 'RelativePoint', 'MaxSteps'] # Collision RelativePoint RewardThresh MaxSteps
-	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver', 'ReplayBufferSaver'] # RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver ReplayBufferSaver
+	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver', 'ReplayBufferSaver', 'BenchMarker'] 
+	# RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver ReplayBufferSaver BenchMarker
 	environment_type = 'DroneRL' # DroneRL
 	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
 	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
@@ -57,7 +58,8 @@ if read_configuration==False:
 	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
 	image_shape=(84, 84, 1)
 	relative_objective_point=(100, 0, 0)
-	start_z = -20
+	start_z = -5
+	every_nEpisodes = 100
 	from datastructs.zone import Zone
 	spawn_zones = [
 		Zone(x_min=-10, x_max=10, y_min=-10, y_max=10, z_min=start_z, z_max=start_z),
@@ -70,7 +72,7 @@ if read_configuration==False:
 		map_ = AirSimMap(
 			settings=None,
 			settings_directory='maps/airsim_settings/',
-			setting_files=['base', 'speedup'],
+			setting_files=['lightweight', 'speedup', 'cameraresolution', 'nodisplay'],
 			release_directory='resources/airsim_maps/',
 			release_relative_path='Blocks/',
 			release_name='Blocks.exe',
@@ -220,8 +222,8 @@ if read_configuration==False:
 			environment_component = environment,
 			policy = 'CnnPolicy',
 			learning_rate = 1e-4,
-			buffer_size = 1000,
-			learning_starts = 100,
+			buffer_size = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 32,
 			tau = 1.0,
 			gamma = 0.99,
@@ -230,7 +232,7 @@ if read_configuration==False:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = 1000,
+			target_update_interval = every_nEpisodes,
 			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.05,
@@ -418,7 +420,7 @@ if read_configuration==False:
 				model_component=model,
 				drone_component=drone,
 				environment_component=environment,
-				evaluate_every_nEpisodes=50,
+				evaluate_every_nEpisodes=every_nEpisodes,
 				nTimes=4, 
 				spawns=([[0,0,start_z],0], [[0,0,start_z],135], [[0,0,start_z],180], [[0,0,start_z],225]),
 			)
@@ -427,14 +429,20 @@ if read_configuration==False:
 			other = ModelSaver(
 				model_component=model,
 				environment_component=environment,
-				save_every_nEpisodes=50,
+				save_every_nEpisodes=every_nEpisodes,
 			)
 		elif other_type == 'ReplayBufferSaver':
 			from others.replaybuffersaver import ReplayBufferSaver
 			other = ReplayBufferSaver(
 				model_component=model,
 				environment_component=environment,
-				save_every_nEpisodes=100,
+				save_every_nEpisodes=every_nEpisodes,
+			)
+		elif other_type == 'BenchMarker':
+			from others.benchmarker import BenchMarker
+			other = BenchMarker(
+				environment_component=environment,
+				benchmark_every_nEpisodes=every_nEpisodes,
 			)
 		others_components.append(other)
 

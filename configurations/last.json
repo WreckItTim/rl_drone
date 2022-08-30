@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_29_1_53_29",
+  "timestamp": "2022_8_29_14_25_25",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -11,8 +11,8 @@
     "x_max": 10,
     "y_min": -10,
     "y_max": 10,
-    "z_min": -20,
-    "z_max": -20
+    "z_min": -5,
+    "z_max": -5
   },
   "AirSimMap__1": {
     "type": "Map.AirSimMap",
@@ -20,27 +20,24 @@
       "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
       "SettingsVersion": 1.2,
       "SimMode": "Multirotor",
-      "ViewMode": "SpringArmChase",
-      "SubWindows": [
-        {
-          "WindowID": 0,
-          "Camera_name": "0",
-          "ImageType": 3,
-          "Visible": true
-        },
-        {
-          "WindowID": 2,
-          "Camera_name": "0",
-          "ImageType": 0,
-          "Visible": true
-        }
-      ],
-      "ClockSpeed": 5
+      "ViewMode": "NoDisplay",
+      "SubWindows": [],
+      "ClockSpeed": 4,
+      "CameraDefaults": {
+        "CaptureSettings": [
+          {
+            "Width": 84,
+            "Height": 84
+          }
+        ]
+      }
     },
     "settings_directory": "maps/airsim_settings/",
     "setting_files": [
-      "base",
-      "speedup"
+      "lightweight",
+      "speedup",
+      "cameraresolution",
+      "nodisplay"
     ],
     "release_directory": "resources/airsim_maps/",
     "release_relative_path": "Blocks/",
@@ -177,7 +174,7 @@
     "replay_buffer_class": null,
     "replay_buffer_kwargs": null,
     "optimize_memory_usage": false,
-    "target_update_interval": 1000,
+    "target_update_interval": 100,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
@@ -198,7 +195,7 @@
     "model_component": "DQN__1",
     "drone_component": "AirSimDrone__1",
     "environment_component": "DroneRL",
-    "evaluate_every_nEpisodes": 50,
+    "evaluate_every_nEpisodes": 100,
     "distance": 100,
     "nTimes": 4,
     "spawns": [
@@ -206,7 +203,7 @@
         [
           0,
           0,
-          -20
+          -5
         ],
         0
       ],
@@ -214,7 +211,7 @@
         [
           0,
           0,
-          -20
+          -5
         ],
         135
       ],
@@ -222,7 +219,7 @@
         [
           0,
           0,
-          -20
+          -5
         ],
         180
       ],
@@ -230,7 +227,7 @@
         [
           0,
           0,
-          -20
+          -5
         ],
         225
       ]
@@ -255,13 +252,18 @@
     "type": "Other.ModelSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 50
+    "save_every_nEpisodes": 100
   },
   "ReplayBufferSaver__1": {
     "type": "Other.ReplayBufferSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
     "save_every_nEpisodes": 100
+  },
+  "BenchMarker__1": {
+    "type": "Other.BenchMarker",
+    "environment_component": "DroneRL",
+    "benchmark_every_nEpisodes": 100
   },
   "DroneRL": {
     "type": "Environment.DroneRL",
@@ -279,7 +281,8 @@
       "RandomSpawnPoint__1",
       "RandomSpawnYaw__1",
       "ModelSaver__1",
-      "ReplayBufferSaver__1"
+      "ReplayBufferSaver__1",
+      "BenchMarker__1"
     ],
     "show_states": true
   }

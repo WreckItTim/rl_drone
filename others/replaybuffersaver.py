@@ -16,4 +16,4 @@ class ReplayBufferSaver(Other):
             self._nEpisodes += 1
             if self._nEpisodes % self.save_every_nEpisodes == 0:
                 print('SAVE REPLAY BUFFER')
-                model.save_replay_buffer(self._write_path)
+                self._model.save_replay_buffer(self._write_path)

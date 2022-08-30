@@ -1,11 +1,6 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\maps\\airsim_settings",
-    "\\observations",
-    "\\sensors",
-    "\\transformers"
+    ""
   ],
-  "SelectedNode": "\\observations\\observation.py",
   "PreviewInSolutionExplorer": false
 }
