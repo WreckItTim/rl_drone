@@ -4,7 +4,7 @@ pip install --upgrade msgpack-rpc-python
 run airsim with settings:
 ./map.exe -settings="settings.json"
 
-upgrade all python packages (from windows powershell):
+upgrade all installed python packages (from windows powershell):
 pip freeze | %{$_.split('==')[0]} | %{pip install --upgrade $_}
 
 default GameUserSettings.ini values:

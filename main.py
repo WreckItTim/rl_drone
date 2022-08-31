@@ -5,10 +5,14 @@ import random
 
 # USER PARAMETERS and setup'
 repo_version = 'alpha'
+test_type = 'beta'
+model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
+train_or_evaluate = 'train'
+run_name = test_type + '_' + model_type + '_' + train_or_evaluate
 timestamp = get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
-write_folder = f'temp/alpha_train/' # f'temp/{timestamp}/' # will write any files to this folder
-read_configuration = False # True: read configuration file to create components
-read_configuration_path = 'temp/alpha_train/configuration.json' # path to read configuration file if read_configuration=True
+write_folder = f'temp/' + run_name + '/' # f'temp/{timestamp}/' # will write any files to this folder
+read_configuration = train_or_evaluate == 'evaluate' # True: read configuration file to create components
+read_configuration_path = 'temp/' + test_type + '_' + model_type + '_train/configuration.json' # path to read configuration file if read_configuration=True
 write_configuration = True # True: writes new configuration file after creating all components
 write_configuration_path = write_folder + '/configuration.json' # path to write a new configuration file if write_configuration=True
 read_global_parameters() # True: sets all variables in the global_parameters.json file
@@ -28,8 +32,8 @@ if read_configuration==True:
 	# ALTER ANY READ-IN COMPONENTS or make a new controller as needed here
 	from controllers.evaluaterl import EvaluateRL
 	controller = EvaluateRL(
-		model_component='DQN__1',
-		n_eval_episodes=3,
+		model_component=model_type + '__1',
+		n_eval_episodes=4,
 	)
 
 
@@ -51,7 +55,6 @@ if read_configuration==False:
 	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver', 'ReplayBufferSaver', 'BenchMarker'] 
 	# RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver ReplayBufferSaver BenchMarker
 	environment_type = 'DroneRL' # DroneRL
-	model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
 	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
 
 	# specify any global parameters to be used by all components
@@ -59,7 +62,7 @@ if read_configuration==False:
 	image_shape=(84, 84, 1)
 	relative_objective_point=(100, 0, 0)
 	start_z = -5
-	every_nEpisodes = 100
+	every_nEpisodes = 1
 	from datastructs.zone import Zone
 	spawn_zones = [
 		Zone(x_min=-10, x_max=10, y_min=-10, y_max=10, z_min=start_z, z_max=start_z),

@@ -26,6 +26,7 @@ class DroneRL(Environment):
             
     # activate needed components
     def step(self, rl_output):
+        print('STEP', self._nSteps)
         state = {'rl_output':float(rl_output)}
         # take action
         transcribed_action = self._actor.act(rl_output)
@@ -59,7 +60,7 @@ class DroneRL(Environment):
     # called at end of episode to prepare for next, when step() returns done=True
     # returns first observation for new episode
     def reset(self):
-        print('Episode', self._nEpisodes, 'Evaluating?', self._evaluating)
+        print('RESET Episode', self._nEpisodes, 'Evaluating?', self._evaluating)
         if not self._evaluating:
             self._nEpisodes += 1
         self._nSteps = 0

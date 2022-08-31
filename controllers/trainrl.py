@@ -11,5 +11,4 @@ class TrainRL(Controller):
 
     # runs control on components
     def run(self, set_save_to_path=True):
-        print('LEARN')
         self._model.learn()

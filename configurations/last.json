@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_29_14_25_25",
+  "timestamp": "2022_8_30_17_52_49",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -164,8 +164,8 @@
     "environment_component": "DroneRL",
     "policy": "CnnPolicy",
     "learning_rate": 0.0001,
-    "buffer_size": 1000,
-    "learning_starts": 100,
+    "buffer_size": 10,
+    "learning_starts": 1,
     "batch_size": 32,
     "tau": 1.0,
     "gamma": 0.99,
@@ -174,7 +174,7 @@
     "replay_buffer_class": null,
     "replay_buffer_kwargs": null,
     "optimize_memory_usage": false,
-    "target_update_interval": 100,
+    "target_update_interval": 1,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
@@ -186,8 +186,8 @@
     "seed": null,
     "device": "auto",
     "init_setup_model": true,
-    "write_path": "temp/alpha_train/model",
-    "replay_buffer_path": "temp/alpha_train/replay_buffer",
+    "write_path": "temp/beta_DQN_train/model",
+    "replay_buffer_path": "temp/beta_DQN_train/replay_buffer",
     "connect_priority": -1
   },
   "SpawnEvaluator__1": {
@@ -195,7 +195,7 @@
     "model_component": "DQN__1",
     "drone_component": "AirSimDrone__1",
     "environment_component": "DroneRL",
-    "evaluate_every_nEpisodes": 100,
+    "evaluate_every_nEpisodes": 1,
     "distance": 100,
     "nTimes": 4,
     "spawns": [
@@ -231,7 +231,8 @@
         ],
         225
       ]
-    ]
+    ],
+    "nEvaluations": 0
   },
   "RandomSpawnPoint__1": {
     "type": "Other.RandomSpawnPoint",
@@ -252,18 +253,18 @@
     "type": "Other.ModelSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 100
+    "save_every_nEpisodes": 1
   },
   "ReplayBufferSaver__1": {
     "type": "Other.ReplayBufferSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 100
+    "save_every_nEpisodes": 1
   },
   "BenchMarker__1": {
     "type": "Other.BenchMarker",
     "environment_component": "DroneRL",
-    "benchmark_every_nEpisodes": 100
+    "benchmark_every_nEpisodes": 1
   },
   "DroneRL": {
     "type": "Environment.DroneRL",

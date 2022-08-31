@@ -1,6 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\temp"
   ],
+  "SelectedNode": "\\temp\\overwrite_settings.json",
   "PreviewInSolutionExplorer": false
 }
