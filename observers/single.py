@@ -13,8 +13,8 @@ class Single(Observer):
     def __init__(
         self, 
         sensor_component, 
-		output_width,
 		output_height, 
+		output_width,
         transformers_components=[], 
         please_write=False, 
         write_directory=None,
@@ -23,7 +23,7 @@ class Single(Observer):
             please_write=please_write, 
             write_directory=write_directory,
         )
-        self._output_shape = (output_width, output_height, 1)
+        self._output_shape = (output_height, output_width, 1)
         
     # gets observations
     def observe(self):

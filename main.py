@@ -59,8 +59,8 @@ if read_configuration==False:
 
 	# specify any global parameters to be used by all components
 	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
-	image_width=84 # after processing
 	image_height=84 # after processing
+	image_width=84 # after processing
 	relative_objective_point=(100, 0, 0)
 	start_z = -5
 	every_nEpisodes = 100
@@ -76,7 +76,7 @@ if read_configuration==False:
 		map_ = AirSimMap(
 			settings=None,
 			settings_directory='maps/airsim_settings/',
-			setting_files=['lightweight', 'speedup', 'tellocamera', 'nodisplay'],
+			setting_files=['lightweight', 'speedup', 'tellocamera'],
 			release_directory='resources/airsim_maps/',
 			release_relative_path='Blocks/',
 			release_name='Blocks.exe',
@@ -122,7 +122,7 @@ if read_configuration==False:
 		if transformer_type == 'ResizeImage':
 			from transformers.resizeimage import ResizeImage
 			transformer = ResizeImage(
-				image_shape=(image_width, image_height, 1)
+				image_shape=(image_height, image_width, 1)
 			)
 		elif transformer_type == 'NormalizeDepth':
 			from transformers.normalizedepth import NormalizeDepth
@@ -140,8 +140,8 @@ if read_configuration==False:
 			transformers_components=transformers_components,
 			please_write=True, 
 			write_directory='temp/',
-			output_width=image_width,
 			output_height=image_height,
+			output_width=image_width,
 		)
 	if observer_type == 'SingleLag':
 		from observers.singlelag import SingleLag
@@ -151,8 +151,8 @@ if read_configuration==False:
 			n_frames_lag=2,
 			please_write=True, 
 			write_directory='temp/',
-			output_width=image_width,
 			output_height=image_height,
+			output_width=image_width,
 		)
 
 	# ACTION
@@ -227,7 +227,7 @@ if read_configuration==False:
 		elif terminator_type == 'MaxSteps':
 			from terminators.maxsteps import MaxSteps
 			terminator = MaxSteps(
-				max_steps = 50,
+				max_steps = 64,
 			)
 		terminators_components.append(terminator)
 

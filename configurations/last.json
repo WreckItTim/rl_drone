@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_31_19_24_41",
+  "timestamp": "2022_8_31_19_35_37",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -20,7 +20,7 @@
       "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
       "SettingsVersion": 1.2,
       "SimMode": "Multirotor",
-      "ViewMode": "NoDisplay",
+      "ViewMode": "SpringArmChase",
       "SubWindows": [],
       "ClockSpeed": 4,
       "CameraDefaults": {
@@ -37,8 +37,7 @@
     "setting_files": [
       "lightweight",
       "speedup",
-      "tellocamera",
-      "nodisplay"
+      "tellocamera"
     ],
     "release_directory": "resources/airsim_maps/",
     "release_relative_path": "Blocks/",
