@@ -45,7 +45,7 @@ if read_configuration==False:
 	drone_type = 'AirSim' # AirSim Tello
 	sensor_type = 'AirSimCamera' # AirSimCamera PortCamera
 	transformer_types = ['ResizeImage', 'NormalizeDepth'] # ResizeImage NormalizeDepth
-	observer_type = 'Single' # Single
+	observer_type = 'SingleLag' # Single SingleLag
 	action_type = 'FixedMove' # FixedMove
 	move_types = ['up', 'down', 'forward'] # up down forward backward left right (optional for fixed_move, also use any combination-diagnol by placing an '_' to seperate, example: forward_up)
 	actor_type = 'DiscreteActor' # DiscreteActor ContinuousActor
@@ -59,10 +59,11 @@ if read_configuration==False:
 
 	# specify any global parameters to be used by all components
 	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
-	image_shape=(84, 84, 1)
+	image_width=84 # after processing
+	image_height=84 # after processing
 	relative_objective_point=(100, 0, 0)
 	start_z = -5
-	every_nEpisodes = 1
+	every_nEpisodes = 100
 	from datastructs.zone import Zone
 	spawn_zones = [
 		Zone(x_min=-10, x_max=10, y_min=-10, y_max=10, z_min=start_z, z_max=start_z),
@@ -75,7 +76,7 @@ if read_configuration==False:
 		map_ = AirSimMap(
 			settings=None,
 			settings_directory='maps/airsim_settings/',
-			setting_files=['lightweight', 'speedup', 'cameraresolution', 'nodisplay'],
+			setting_files=['lightweight', 'speedup', 'tellocamera', 'nodisplay'],
 			release_directory='resources/airsim_maps/',
 			release_relative_path='Blocks/',
 			release_name='Blocks.exe',
@@ -121,7 +122,7 @@ if read_configuration==False:
 		if transformer_type == 'ResizeImage':
 			from transformers.resizeimage import ResizeImage
 			transformer = ResizeImage(
-				image_shape=image_shape
+				image_shape=(image_width, image_height, 1)
 			)
 		elif transformer_type == 'NormalizeDepth':
 			from transformers.normalizedepth import NormalizeDepth
@@ -139,7 +140,19 @@ if read_configuration==False:
 			transformers_components=transformers_components,
 			please_write=True, 
 			write_directory='temp/',
-			output_shape=image_shape,
+			output_width=image_width,
+			output_height=image_height,
+		)
+	if observer_type == 'SingleLag':
+		from observers.singlelag import SingleLag
+		observer = SingleLag(
+			sensor_component=sensor, 
+			transformers_components=transformers_components,
+			n_frames_lag=2,
+			please_write=True, 
+			write_directory='temp/',
+			output_width=image_width,
+			output_height=image_height,
 		)
 
 	# ACTION
@@ -150,8 +163,8 @@ if read_configuration==False:
 			fixed_move = FixedMove.get_move(
 				drone_component=drone, 
 				move_type=move_type, 
-				step_size=5,
-				speed=4,
+				step_size=5 if move_type != 'down' else 1,
+				speed=2,
 			)
 			actions_components.append(fixed_move)
 
@@ -176,8 +189,8 @@ if read_configuration==False:
 			reward = RelativePoint(
 				drone_component = drone,
 				xyz_point = relative_objective_point,
-				min_distance = 10,
-				max_distance = 190,
+				min_distance = 5,
+				max_distance = 200,
 			)
 		rewards_components.append(reward)
 
@@ -203,7 +216,7 @@ if read_configuration==False:
 			terminator = RelativePoint(
 				drone_component = drone,
 				xyz_point = relative_objective_point,
-				min_distance = 10,
+				min_distance = 5,
 				max_distance = 110,
 			)
 		elif terminator_type == 'RewardThresh':

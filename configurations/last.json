@@ -1,5 +1,5 @@
 {
-  "timestamp": "2022_8_30_17_52_49",
+  "timestamp": "2022_8_31_19_24_41",
   "repo_version": "alpha",
   "controller": {
     "type": "Controller.TrainRL",
@@ -26,8 +26,9 @@
       "CameraDefaults": {
         "CaptureSettings": [
           {
-            "Width": 84,
-            "Height": 84
+            "Width": 2592,
+            "Height": 1936,
+            "FOV_Degrees": 21.55
           }
         ]
       }
@@ -36,7 +37,7 @@
     "setting_files": [
       "lightweight",
       "speedup",
-      "cameraresolution",
+      "tellocamera",
       "nodisplay"
     ],
     "release_directory": "resources/airsim_maps/",
@@ -67,14 +68,12 @@
     "min_depth": 0,
     "max_depth": 100
   },
-  "Single__1": {
-    "type": "Observer.Single",
+  "SingleLag__1": {
+    "type": "Observer.SingleLag",
     "sensor_component": "AirSimCamera__1",
-    "output_shape": [
-      84,
-      84,
-      1
-    ],
+    "output_width": 84,
+    "output_height": 84,
+    "n_frames_lag": 2,
     "transformers_components": [
       "ResizeImage__1",
       "NormalizeDepth__1"
@@ -88,15 +87,15 @@
     "x_distance": 0,
     "y_distance": 0,
     "z_distance": -5,
-    "speed": 4
+    "speed": 2
   },
   "down": {
     "type": "Action.FixedMove",
     "drone_component": "AirSimDrone__1",
     "x_distance": 0,
     "y_distance": 0,
-    "z_distance": 5,
-    "speed": 4
+    "z_distance": 1,
+    "speed": 2
   },
   "forward": {
     "type": "Action.FixedMove",
@@ -104,7 +103,7 @@
     "x_distance": 5,
     "y_distance": 0,
     "z_distance": 0,
-    "speed": 4
+    "speed": 2
   },
   "DiscreteActor__1": {
     "type": "Actor.DiscreteActor",
@@ -126,8 +125,8 @@
       0.0,
       0.0
     ],
-    "min_distance": 10,
-    "max_distance": 190
+    "min_distance": 5,
+    "max_distance": 200
   },
   "Schema__1": {
     "type": "Rewarder.Schema",
@@ -152,7 +151,7 @@
       0.0,
       0.0
     ],
-    "min_distance": 10,
+    "min_distance": 5,
     "max_distance": 110
   },
   "MaxSteps__1": {
@@ -164,8 +163,8 @@
     "environment_component": "DroneRL",
     "policy": "CnnPolicy",
     "learning_rate": 0.0001,
-    "buffer_size": 10,
-    "learning_starts": 1,
+    "buffer_size": 1000,
+    "learning_starts": 100,
     "batch_size": 32,
     "tau": 1.0,
     "gamma": 0.99,
@@ -174,7 +173,7 @@
     "replay_buffer_class": null,
     "replay_buffer_kwargs": null,
     "optimize_memory_usage": false,
-    "target_update_interval": 1,
+    "target_update_interval": 100,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
@@ -195,7 +194,7 @@
     "model_component": "DQN__1",
     "drone_component": "AirSimDrone__1",
     "environment_component": "DroneRL",
-    "evaluate_every_nEpisodes": 1,
+    "evaluate_every_nEpisodes": 100,
     "distance": 100,
     "nTimes": 4,
     "spawns": [
@@ -253,24 +252,24 @@
     "type": "Other.ModelSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 1
+    "save_every_nEpisodes": 100
   },
   "ReplayBufferSaver__1": {
     "type": "Other.ReplayBufferSaver",
     "model_component": "DQN__1",
     "environment_component": "DroneRL",
-    "save_every_nEpisodes": 1
+    "save_every_nEpisodes": 100
   },
   "BenchMarker__1": {
     "type": "Other.BenchMarker",
     "environment_component": "DroneRL",
-    "benchmark_every_nEpisodes": 1
+    "benchmark_every_nEpisodes": 100
   },
   "DroneRL": {
     "type": "Environment.DroneRL",
     "drone_component": "AirSimDrone__1",
     "actor_component": "DiscreteActor__1",
-    "observer_component": "Single__1",
+    "observer_component": "SingleLag__1",
     "rewarder_component": "Schema__1",
     "terminators_components": [
       "Collision__1",

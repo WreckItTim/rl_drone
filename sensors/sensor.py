@@ -16,3 +16,7 @@ class Sensor(Component):
 
     def connect(self):
         super().connect()
+
+    # creates a new observation object from passed in data
+    def create_observation(self, data):
+        raise NotImplementedError

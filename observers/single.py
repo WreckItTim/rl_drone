@@ -10,10 +10,22 @@ class Single(Observer):
     
     # constructor
     @_init_wrapper
-    def __init__(self, sensor_component, output_shape, transformers_components=[], please_write=False, write_directory=None):
-        super().__init__(please_write=please_write, write_directory=write_directory)
+    def __init__(
+        self, 
+        sensor_component, 
+		output_width,
+		output_height, 
+        transformers_components=[], 
+        please_write=False, 
+        write_directory=None,
+    ):
+        super().__init__(
+            please_write=please_write, 
+            write_directory=write_directory,
+        )
+        self._output_shape = (output_width, output_height, 1)
         
-    # gets observations than transcribes for input into RL model
+    # gets observations
     def observe(self):
         observation = self._sensor.sense()
         for transformer in self._transformers:

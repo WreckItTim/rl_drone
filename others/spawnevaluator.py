@@ -34,7 +34,6 @@ class SpawnEvaluator(Other):
             freeze_state = state.copy()
             self._states[self._evaluation_episode][self._nSteps] = freeze_state
             self._nSteps += 1
-            print('episode', self._evaluation_episode, 'yaw', self._drone.get_yaw())
                 
     def reset(self):
         # handle resets while training - check when to do next set of evaluations

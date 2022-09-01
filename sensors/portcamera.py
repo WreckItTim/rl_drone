@@ -31,3 +31,11 @@ class PortCamera(Sensor):
             is_gray=self.is_gray,
         )
         return image
+
+    # creates a new observation object from passed in data
+    def create_observation(self, data):
+        image = Image(
+            _data=data, 
+            is_gray=self.is_gray,
+        )
+        return image

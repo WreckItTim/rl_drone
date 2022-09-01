@@ -21,12 +21,11 @@ class DroneRL(Environment):
     def connect(self):
         super().connect()
         # even though we do not directly use the observation or action space, these fields are necesary for sb3
-        self.observation_space = spaces.Box(0, 255, shape=self._observer.output_shape, dtype=np.uint8)
+        self.observation_space = spaces.Box(0, 255, shape=self._observer._output_shape, dtype=np.uint8)
         self.action_space = spaces.Discrete(len(self._actor._actions))
             
     # activate needed components
     def step(self, rl_output):
-        print('STEP', self._nSteps)
         state = {'rl_output':float(rl_output)}
         # take action
         transcribed_action = self._actor.act(rl_output)
@@ -34,6 +33,9 @@ class DroneRL(Environment):
         # get observation
         observation = self._observer.observe()
         state['observation_component'] = observation._name
+        # set state kinematics variables
+        state['drone_position'] = self._drone.get_position() 
+        state['yaw'] = self._drone.get_yaw() 
         # set rewards in state dictionary
         self._rewarder.reward(state)
         # check for termination
