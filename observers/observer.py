@@ -4,22 +4,21 @@ from os.path import exists
 from os import makedirs
 
 class Observer(Component):
-    # constructor
-    def __init__(self, please_write=False, write_directory=None):
-        if please_write:
-            if not exists(write_directory):
-                makedirs(write_directory)
+	# constructor
+	def __init__(self):
+		pass
 
-    def activate(self):
-        self.observe().display()
+	# when using the debug controller
+	def debug(self):
+		self.observe().display()
 
-    def connect(self):
-        super().connect()
+	def connect(self):
+		super().connect()
 
-    # returns observation transcribed for input into RL model
-    def observe(self):
-        raise NotImplementedError
+	# returns observation transcribed for input into RL model
+	def observe(self):
+		raise NotImplementedError
 
-    def reset(self):
-        for transformer in self._transformers:
-            transformer.reset()
+	def reset(self):
+		for transformer in self._transformers:
+			transformer.reset()

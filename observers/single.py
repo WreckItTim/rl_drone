@@ -15,13 +15,9 @@ class Single(Observer):
         sensor_component, 
 		output_height, 
 		output_width,
-        transformers_components=[], 
-        please_write=False, 
-        write_directory=None,
+        transformers_components=[],
     ):
         super().__init__(
-            please_write=please_write, 
-            write_directory=write_directory,
         )
         self._output_shape = (output_height, output_width, 1)
         

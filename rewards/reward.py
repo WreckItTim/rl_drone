@@ -2,16 +2,17 @@
 from component import Component
 
 class Reward(Component):
-    # constructor
-    def __init__(self):
-        pass
+	# constructor
+	def __init__(self):
+		pass
 
-    # calculates rewards from agent's current state (call to when taking a step)
-    def reward(self, state):
-        raise NotImplementedError
+	# calculates rewards from agent's current state (call to when taking a step)
+	def reward(self, state):
+		raise NotImplementedError
 
-    def activate(self):
-        return self.reward({})
+	# when using the debug controller
+	def debug(self):
+		return self.reward({})
 
-    def connect(self):
-        super().connect()
+	def connect(self):
+		super().connect()

@@ -5,7 +5,8 @@ class Drone(Component):
     def __init__(self):
         pass
 
-    def activate(self):
+    # when using the debug controller
+    def debug(self):
         self.take_off()
 
     # updates number of collisions and returns same 

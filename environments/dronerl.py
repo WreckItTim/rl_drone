@@ -12,10 +12,9 @@ class DroneRL(Environment):
     # checkpoint every number of episodes - make evaluations and save model
     @_init_wrapper
     def __init__(self, drone_component, actor_component, observer_component, rewarder_component, terminators_components, 
-                        others_components=[], show_states=True):
+                        nEpisodes=0, others_components=[], show_states=True):
         super().__init__()
         self._nSteps = 0
-        self._nEpisodes = 0
         self._evaluating = False
 
     def connect(self):
@@ -48,7 +47,7 @@ class DroneRL(Environment):
             state['nEpisodes'] = 'evaluation'
             observation.write()
         else:
-            state['nEpisodes'] = self._nEpisodes
+            state['nEpisodes'] = self.nEpisodes
         state['nSteps'] = self._nSteps 
         # display state?
         #if self.show_states:
@@ -62,9 +61,9 @@ class DroneRL(Environment):
     # called at end of episode to prepare for next, when step() returns done=True
     # returns first observation for new episode
     def reset(self):
-        print('RESET Episode', self._nEpisodes, 'Evaluating?', self._evaluating)
+        print('RESET Episode', self.nEpisodes, 'Evaluating?', self._evaluating)
         if not self._evaluating:
-            self._nEpisodes += 1
+            self.nEpisodes += 1
         self._nSteps = 0
         self._drone.reset()
         for other in self._others:

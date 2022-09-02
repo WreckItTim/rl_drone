@@ -75,7 +75,8 @@ class Model(Component):
         else:
             self._sb3model = self.sb3Type.load(path)
 
-    def activate(self):
+    # when using the debug controller
+    def debug(self):
         self.learn()
         self.evaluate(self._environment)
 

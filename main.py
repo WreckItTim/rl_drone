@@ -4,8 +4,8 @@ from component import *
 import random
 
 # USER PARAMETERS and setup'
-repo_version = 'alpha'
-test_type = 'beta'
+repo_version = 'gamma'
+test_type =  'debug' # 'debug' 'alpha' 'beta' 'gamma'
 model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
 train_or_evaluate = 'train'
 run_name = test_type + '_' + model_type + '_' + train_or_evaluate
@@ -40,202 +40,261 @@ if read_configuration==True:
 # MAKE NEW CONFIGURATION, set parameters, and create component objects one by one by code, as needed below (all packaged components are listed below with __init__ args)
 if read_configuration==False:
 	speak('creating new configuration...')
-	# specify components to be used
-	map_type = 'AirSim' # AirSim Field
-	drone_type = 'AirSim' # AirSim Tello
-	sensor_type = 'AirSimCamera' # AirSimCamera PortCamera
-	transformer_types = ['ResizeImage', 'NormalizeDepth'] # ResizeImage NormalizeDepth
-	observer_type = 'SingleLag' # Single SingleLag
-	action_type = 'FixedMove' # FixedMove
-	move_types = ['up', 'down', 'forward'] # up down forward backward left right (optional for fixed_move, also use any combination-diagnol by placing an '_' to seperate, example: forward_up)
-	actor_type = 'DiscreteActor' # DiscreteActor ContinuousActor
-	reward_types = ['Avoid', 'RelativePoint'] # Avoid RelativePoint
-	rewarder_type = 'Schema' # Schema
-	terminator_types = ['Collision', 'RelativePoint', 'MaxSteps'] # Collision RelativePoint RewardThresh MaxSteps
-	other_types = ['SpawnEvaluator', 'RandomSpawnPoint', 'RandomSpawnYaw', 'ModelSaver', 'ReplayBufferSaver', 'BenchMarker'] 
-	# RandomSpawnPoint RandomSpawnYaw SpawnEvaluator ModelSaver ReplayBufferSaver BenchMarker
-	environment_type = 'DroneRL' # DroneRL
-	controller_type = 'TrainRL' # TrainRL EvaluateRL Debug (set the debug() method for any component)
-
-	# specify any global parameters to be used by all components
-	environment = 'DroneRL' # some components require environment before it is created - so pass in this name and set name during environment init()
-	image_height=84 # after processing
-	image_width=84 # after processing
-	relative_objective_point=(100, 0, 0)
+	
+	# global parameters to be used by all components
+	controller = 'Debug' # Debug TrainRL EvaluateRL
+	drone = 'AirSim' # AirSim Tello
+	model = 'DQN' # DQN A2C DDPG PPO SAC TD3
+	observer = 'MultiStack' # Single SingleLag MultiStack
+	sensors = [
+		'Camera', 
+		'Distance',
+		]
+	output_height = 84 # output shape after processing
+	output_width = 84 # output shape after processing
+	relative_objective_point = (100, 0, 0)
 	start_z = -5
 	every_nEpisodes = 100
+	step_size = 4 # meters
+	speed = 4 # meters / second
 	from datastructs.zone import Zone
 	spawn_zones = [
-		Zone(x_min=-10, x_max=10, y_min=-10, y_max=10, z_min=start_z, z_max=start_z),
+		Zone(
+			x_min=-10, 
+			x_max=10, 
+			y_min=-10, 
+			y_max=10, 
+			z_min=start_z, 
+			z_max=start_z,
+			name='SpawnZone',
+			),
 	]
 
-
 	# MAP
-	if map_type == 'AirSim':
+	if drone == 'AirSim':
 		from maps.airsimmap import AirSimMap
-		map_ = AirSimMap(
-			settings=None,
-			settings_directory='maps/airsim_settings/',
-			setting_files=['lightweight', 'speedup', 'tellocamera'],
-			release_directory='resources/airsim_maps/',
-			release_relative_path='Blocks/',
-			release_name='Blocks.exe',
+		AirSimMap(
+			settings = None,
+			settings_directory = 'maps/airsim_settings/',
+			setting_files = [
+				'lightweight', 
+				'speedup', 
+				'tellocamera', 
+				'bellydistance'
+				],
+			release_directory = 'resources/airsim_maps/',
+			release_relative_path = 'Blocks/',
+			release_name = 'Blocks.exe',
+			name = 'Map',
 		)
-	elif map_type == 'Field':
+	elif drone == 'Tello':
 		from maps.field import Field
 		map_ = Field(
+			name='Map',
 		)
 
 	# DRONE
-	if drone_type == 'AirSim':
+	if drone == 'AirSim':
 		from drones.airsimdrone import AirSimDrone
-		drone = AirSimDrone(
+		AirSimDrone(
+			name='Drone',
 		)
-	elif drone_type == 'Tello':
+	elif drone == 'Tello':
 		from drones.tello import Tello 
-		drone = Tello(
+		Tello(
 			wifi_name = 'cloud',
 			wifi_password = 'bustersword',
+			name='Drone',
 		)
 
 	# SENSOR
-	if sensor_type == 'AirSimCamera':
+	if drone == 'AirSim' and 'Camera' in sensors:
 		from sensors.airsimcamera import AirSimCamera
-		sensor = AirSimCamera(
-			camera_view='0',
-			image_type=2,
-			as_float=True,
-			compress=False,
-			is_gray=True
+		AirSimCamera(
+			camera_view = '0',
+			image_type = 2,
+			as_float = True,
+			compress = False,
+			is_gray = True,
+			name = 'Camera',
 		)
-	elif sensor_type == 'PortCamera':
+	if drone == 'AirSim' and 'Distance' in sensors:
+		from sensors.airsimdistance import AirSimDistance
+		AirSimDistance(
+			name = 'Distance',
+		)
+	if drone == 'Tello' and 'Camera' in sensors:
 		from sensors.portcamera import PortCamera
-		sensor = PortCamera(
-			port='udp://0.0.0.0:11111',
-			is_gray=False,
+		PortCamera(
+			port = 'udp://0.0.0.0:11111',
+			is_gray = False,
+			name = 'Camera',
 		)
 
 	# TRANSFORMER
-	transformers_components=[] # robots in disguise! 
-	for transformer_type in transformer_types:
-		transformer = None
-		if transformer_type == 'ResizeImage':
-			from transformers.resizeimage import ResizeImage
-			transformer = ResizeImage(
-				image_shape=(image_height, image_width, 1)
-			)
-		elif transformer_type == 'NormalizeDepth':
-			from transformers.normalizedepth import NormalizeDepth
-			transformer = NormalizeDepth(
-				min_depth=0,
-				max_depth=100,
-			)
-		transformers_components.append(transformer)
+	from transformers.resizeimage import ResizeImage
+	ResizeImage(
+		image_shape = (output_height, output_width, 1),
+		name = 'ResizeImage',
+	)
+	from transformers.normalizedepth import NormalizeDepth
+	NormalizeDepth(
+		min_depth = 0,
+		max_depth = 100,
+		name = 'NormalizeDepth',
+	)
 
 	# OBSERVER
-	if observer_type == 'Single':
+	if observer == 'Single':
 		from observers.single import Single
-		observer = Single(
-			sensor_component=sensor, 
-			transformers_components=transformers_components,
-			please_write=True, 
-			write_directory='temp/',
-			output_height=image_height,
-			output_width=image_width,
+		Single(
+			sensor_component = sensors[0], 
+			transformers_components = [
+				'ResizeImage', 
+				'NormalizeDepth',
+				],
+			output_height = output_height,
+			output_width = output_width,
+			name = 'Observer',
 		)
-	if observer_type == 'SingleLag':
+	elif observer == 'SingleLag':
 		from observers.singlelag import SingleLag
-		observer = SingleLag(
-			sensor_component=sensor, 
-			transformers_components=transformers_components,
-			n_frames_lag=2,
-			please_write=True, 
-			write_directory='temp/',
-			output_height=image_height,
-			output_width=image_width,
+		SingleLag(
+			sensor_component = sensors[0], 
+			transformers_components = [
+				'ResizeImage', 
+				'NormalizeDepth',
+				],
+			n_frames_lag = 2,
+			output_height = output_height,
+			output_width = output_width,
+			name = 'Observer',
+		)
+	elif observer == 'MultiStack':
+		distance_thickness = 20
+		resize = ResizeImage(
+			image_shape=(output_height-distance_thickness, output_width, 1),
+		)
+		normalize_distance = NormalizeDepth(
+			min_depth = 0,
+			max_depth = 40,
+		)
+		from observers.single import Single
+		observers = [
+			Single(
+				sensor_component = 'Camera', 
+				transformers_components = [
+					resize,
+					'NormalizeDepth',
+				],
+				output_height = output_height-distance_thickness,
+				output_width = output_width,
+			),
+			Single(
+				sensor_component = 'Distance', 
+				transformers_components = [
+					normalize_distance,
+				],
+				output_height = distance_thickness,
+				output_width = output_width,
+			),
+			]
+		from observers.multistack import MultiStack
+		MultiStack(
+			observers_components = observers,
+			output_height = output_height,
+			output_width = output_width,
+			stack='v',
+			name='Observer',
 		)
 
 	# ACTION
-	actions_components = []
-	if action_type == 'FixedMove':
-		from actions.fixedmove import FixedMove 
-		for move_type in move_types:
-			fixed_move = FixedMove.get_move(
-				drone_component=drone, 
-				move_type=move_type, 
-				step_size=5 if move_type != 'down' else 1,
-				speed=2,
-			)
-			actions_components.append(fixed_move)
+	from actions.fixedmove import FixedMove 
+	FixedMove.get_move(
+		drone_component = 'Drone', 
+		move_type = 'Up', 
+		step_size = step_size,
+		speed = speed,
+	)
+	FixedMove.get_move(
+		drone_component = 'Drone', 
+		move_type = 'Down', 
+		step_size = step_size,
+		speed = speed,
+	)
+	FixedMove.get_move(
+		drone_component = 'Drone', 
+		move_type = 'Forward', 
+		step_size = step_size,
+		speed = speed,
+	)
 
 	# ACTOR
-	if actor_type == 'DiscreteActor':
-		from actors.discreteactor import DiscreteActor
-		actor = DiscreteActor(
-			actions_components=actions_components,
-		)
+	from actors.discreteactor import DiscreteActor
+	DiscreteActor(
+		actions_components=['Up','Down','Forward',],
+		name='Actor',
+	)
 
 	# REWARD
-	rewards_components=[]
-	for reward_type in reward_types:
-		reward = None
-		if reward_type == 'Avoid':
-			from rewards.avoid import Avoid
-			reward = Avoid(
-				drone_component = drone
-			)
-		elif reward_type == 'RelativePoint':
-			from rewards.relativepoint import RelativePoint
-			reward = RelativePoint(
-				drone_component = drone,
-				xyz_point = relative_objective_point,
-				min_distance = 5,
-				max_distance = 200,
-			)
-		rewards_components.append(reward)
+	from rewards.avoid import Avoid
+	Avoid(
+		drone_component = 'Drone',
+		name = 'AvoidReward',
+	)
+	from rewards.relativepoint import RelativePoint
+	RelativePoint(
+		drone_component = 'Drone',
+		xyz_point = relative_objective_point,
+		min_distance = 5,
+		max_distance = 200,
+		name = 'RelativePointReward',
+	)
 
 	# REWARDER
-	if rewarder_type == 'Schema':
-		from rewarders.schema import Schema
-		rewarder = Schema(
-			rewards_components=rewards_components,
-			reward_weights=[1, 2],
-		)
+	from rewarders.schema import Schema
+	Schema(
+		rewards_components = [
+			'AvoidReward',
+			'RelativePointReward',
+			],
+		reward_weights = [
+			1,
+			2,
+			],
+		name = 'Rewarder',
+	)
 
 	# TERMINATOR
-	terminators_components=[]
-	for terminator_type in terminator_types:
-		terminator = None
-		if terminator_type == 'Collision':
-			from terminators.collision import Collision
-			terminator = Collision(
-				drone_component = drone
-			)
-		elif terminator_type == 'RelativePoint':
-			from terminators.relativepoint import RelativePoint
-			terminator = RelativePoint(
-				drone_component = drone,
-				xyz_point = relative_objective_point,
-				min_distance = 5,
-				max_distance = 110,
-			)
-		elif terminator_type == 'RewardThresh':
-			from terminators.rewardthresh import RewardThresh
-			terminator = RewardThresh(
-				min_reward = 0,
-			)
-		elif terminator_type == 'MaxSteps':
-			from terminators.maxsteps import MaxSteps
-			terminator = MaxSteps(
-				max_steps = 64,
-			)
-		terminators_components.append(terminator)
+	from terminators.collision import Collision
+	Collision(
+		drone_component = 'Drone',
+		name = 'Collision',
+	)
+	from terminators.relativepoint import RelativePoint
+	RelativePoint(
+		drone_component = 'Drone',
+		xyz_point = relative_objective_point,
+		min_distance = 5,
+		max_distance = 110,
+		name = 'RelativePointTerminator',
+	)
+	from terminators.rewardthresh import RewardThresh
+	RewardThresh(
+		min_reward = 0,
+		name = 'RewardThresh',
+	)
+	from terminators.maxsteps import MaxSteps
+	MaxSteps(
+		max_steps = 64,
+		name = 'MaxSteps',
+	)
 
 	# MODEL
-	if model_type == 'DQN':
+	if model == 'DQN':
 		from models.dqn import DQN
-		model = DQN(
-			environment_component = environment,
+		DQN(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-4,
 			buffer_size = every_nEpisodes*10,
@@ -260,13 +319,14 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
-	elif model_type == 'A2C':
+	elif model == 'A2C':
 		from models.a2c import A2C
-		model = A2C(
-			environment_component = environment,
+		A2C(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 7e-4,
 			n_steps = 5,
@@ -287,13 +347,14 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
-	elif model_type == 'DDPG':
+	elif model == 'DDPG':
 		from models.ddpg import DDPG
-		model = DDPG(
-			environment_component = environment,
+		DDPG(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -314,13 +375,14 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
-	elif model_type == 'PPO':
+	elif model == 'PPO':
 		from models.ppo import PPO
-		model = PPO(
-			environment_component = environment,
+		PPO(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			n_steps = 2048,
@@ -344,13 +406,14 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
-	elif model_type == 'SAC':
+	elif model == 'SAC':
 		from models.sac import SAC
-		model = SAC(
-			environment_component = environment,
+		SAC(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -377,13 +440,14 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
-	elif model_type == 'TD3':
+	elif model == 'TD3':
 		from models.td3 import TD3
-		model = TD3(
-			environment_component = environment,
+		TD3(
+			environment_component = 'Environment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
@@ -407,91 +471,99 @@ if read_configuration==False:
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-            write_path = None,
-            replay_buffer_path = None,
+			write_path = None,
+			replay_buffer_path = None,
+			name='Model',
 		)
 
 	# OTHER
-	others_components = []
-	for other_type in other_types:
-		other = None
-		if other_type == 'RandomSpawnPoint':
-			from others.randomspawnpoint import RandomSpawnPoint
-			other = RandomSpawnPoint(
-				drone_component=drone, 
-				environment_component=environment,
-				spawn_zones_components=spawn_zones,
-			)
-		elif other_type == 'RandomSpawnYaw':
-			from others.randomspawnyaw import RandomSpawnYaw
-			other = RandomSpawnYaw(
-				drone_component=drone, 
-				environment_component=environment,
-				yaw_min=0, 
-				yaw_max=360,
-			)
-		elif other_type == 'SpawnEvaluator':
-			from others.spawnevaluator import SpawnEvaluator
-			other = SpawnEvaluator(
-				model_component=model,
-				drone_component=drone,
-				environment_component=environment,
-				evaluate_every_nEpisodes=every_nEpisodes,
-				nTimes=4, 
-				spawns=([[0,0,start_z],0], [[0,0,start_z],135], [[0,0,start_z],180], [[0,0,start_z],225]),
-			)
-		elif other_type == 'ModelSaver':
-			from others.modelsaver import ModelSaver
-			other = ModelSaver(
-				model_component=model,
-				environment_component=environment,
-				save_every_nEpisodes=every_nEpisodes,
-			)
-		elif other_type == 'ReplayBufferSaver':
-			from others.replaybuffersaver import ReplayBufferSaver
-			other = ReplayBufferSaver(
-				model_component=model,
-				environment_component=environment,
-				save_every_nEpisodes=every_nEpisodes,
-			)
-		elif other_type == 'BenchMarker':
-			from others.benchmarker import BenchMarker
-			other = BenchMarker(
-				environment_component=environment,
-				benchmark_every_nEpisodes=every_nEpisodes,
-			)
-		others_components.append(other)
+	from others.randomspawnpoint import RandomSpawnPoint
+	RandomSpawnPoint(
+		drone_component='Drone', 
+		environment_component='Environment',
+		spawn_zones_components=spawn_zones,
+		name='RandomSpawnPoint',
+	)
+	from others.randomspawnyaw import RandomSpawnYaw
+	RandomSpawnYaw(
+		drone_component='Drone', 
+		environment_component='Environment',
+		yaw_min=0, 
+		yaw_max=360,
+		name='RandomSpawnYaw',
+	)
+	from others.spawnevaluator import SpawnEvaluator
+	SpawnEvaluator(
+		model_component='Model',
+		drone_component='Drone',
+		environment_component='Environment',
+		evaluate_every_nEpisodes=every_nEpisodes,
+		nTimes=4, 
+		spawns=([[0,0,start_z],0], [[0,0,start_z],135], [[0,0,start_z],180], [[0,0,start_z],225]),
+		name='SpawnEvaluator',
+	)
+	from others.modelsaver import ModelSaver
+	ModelSaver(
+		model_component='Model',
+		environment_component='Environment',
+		save_every_nEpisodes=every_nEpisodes,
+		name='ModelSaver',
+	)
+	from others.replaybuffersaver import ReplayBufferSaver
+	ReplayBufferSaver(
+		model_component='Model',
+		environment_component='Environment',
+		save_every_nEpisodes=every_nEpisodes,
+		name='ReplayBufferSaver',
+	)
+	from others.benchmarker import BenchMarker
+	BenchMarker(
+		environment_component='Environment',
+		benchmark_every_nEpisodes=every_nEpisodes,
+		name='BenchMarker',
+	)
 
 	# ENVIRONMENT
-	if environment_type == 'DroneRL':
-		from environments.dronerl import DroneRL
-		environment = DroneRL(
-			drone_component=drone, 
-			actor_component=actor, 
-			observer_component=observer, 
-			rewarder_component=rewarder, 
-			terminators_components=terminators_components,
-			others_components=others_components,
-			name = 'DroneRL'
-		)
+	from environments.dronerl import DroneRL
+	DroneRL(
+		drone_component='Drone', 
+		actor_component='Actor', 
+		observer_component='Observer', 
+		rewarder_component='Rewarder', 
+		terminators_components=[
+			'Collision',
+			'RelativePoint',
+			#'RewardThresh',
+			'MaxSteps',
+			],
+		others_components=[
+			'RandomSpawnPoint',
+			'RandomSpawnYaw',
+			'SpawnEvaluator',
+			'ModelSaver',
+			'ReplayBufferSaver',
+			'BenchMarker',
+			],
+		name = 'Environment'
+	)
 
 	# CONTROLLER
-	if controller_type == 'Manual':
-		from controllers.manual import Manual
-		controller = Manual(
-			drone_component=drone
-		)
-	elif controller_type == 'TrainRL':
+	if controller == 'Debug':
+		from controllers.debug import Debug
+		controller = Debug(
+		drone_component='Drone'
+	)
+	elif controller == 'TrainRL':
 		from controllers.trainrl import TrainRL
 		controller = TrainRL(
-			model_component=model,
-		)
-	elif controller_type == 'EvaluateRL':
+		model_component='Model',
+	)
+	elif controller == 'EvaluateRL':
 		from controllers.evaluaterl import EvaluateRL
 		controller = EvaluateRL(
-			model_component=model,
-			n_eval_episodes=3,
-		)
+		model_component='Model',
+		n_eval_episodes=3,
+	)
 
 speak('configuration loaded!')
 

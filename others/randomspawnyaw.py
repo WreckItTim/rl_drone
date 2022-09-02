@@ -6,14 +6,15 @@ import random
 # randomly set drone rotation
 class RandomSpawnYaw(Other):
 
-    @_init_wrapper
-    def __init__(self, drone_component, environment_component, yaw_min, yaw_max):
-        pass
+	@_init_wrapper
+	def __init__(self, drone_component, environment_component, yaw_min, yaw_max):
+		pass
 
-    def reset(self):
-        if not self._environment._evaluating:
-            degrees = random.uniform(self.yaw_min, self.yaw_max)
-            self._drone.set_yaw(degrees)
+	def reset(self):
+		if not self._environment._evaluating:
+			degrees = random.uniform(self.yaw_min, self.yaw_max)
+			self._drone.set_yaw(degrees)
 
-    def activate(self):
-        self.reset()
+	# when using the debug controller
+	def debug(self):
+		self.reset()

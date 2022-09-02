@@ -1,7 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\actions",
+    "\\sensors",
+    "\\temp",
+    "\\temp\\beta_DQN_train",
+    "\\temp\\debug_DQN_train"
   ],
-  "SelectedNode": "\\main.py",
+  "SelectedNode": "\\temp\\beta_DQN_train\\configuration.json",
   "PreviewInSolutionExplorer": false
 }

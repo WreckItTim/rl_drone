@@ -5,16 +5,18 @@ from component import _init_wrapper
 import random
 
 class DiscreteActor(Actor):
-    # constructor
-    @_init_wrapper
-    def __init__(self, actions_components=[]):
-        super().__init__()
+	# constructor
+	@_init_wrapper
+	def __init__(self, actions_components=[]):
+		super().__init__()
 
-    # interpret action from RL
-    def act(self, rl_output):
-        self._actions[rl_output].act()
-        return self._actions[rl_output]._name
-        
-    def activate(self):
-        rl_output = random.randint(0, len(self._actions)-1)
-        self.act(rl_output)
+	# interpret action from RL
+	def act(self, rl_output):
+		self._actions[rl_output].act()
+		return self._actions[rl_output]._name
+		
+
+	# when using the debug controller
+	def debug(self):
+		rl_output = random.randint(0, len(self._actions)-1)
+		self.act(rl_output)

@@ -6,8 +6,9 @@ class Action(Component):
 	# contstructor
 	def __init__(self):
 		pass
-
-	def activate(self):
+		
+	# when using the debug controller
+	def debug(self):
 		self.act()
 
 	def connect(self):

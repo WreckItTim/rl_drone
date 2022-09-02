@@ -7,17 +7,15 @@ import numpy as np
 class Zone(DataStruct):
     # constructor
     @_init_wrapper
-    def __init__(self, x_min:int=0, x_max:int=0, y_min:int=0, y_max:int=0, z_min:int=0, z_max:int=0):
+    def __init__(self, 
+                 x_min:int=0, 
+                 x_max:int=0, 
+                 y_min:int=0, 
+                 y_max:int=0, 
+                 z_min:int=0, 
+                 z_max:int=0,
+                 ):
         super().__init__()
-
-        '''
-        self._prism = np.array([
-            [x_min, x_max], 
-            [y_min, y_max], 
-            [z_min, z_max]]
-            , dtype=int
-        )
-        '''
 
     # checks bounds if point is inside prism, point is np array [x,y,z] (include boundary)
     def in_bounds(self, point):
@@ -43,3 +41,7 @@ class Zone(DataStruct):
             z = random.uniform(self.z_min, self.z_max)
             points[i] = np.array([x, y, z], dtype=float)
         return points
+
+    # debug mode
+    def debug(self):
+        return self.random_point()
