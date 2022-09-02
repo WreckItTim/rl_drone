@@ -38,5 +38,5 @@ class MultiStack(Observer):
         return stacked_image
 
     def reset(self):
-        super().reset()
-        self._sensor.reset()
+        for observer in self._observers:
+            observer.reset()

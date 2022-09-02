@@ -1,9 +1,10 @@
+import utils
 import numpy as np
 from time import time
 from sys import getsizeof
-import utils
 import inspect
 from functools import wraps, partialmethod
+from configuration import Configuration
 
 # README - for all new classes that you make (I suggest everyone read this to understand how the repo works anyways):
 # all classes are children of this Component class 
@@ -58,7 +59,7 @@ from functools import wraps, partialmethod
 	# e. can be used in the same manner as any parent-base class, for example you can make a new reward or action or sensor or whatever
 	
 # times all funciton calls and saves to library (microseconds)
-def _timer_wrapper(method):
+def _timer_wrapper(configuration, method):
 	def _wrapper(*args, **kwargs):
 		module_name = method.__module__
 		t1 = time()
@@ -66,7 +67,7 @@ def _timer_wrapper(method):
 		t2 = time()
 		delta_t = (t2 - t1) * 1000000
 		entry_name = module_name + '.' + method.__name__
-		log_entry('time', entry_name, delta_t)
+		configuration.log_benchmark('time', entry_name, delta_t)
 		return method_output
 	return _wrapper
 
@@ -77,10 +78,23 @@ def _init_wrapper(init_method):
 	@wraps(init_method)
 	def _wrapper(self, *args, **kwargs):
 
-		# SET UNIQUE NAME 
-		clone_id = 1
+		# GET WRAPPER VARS
+		configuration = kwargs['configuration']
+		del kwargs['configuration']
 		arg_name = kwargs['name']
 		del kwargs['name']
+		connect_priority = kwargs['connect_priority']
+		del kwargs['connect_priority']
+		disconnect_priority = kwargs['disconnect_priority']
+		del kwargs['disconnect_priority']
+
+		# get configuration
+		if configuration is None:
+			configuration = Configuration.get_active()
+		self._configuration = configuration
+
+		# SET UNIQUE NAME 
+		clone_id = 1
 		if arg_name is None:
 			partial_name = f'{self._child().__name__}'
 			try_name = f'{partial_name}__{clone_id}' 
@@ -88,16 +102,10 @@ def _init_wrapper(init_method):
 			partial_name = arg_name
 			try_name = partial_name
 		clone_id = 2
-		while try_name in component_list:
+		while try_name in configuration.components:
 			try_name = f'{partial_name}__{clone_id}'
 			clone_id = clone_id + 1
 		self._name = try_name
-
-		# TEMP SAVE PIRORITIES for load orders
-		connect_priority = kwargs['connect_priority']
-		del kwargs['connect_priority']
-		disconnect_priority = kwargs['disconnect_priority']
-		del kwargs['disconnect_priority']
 
 		# UPDATE ALL ARGS
 		bound = sig.bind(self, *args, **kwargs)
@@ -145,7 +153,7 @@ def _init_wrapper(init_method):
 				setattr(self, key, all_args[key])
 
 		# CALL BASE INIT
-		self._add_to_list = True # change in base init method to false to not add
+		self._add_to_configuration = True # change in base init method to false to not add
 		self._add_timers = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
 
@@ -159,164 +167,13 @@ def _init_wrapper(init_method):
 		if self._add_timers:
 			for method in dir(self):
 				if callable(getattr(self, method)) and method[0] != '_':
-					setattr(self, method, _timer_wrapper(getattr(self, method)))
+					setattr(self, method, _timer_wrapper(configuration, getattr(self, method)))
 
 		# ADD TO LIST OF COMPONENTS
-		if self._add_to_list:
-			component_list[self._name] = self
+		if self._add_to_configuration:
+			configuration.add_component(self)
 		
-	return partialmethod(_wrapper, name=None, connect_priority=None, disconnect_priority=None)
-
-# serializes a list of components into a configuration file
-def serialize_configuration(controller, components, timestamp, repo_version):
-	configuration = {
-		'timestamp':timestamp,
-		'repo_version':repo_version,
-		'controller':controller._to_json(),
-	}
-	for component in components:
-		configuration[component._name] = component._to_json()
-	return configuration
-
-# deserializes a configuration file into a list of components
-def deserialize_configuration(configuration):
-	timestamp = configuration['timestamp']
-	repo_version = configuration['repo_version']
-	controller_arguments = configuration['controller']
-	components = []
-	for component_name in configuration:
-		if component_name in ['controller', 'timestamp', 'repo_version']:
-			continue
-		component_arguments = configuration[component_name]
-		component = deserialize_component(component_name, component_arguments)
-		components.append(component)
-	controller = deserialize_component('controller', controller_arguments)
-	return controller, components, timestamp, repo_version
-
-# deserializes a dictionary to a component
-def deserialize_component(component_name, component_arguments):
-	# get parent and child types
-	types = component_arguments['type'].split('.')
-	parent_type, child_type = types[0], types[1]
-	import_component = parent_type.lower() + 's.' + child_type.lower()
-	child_module = __import__(import_component, fromlist=[child_type])
-	child_class = getattr(child_module, child_type)
-	# create a child object
-	component_arguments_copy = component_arguments.copy()
-	del component_arguments_copy['type']
-	component_arguments_copy['name'] = component_name
-	component = child_class(**component_arguments_copy)
-	return component
-
-# keeps track of global components
-component_list = {}
-def get_component(component_name, is_type=None):
-	if component_name not in component_list:
-		print('component named', component_name, 'does not exist')
-		return None
-	component = component_list[component_name]
-	if is_type is not None:
-		component.check(is_type)
-	return component
-
-# returns a list of all global components created
-def get_all_components():
-	components = []
-	for component_name in component_list:
-		components.append(get_component(component_name))
-	return components
-
-# connects in order of connect_priority (positives low-to-high, default zeros, negatives high-to-low)
-def connect_components(components):
-	# get priorities
-	priorities = []
-	component_dic = {}
-	for idx, component in enumerate(components):
-		priority = component.connect_priority
-		if priority not in priorities:
-			priorities.append(priority)
-			component_dic[priority] = []
-		component_dic[priority].append(component)
-	priorities.sort()
-	# positives first
-	start_positive_index = len(priorities)
-	for index, priority in enumerate(priorities):
-		if priority > 0:
-			start_positive_index = index
-			break
-	for index in range(start_positive_index, len(priorities)):
-		for component in component_dic[priorities[index]]:
-			component.connect()
-	# default zeroes
-	if 0 in component_dic:
-		for component in component_dic[0]:
-			component.connect()
-	# negatives last
-	start_negative_index = 0
-	for index, priority in enumerate(reversed(priorities)):
-		if priority < 0:
-			start_negative_index = len(priorities)-index-1
-			break
-	for index in range(start_negative_index, -1, -1):
-		for component in component_dic[priorities[index]]:
-			component.connect()
-
-# diusconnects in order of disconnect_priority (positives low-to-high, default zeros, negatives high-to-low)
-def disconnect_components(components):
-	# get priorities
-	priorities = []
-	component_dic = {}
-	for idx, component in enumerate(components):
-		priority = component.disconnect_priority
-		if priority not in priorities:
-			priorities.append(priority)
-			component_dic[priority] = []
-		component_dic[priority].append(component)
-	priorities.sort()
-	# positives first
-	start_positive_index = len(priorities)
-	for index, priority in enumerate(priorities):
-		if priority > 0:
-			start_positive_index = index
-			break
-	for index in range(start_positive_index, len(priorities)):
-		for component in component_dic[priorities[index]]:
-			component.disconnect()
-	# default zeroes
-	if 0 in component_dic:
-		for component in component_dic[0]:
-			component.disconnect()
-	# negatives last
-	start_negative_index = 0
-	for index, priority in enumerate(reversed(priorities)):
-		if priority < 0:
-			start_negative_index = len(priorities)-index-1
-			break
-	for index in range(start_negative_index, -1, -1):
-		for component in component_dic[priorities[index]]:
-			component.disconnect()
-
-# logs global time and memory benchmarks, to be written at end (or at intervals if using Other.BenchmarkWriter)
-benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
-def log_entry(master_key, key, value):
-	if key not in benchmarks[master_key]:
-		benchmarks[master_key][key] = [value]
-	else:
-		benchmarks[master_key][key].append(value)
-
-# fetches memory stored in this object, in mega bytes
-def log_memory(component):
-	nBytes = getsizeof(component) # self.__sizeof__()
-	nKiloBytes = nBytes * 0.000977
-	log_entry('memory', component._name, nKiloBytes)
-
-# benchmarks all components and writes to file
-def benchmark_components(components, write_path=None):
-	for component in components:
-		log_memory(component)
-	if write_path is None:
-		write_path = utils.get_global_parameter('write_folder') + 'benchmarks.json'
-	utils.write_json(benchmarks, write_path)
+	return partialmethod(_wrapper, configuration=None, name=None, connect_priority=None, disconnect_priority=None)
 
 # the component class itself
 class Component():
@@ -349,12 +206,12 @@ class Component():
 			member_name, component_names = components_pair
 			components = []
 			for component_name in component_names:
-				component = get_component(component_name)
+				component = self._configuration.get_component(component_name)
 				components.append(component)
 			setattr(self, member_name, components)
 		for component_pair in self._connect_component_list:
 			member_name, component_name = component_pair
-			component = get_component(component_name)
+			component = self._configuration.get_component(component_name)
 			setattr(self, member_name, component)
 
 	# kill connection, clean up as needed
@@ -412,3 +269,22 @@ class Component():
 	# checks json serialization for equality
 	def __eq__(self, other):
 		return self._to_json() == other._to_json()
+
+	# deserializes a dictionary to a component
+	@staticmethod
+	def deserialize(component_name, component_arguments):
+		# get parent and child types
+		types = component_arguments['type'].split('.')
+		parent_type, child_type = types[0], types[1]
+		import_component = parent_type.lower() + 's.' + child_type.lower()
+		child_module = __import__(import_component, fromlist=[child_type])
+		child_class = getattr(child_module, child_type)
+		# create a child object
+		component_arguments_copy = component_arguments.copy()
+		del component_arguments_copy['type']
+		if 'name' not in component_arguments_copy:
+			component_arguments_copy['name'] = component_name
+		component = child_class(**component_arguments_copy)
+		return component
+
+from controllers.controller import Controller

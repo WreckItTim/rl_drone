@@ -73,5 +73,5 @@ class DroneRL(Environment):
         self._rewarder.reset()
         for terminator in self._terminators:
             terminator.reset()
-        self._drone.take_off()
+        #self._drone.take_off()
         return self._observer.observe().to_numpy()

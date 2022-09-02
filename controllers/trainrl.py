@@ -6,7 +6,9 @@ import time
 class TrainRL(Controller):
     # constructor
     @_init_wrapper
-    def __init__(self, model_component):
+    def __init__(self, 
+                 model_component,
+                 ):
         super().__init__()
 
     # runs control on components

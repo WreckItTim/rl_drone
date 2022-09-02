@@ -1,0 +1,177 @@
+import utils
+from sys import getsizeof
+
+# saves config of components
+class Configuration():
+	active = None
+
+	def __init__(self, timestamp, repo_version):
+		self.timestamp = timestamp
+		self.repo_version = repo_version
+		self.components = {}
+		self.benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
+
+	def set_controller(self, controller):
+		self.controller = controller
+		controller._configuration = self
+		
+	#  keep track of component benchmarks
+	def log_benchmark(self, master_key, key, value):
+		if key not in self.benchmarks[master_key]:
+			self.benchmarks[master_key][key] = [value]
+		else:
+			self.benchmarks[master_key][key].append(value)
+
+	# benchmarks all components and writes to file
+	def benchmark_memory(self):
+		for component_name in self.components:
+			component = self.get_component(component_name)
+			nBytes = getsizeof(component) # self.__sizeof__()
+			nKiloBytes = nBytes * 0.000977
+			self.benchmarks['memory'][component._name] = nKiloBytes
+
+	# saves benchmarks
+	def log_benchmarks(self, write_path=None):
+		self.benchmark_memory()
+		if write_path is None:
+			write_path = utils.get_global_parameter('write_folder') + 'benchmarks.json'
+		utils.write_json(self.benchmarks, write_path)
+
+	# keeps track of components
+	def add_component(self, component):
+		self.components[component._name] = component
+
+	# keeps track of components
+	def get_component(self, component_name, is_type=None):
+		if component_name not in self.components:
+			utils.error(f'component named {component_name} does not exist')
+			return None
+		component = self.components[component_name]
+		if is_type is not None:
+			component.check(is_type)
+		return component
+		
+	# connect components in order of connect_priority (positives low-to-high, default zeros, negatives high-to-low)
+	def connect_all(self):
+		# get priorities
+		priorities = []
+		component_dic = {}
+		for component_name in self.components:
+			component = self.get_component(component_name)
+			priority = component.connect_priority
+			if priority not in priorities:
+				priorities.append(priority)
+				component_dic[priority] = []
+			component_dic[priority].append(component)
+		priorities.sort()
+		# positives first
+		start_positive_index = len(priorities)
+		for index, priority in enumerate(priorities):
+			if priority > 0:
+				start_positive_index = index
+				break
+		for index in range(start_positive_index, len(priorities)):
+			for component in component_dic[priorities[index]]:
+				component.connect()
+		# default zeroes
+		if 0 in component_dic:
+			for component in component_dic[0]:
+				component.connect()
+		# negatives last
+		start_negative_index = 0
+		for index, priority in enumerate(reversed(priorities)):
+			if priority < 0:
+				start_negative_index = len(priorities)-index-1
+				break
+		for index in range(start_negative_index, -1, -1):
+			for component in component_dic[priorities[index]]:
+				component.connect()
+		self.controller.connect()
+		
+	# disconnect components in order of connect_priority (positives low-to-high, default zeros, negatives high-to-low)
+	def disconnect_all(self):
+		# get priorities
+		priorities = []
+		component_dic = {}
+		for component_name in self.components:
+			component = self.get_component(component_name)
+			priority = component.disconnect_priority
+			if priority not in priorities:
+				priorities.append(priority)
+				component_dic[priority] = []
+			component_dic[priority].append(component)
+		priorities.sort()
+		# positives first
+		start_positive_index = len(priorities)
+		for index, priority in enumerate(priorities):
+			if priority > 0:
+				start_positive_index = index
+				break
+		for index in range(start_positive_index, len(priorities)):
+			for component in component_dic[priorities[index]]:
+				component.disconnect()
+		# default zeroes
+		if 0 in component_dic:
+			for component in component_dic[0]:
+				component.disconnect()
+		# negatives last
+		start_negative_index = 0
+		for index, priority in enumerate(reversed(priorities)):
+			if priority < 0:
+				start_negative_index = len(priorities)-index-1
+				break
+		for index in range(start_negative_index, -1, -1):
+			for component in component_dic[priorities[index]]:
+				component.disconnect()
+		self.controller.disconnect()
+		
+	# serializes into a configuration json file
+	def serialize(self):
+		configuration_file = {
+			'timestamp':self.timestamp,
+			'repo_version':self.repo_version,
+			'controller':self.controller._to_json(),
+		}
+		for component_name in self.components:
+			component = self.get_component(component_name)
+			configuration_file[component._name] = component._to_json()
+		return configuration_file
+
+	# deserializes a json file into a configuration
+	@staticmethod
+	def deserialize(configuration_file):
+		timestamp = configuration_file['timestamp']
+		repo_version = configuration_file['repo_version']
+		configuration = Configuration(timestamp, repo_version)
+		Configuration.set_active(configuration)
+		controller_arguments = configuration_file['controller']
+		controller = Component.deserialize(None, controller_arguments)
+		configuration.set_controller(controller)
+		for component_name in configuration_file:
+			if component_name in ['controller', 'timestamp', 'repo_version']:
+				continue
+			component_arguments = configuration_file[component_name]
+			component = Component.deserialize(component_name, component_arguments)
+		return configuration
+
+	def save(self, write_path=None):
+		configuration_file = self.serialize()
+		if write_path is None:
+			write_path = utils.get_global_parameter('write_folder') + 'configuration.json'
+		utils.write_json(configuration_file, write_path)
+
+	@staticmethod
+	def load(read_path):
+		configuration_file = utils.read_json(read_path)
+		configuration = Configuration.deserialize(configuration_file)
+		return configuration
+	
+	@staticmethod
+	def set_active(configuration):
+		Configuration.active = configuration
+	
+	@staticmethod
+	def get_active():
+		return Configuration.active
+
+from component import Component

@@ -1,6 +1,7 @@
 # abstract class used to handle all components
 from controllers.controller import Controller
-from component import get_component, component_list, _init_wrapper
+from component import _init_wrapper
+from configuration import Configuration
 
 class Debug(Controller):
     # constructor
@@ -10,24 +11,25 @@ class Debug(Controller):
 
     # runs control on components
     def run(self):
-        component_names = list(component_list.keys())
+        configuration = Configuration.get_active()
+        component_names = list(configuration.components.keys())
         while(True):
             print('Enter component _name or index to debug, list to see components, or reset')
             user_input = input().lower()
             if user_input == 'quit':
                 break
             elif user_input == 'list':
-                component_names = list(component_list.keys())
+                component_names = list(configuration.components.keys())
                 for idx, component_name in enumerate(component_names):
                     print(idx, ':', component_name)
             elif user_input == 'reset':
-                _drone.reset()
+                self._drone.reset()
             else:
-                if user_input in component_list: 
-                    print(get_component(user_input).debug())
+                if user_input in component_names: 
+                    print(configuration.get_component(user_input).debug())
                 elif int(user_input) > 0 and int(user_input) < len(component_names):
                     idx = int(user_input)
                     component_name = component_names[idx]
-                    print(get_component(component_name).debug())
+                    print(configuration.get_component(component_name).debug())
                 else:
                     print('invalid entry')

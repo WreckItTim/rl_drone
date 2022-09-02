@@ -1,50 +1,74 @@
 import os
-from utils import *
-from component import *
-import random
+import utils
+from configuration import Configuration
 
 # USER PARAMETERS and setup'
 repo_version = 'gamma'
-test_type =  'debug' # 'debug' 'alpha' 'beta' 'gamma'
-model_type = 'DQN' # A2C DDPG DQN PPO SAC TD3 (make sure you are using the correct action and observer types for the given model)
+test_version =  'debug' # 'debug' 'alpha' 'beta' 'gamma'
+model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 train_or_evaluate = 'train'
-run_name = test_type + '_' + model_type + '_' + train_or_evaluate
-timestamp = get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
-write_folder = f'temp/' + run_name + '/' # f'temp/{timestamp}/' # will write any files to this folder
-read_configuration = train_or_evaluate == 'evaluate' # True: read configuration file to create components
-read_configuration_path = 'temp/' + test_type + '_' + model_type + '_train/configuration.json' # path to read configuration file if read_configuration=True
-write_configuration = True # True: writes new configuration file after creating all components
-write_configuration_path = write_folder + '/configuration.json' # path to write a new configuration file if write_configuration=True
-read_global_parameters() # True: sets all variables in the global_parameters.json file
+run_name = test_version + '_' + model + '_' + train_or_evaluate
+timestamp = utils.get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
+write_folder = f'temp/' + run_name + '/' # f'temp/{timestamp}/' # will write, by default, all files to this folder
+read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json' # path to read configuration file if read_configuration=True
+write_configuration_path = 'temp/' + run_name + '/configuration.json' # path to write configuration file if write_configuration=True
+utils.read_global_parameters() # True: sets all variables in the global_parameters.json file
 if not os.path.exists('temp/'):
 	os.makedirs('temp/')
 if not os.path.exists(write_folder):
 	os.makedirs(write_folder)
-global_parameters['write_folder'] = write_folder # all components will write files/sub_directories to this master folder, unless you otherwise specify an absolute path
+utils.global_parameters['write_folder'] = write_folder # master, default folder to right run log/info to
 
+# force a new configuration even if read_configuration_path exists already
+MAKE_NEW = True
 
 # READ OLD CONFIGURATION FILE, you need do nothing else if path is set correctly above
-if read_configuration==True:
-	speak('reading configuration...')
-	configuration = read_json(read_configuration_path)
-	controller, components, timestamp, repo_version = deserialize_configuration(configuration) # note that this timestamp is from when the configuration file was last updated (changed when written)
-
+if not MAKE_NEW and os.path.exists(read_configuration_path):
+	utils.speak('reading configuration...')
+	configuration = Configuration.load(read_configuration_path)
+	Configuration.set_active(configuration)
+	
 	# ALTER ANY READ-IN COMPONENTS or make a new controller as needed here
-	from controllers.evaluaterl import EvaluateRL
-	controller = EvaluateRL(
-		model_component=model_type + '__1',
-		n_eval_episodes=4,
-	)
+	if train_or_evaluate == 'evaluate':
+		from controllers.evaluaterl import EvaluateRL
+		controller = EvaluateRL(
+			model_component=model,
+			n_eval_episodes=4,
+		)
+	configuration.set_controller(controller)
 
 
 # MAKE NEW CONFIGURATION, set parameters, and create component objects one by one by code, as needed below (all packaged components are listed below with __init__ args)
-if read_configuration==False:
-	speak('creating new configuration...')
+elif MAKE_NEW or not os.path.exists(read_configuration_path):
+	utils.speak('creating new configuration...')
+
+	# create configuration object and set active (will add components to this configuration)
+	configuration = Configuration(timestamp, repo_version)
+	Configuration.set_active(configuration)
+	
+	# create controller object
+	controller_type = 'Debug' # Debug TrainRL EvaluateRL
+	# CONTROLLER
+	if controller_type == 'Debug':
+		from controllers.debug import Debug
+		controller = Debug(
+		drone_component='Drone'
+	)
+	elif controller_type == 'TrainRL':
+		from controllers.trainrl import TrainRL
+		controller = TrainRL(
+		model_component='Model',
+	)
+	elif controller_type == 'EvaluateRL':
+		from controllers.evaluaterl import EvaluateRL
+		controller = EvaluateRL(
+		model_component='Model',
+		n_eval_episodes=4,
+	)
+	configuration.set_controller(controller)
 	
 	# global parameters to be used by all components
-	controller = 'Debug' # Debug TrainRL EvaluateRL
 	drone = 'AirSim' # AirSim Tello
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 	observer = 'MultiStack' # Single SingleLag MultiStack
 	sensors = [
 		'Camera', 
@@ -53,22 +77,10 @@ if read_configuration==False:
 	output_height = 84 # output shape after processing
 	output_width = 84 # output shape after processing
 	relative_objective_point = (100, 0, 0)
-	start_z = -5
-	every_nEpisodes = 100
+	start_z = -4
+	every_nEpisodes = 2
 	step_size = 4 # meters
 	speed = 4 # meters / second
-	from datastructs.zone import Zone
-	spawn_zones = [
-		Zone(
-			x_min=-10, 
-			x_max=10, 
-			y_min=-10, 
-			y_max=10, 
-			z_min=start_z, 
-			z_max=start_z,
-			name='SpawnZone',
-			),
-	]
 
 	# MAP
 	if drone == 'AirSim':
@@ -80,7 +92,8 @@ if read_configuration==False:
 				'lightweight', 
 				'speedup', 
 				'tellocamera', 
-				'bellydistance'
+				'bellydistance',
+				'nodisplay',
 				],
 			release_directory = 'resources/airsim_maps/',
 			release_relative_path = 'Blocks/',
@@ -232,7 +245,11 @@ if read_configuration==False:
 	# ACTOR
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
-		actions_components=['Up','Down','Forward',],
+		actions_components=[
+#			'Up',
+#			'Down',
+			'Forward',
+			],
 		name='Actor',
 	)
 
@@ -281,6 +298,7 @@ if read_configuration==False:
 	)
 	from terminators.rewardthresh import RewardThresh
 	RewardThresh(
+		rewarder_component='Rewarder',
 		min_reward = 0,
 		name = 'RewardThresh',
 	)
@@ -477,50 +495,74 @@ if read_configuration==False:
 		)
 
 	# OTHER
-	from others.randomspawnpoint import RandomSpawnPoint
-	RandomSpawnPoint(
-		drone_component='Drone', 
-		environment_component='Environment',
-		spawn_zones_components=spawn_zones,
-		name='RandomSpawnPoint',
+	from others.spawner import Spawner
+	from datastructs.spawn import Spawn
+	Spawner(
+		Spawn(
+			x_min=-10, 
+			x_max=10,
+			y_min=-10, 
+			y_max=10, 
+			z_min=start_z, 
+			z_max=start_z,
+			yaw_max=360,
+			random=True,
+			),
+		spawn_on_train=True,
+		spawn_on_evaluate=False,
+		name='Spawner',
 	)
-	from others.randomspawnyaw import RandomSpawnYaw
-	RandomSpawnYaw(
-		drone_component='Drone', 
-		environment_component='Environment',
-		yaw_min=0, 
-		yaw_max=360,
-		name='RandomSpawnYaw',
-	)
-	from others.spawnevaluator import SpawnEvaluator
-	SpawnEvaluator(
+	from others.evaluator import Evaluator
+	Evaluator(
 		model_component='Model',
 		drone_component='Drone',
 		environment_component='Environment',
-		evaluate_every_nEpisodes=every_nEpisodes,
-		nTimes=4, 
-		spawns=([[0,0,start_z],0], [[0,0,start_z],135], [[0,0,start_z],180], [[0,0,start_z],225]),
-		name='SpawnEvaluator',
+		spawners_components=[
+			Spawner(
+				Spawn(
+					z=start_z, 
+					random=False,
+				),
+			),
+			Spawner(
+				Spawn(
+					z=start_z, 
+					yaw=135, 
+					random=False,
+				),
+			),
+			Spawner(
+				Spawn(
+					z=start_z, 
+					yaw=180, 
+					random=False,
+				),
+			),
+			Spawner(
+				Spawn(
+					z=start_z, 
+					yaw=225, 
+					random=False,
+				),
+			),
+			],
+		evaluate_every_nEpisodes=every_nEpisodes, 
+		_write_folder=None, 
+		nEvaluations=0,
+		name='Evaluator',
 	)
-	from others.modelsaver import ModelSaver
-	ModelSaver(
-		model_component='Model',
+	from others.saver import Saver
+	Saver(
+		model_component='Model', 
 		environment_component='Environment',
-		save_every_nEpisodes=every_nEpisodes,
-		name='ModelSaver',
-	)
-	from others.replaybuffersaver import ReplayBufferSaver
-	ReplayBufferSaver(
-		model_component='Model',
-		environment_component='Environment',
-		save_every_nEpisodes=every_nEpisodes,
-		name='ReplayBufferSaver',
-	)
-	from others.benchmarker import BenchMarker
-	BenchMarker(
-		environment_component='Environment',
-		benchmark_every_nEpisodes=every_nEpisodes,
-		name='BenchMarker',
+		nEpisodes=0, 
+		save_every_nEpisodes=every_nEpisodes, 
+		save_model=True,
+		save_replay_buffer=True,
+		save_configuration_file=True,
+		save_benchmarks=True,
+		_write_folder=None,
+		name='Saver',
 	)
 
 	# ENVIRONMENT
@@ -532,86 +574,31 @@ if read_configuration==False:
 		rewarder_component='Rewarder', 
 		terminators_components=[
 			'Collision',
-			'RelativePoint',
+			'RelativePointTerminator',
 			#'RewardThresh',
 			'MaxSteps',
 			],
 		others_components=[
-			'RandomSpawnPoint',
-			'RandomSpawnYaw',
-			'SpawnEvaluator',
-			'ModelSaver',
-			'ReplayBufferSaver',
-			'BenchMarker',
+			'Spawner',
+			'Evaluator',
+			'Saver',
 			],
 		name = 'Environment'
 	)
+utils.speak('configuration created!')
 
-	# CONTROLLER
-	if controller == 'Debug':
-		from controllers.debug import Debug
-		controller = Debug(
-		drone_component='Drone'
-	)
-	elif controller == 'TrainRL':
-		from controllers.trainrl import TrainRL
-		controller = TrainRL(
-		model_component='Model',
-	)
-	elif controller == 'EvaluateRL':
-		from controllers.evaluaterl import EvaluateRL
-		controller = EvaluateRL(
-		model_component='Model',
-		n_eval_episodes=3,
-	)
-
-speak('configuration loaded!')
-
-
-# FETCH COMPONENTS (before any are created during run)
-configuration_components = get_all_components()
-
-
-# WRITE CONFIGURATION
-if write_configuration:
-	configuration = serialize_configuration(controller, configuration_components, timestamp, repo_version)
-	write_json(configuration, write_configuration_path)
-	write_json(configuration, 'configurations/last.json')
- 
 
 # CONNECT COMPONENTS
-connect_components(configuration_components)
-speak('components connected!')
+configuration.connect_all()
 
-
-# CONNECT CONTROLLER
-controller.connect()
-speak('controller connected!')
-
+# WRITE CONFIGURATION
+configuration.save()
 
 # RUN CONTROLLER
-speak('running controller...')
-controller.run()
-
-
-# FETCH COMPONENTS (including any created during run)
-run_components = get_all_components()
-
-
-# LOG BENCHMARKS
-benchmark_components(run_components)
-speak('components benchmarked!')
-
+configuration.controller.run()
 
 # DISCONNECT COMPONENTS
-disconnect_components(run_components)
-speak('components disconnected!')
+configuration.disconnect_all()
 
-
-# DISCONNECT CONTROLLER
-controller.disconnect()
-speak('controller disconnected!')
-
-
-# ALL DONE
-speak('Good bye!')
+# all done!
+utils.speak('Thatll do pig thatll do')

@@ -1,5 +1,5 @@
 # abstract class used to handle observations to input into rl algo
-from component import Component, get_component
+from component import Component
 from matplotlib.pyplot import imshow, show
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3

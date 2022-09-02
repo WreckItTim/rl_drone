@@ -1,9 +1,9 @@
 {
-  "timestamp": "2022_9_1_22_55_52",
+  "timestamp": "2022_9_1_23_40_1",
   "repo_version": "gamma",
   "controller": {
-    "type": "Controller.Debug",
-    "drone_component": "Drone"
+    "type": "Controller.TrainRL",
+    "model_component": "Model"
   },
   "SpawnZone": {
     "type": "DataStruct.Zone",
@@ -11,8 +11,8 @@
     "x_max": 10,
     "y_min": -10,
     "y_max": 10,
-    "z_min": -5,
-    "z_max": -5
+    "z_min": -4,
+    "z_max": -4
   },
   "Map": {
     "type": "Map.AirSimMap",
@@ -155,8 +155,6 @@
   "Actor": {
     "type": "Actor.DiscreteActor",
     "actions_components": [
-      "Up",
-      "Down",
       "Forward"
     ]
   },
@@ -214,8 +212,8 @@
     "environment_component": "Environment",
     "policy": "CnnPolicy",
     "learning_rate": 0.0001,
-    "buffer_size": 1000,
-    "learning_starts": 100,
+    "buffer_size": 20,
+    "learning_starts": 2,
     "batch_size": 32,
     "tau": 1.0,
     "gamma": 0.99,
@@ -224,7 +222,7 @@
     "replay_buffer_class": null,
     "replay_buffer_kwargs": null,
     "optimize_memory_usage": false,
-    "target_update_interval": 100,
+    "target_update_interval": 2,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
@@ -236,8 +234,8 @@
     "seed": null,
     "device": "auto",
     "init_setup_model": true,
-    "write_path": "temp/debug_DQN_train/model",
-    "replay_buffer_path": "temp/debug_DQN_train/replay_buffer",
+    "write_path": "temp/gamma_DQN_train/model",
+    "replay_buffer_path": "temp/gamma_DQN_train/replay_buffer",
     "connect_priority": -1
   },
   "RandomSpawnPoint": {
@@ -260,15 +258,14 @@
     "model_component": "Model",
     "drone_component": "Drone",
     "environment_component": "Environment",
-    "evaluate_every_nEpisodes": 100,
+    "evaluate_every_nEpisodes": 2,
     "distance": 100,
-    "nTimes": 4,
     "spawns": [
       [
         [
           0,
           0,
-          -5
+          -4
         ],
         0
       ],
@@ -276,7 +273,7 @@
         [
           0,
           0,
-          -5
+          -4
         ],
         135
       ],
@@ -284,19 +281,12 @@
         [
           0,
           0,
-          -5
-        ],
-        180
-      ],
-      [
-        [
-          0,
-          0,
-          -5
+          -4
         ],
         225
       ]
     ],
+    "nTimes": 3,
     "nEvaluations": 0
   },
   "ModelSaver": {
@@ -304,20 +294,20 @@
     "model_component": "Model",
     "environment_component": "Environment",
     "nEpisodes": 0,
-    "save_every_nEpisodes": 100
+    "save_every_nEpisodes": 2
   },
   "ReplayBufferSaver": {
     "type": "Other.ReplayBufferSaver",
     "model_component": "Model",
     "environment_component": "Environment",
     "nEpisodes": 0,
-    "save_every_nEpisodes": 100
+    "save_every_nEpisodes": 2
   },
   "BenchMarker": {
     "type": "Other.BenchMarker",
     "environment_component": "Environment",
     "nEpisodes": 0,
-    "benchmark_every_nEpisodes": 100
+    "benchmark_every_nEpisodes": 2
   },
   "Environment": {
     "type": "Environment.DroneRL",
@@ -327,16 +317,16 @@
     "rewarder_component": "Rewarder",
     "terminators_components": [
       "Collision",
-      "RelativePoint",
+      "RelativePointTerminator",
       "MaxSteps"
     ],
     "nEpisodes": 0,
     "others_components": [
+      "ModelSaver",
+      "ReplayBufferSaver",
       "RandomSpawnPoint",
       "RandomSpawnYaw",
       "SpawnEvaluator",
-      "ModelSaver",
-      "ReplayBufferSaver",
       "BenchMarker"
     ],
     "show_states": true

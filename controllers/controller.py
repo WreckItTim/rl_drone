@@ -5,8 +5,8 @@ class Controller(Component):
 
     # constructor
     def __init__(self):
-        self._add_to_list = False
-        self._name = 'controller'
+        self._add_to_configuration = False
+        self.name = self._name
 
     # runs control on components
     def run(self):

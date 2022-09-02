@@ -1,75 +1,75 @@
 from component import Component
 
 class Drone(Component):
-    # constructor
-    def __init__(self):
-        pass
+	# constructor
+	def __init__(self):
+		pass
 
-    # when using the debug controller
-    def debug(self):
-        self.take_off()
+	# when using the debug controller
+	def debug(self):
+		self.take_off()
 
-    # updates number of collisions and returns same 
-    def check_collision(self):
-        raise NotImplementedError
+	# updates number of collisions and returns same 
+	def check_collision(self):
+		raise NotImplementedError
 
-    # setup anything that needs to be done to communicate with drone
-    def connect(self):
-        super().connect()
+	# setup anything that needs to be done to communicate with drone
+	def connect(self):
+		super().connect()
 
-    # clean up any resources as needed when done with communication
-    def disconnect(self):
-        raise NotImplementedError
-    
-    # take off!
-    def take_off(self):
-        raise NotImplementedError
+	# clean up any resources as needed when done with communication
+	def disconnect(self):
+		raise NotImplementedError
+	
+	# take off!
+	def take_off(self):
+		raise NotImplementedError
 
-    # land!
-    def land(self):
-        raise NotImplementedError
+	# land!
+	def land(self):
+		raise NotImplementedError
 
-    # teleports to exact position (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
-    def teleport(self, point):
-        raise NotImplementedError
+	# teleports to exact position (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
+	def teleport(self, point):
+		raise NotImplementedError
 
-    # sets exact yaw (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
-    def set_yaw(self, degrees):
-        raise NotImplementedError
+	# sets exact yaw (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
+	def set_yaw(self, degrees):
+		raise NotImplementedError
 
-    # moves to relative position at given speed (units defined within drone) 
-    def move(self, point, speed):
-        raise NotImplementedError
+	# moves to relative position at given speed (units defined within drone) 
+	def move(self, point, speed):
+		raise NotImplementedError
 
-    # moves to absolute position at given speed (units defined within drone) 
-    def move_to(self, point, speed):
-        raise NotImplementedError
+	# moves to absolute position at given speed (units defined within drone) 
+	def move_to(self, point, speed):
+		raise NotImplementedError
 
-    # rotates along the z-axis
-    def rotate(self, degrees):
-        raise NotImplementedError
+	# rotates along the z-axis
+	def rotate(self, degrees):
+		raise NotImplementedError
 
-    # return response from all active sensors
-    def sense(self):
-        raise NotImplementedError
+	# return response from all active sensors
+	def sense(self):
+		raise NotImplementedError
 
-    # issue command to drone via string
-    def command(self):
-        raise NotImplementedError
+	# issue command to drone via string
+	def command(self):
+		raise NotImplementedError
 
-    # get current position of drone
-    def get_position(self):
-        raise NotImplementedError
+	# get current position of drone
+	def get_position(self):
+		raise NotImplementedError
 
-    # get rotation about the z-axis (yaw)
-    def get_yaw(self, radians=True):
-        raise NotImplementedError
+	# get rotation about the z-axis (yaw)
+	def get_yaw(self, radians=True):
+		raise NotImplementedError
 
-    # enter hover mode
-    def hover(self):
-        raise NotImplementedError
+	# enter hover mode
+	def hover(self):
+		raise NotImplementedError
 
-    # reset to prepare for next run (episode for RL)
-    def reset(self):
-        raise NotImplementedError
-        
+	# reset to prepare for next run (episode for RL)
+	def reset(self):
+		raise NotImplementedError
+		
