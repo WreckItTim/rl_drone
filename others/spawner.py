@@ -19,8 +19,8 @@ class Spawner(Other):
 	def spawn(self):
 		point, yaw = self._spawn.get_spawn()
 		self._drone.teleport(point)
+		self._drone.take_off()
 		self._drone.set_yaw(yaw)
-		self._drone.take_off() 
 
 	def reset(self):
 		if not self._environment._evaluating and self.spawn_on_train:

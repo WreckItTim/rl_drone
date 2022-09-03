@@ -4,7 +4,7 @@ from configuration import Configuration
 
 # USER PARAMETERS and setup'
 repo_version = 'gamma'
-test_version =  'debug' # 'debug' 'alpha' 'beta' 'gamma'
+test_version =  'gamma' # 'debug' 'alpha' 'beta' 'gamma'
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 train_or_evaluate = 'train'
 run_name = test_version + '_' + model + '_' + train_or_evaluate
@@ -47,7 +47,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	Configuration.set_active(configuration)
 	
 	# create controller object
-	controller_type = 'Debug' # Debug TrainRL EvaluateRL
+	controller_type = 'TrainRL' # Debug TrainRL EvaluateRL
 	# CONTROLLER
 	if controller_type == 'Debug':
 		from controllers.debug import Debug
@@ -77,9 +77,9 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	output_height = 84 # output shape after processing
 	output_width = 84 # output shape after processing
 	relative_objective_point = (100, 0, 0)
-	start_z = -4
-	every_nEpisodes = 2
-	step_size = 4 # meters
+	start_z = 0
+	every_nEpisodes = 100
+	step_size = 5 # meters
 	speed = 4 # meters / second
 
 	# MAP
@@ -90,7 +90,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				'speedup', 
+				#'speedup', 
 				'tellocamera', 
 				'bellydistance',
 				'nodisplay',
@@ -246,8 +246,8 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
-#			'Up',
-#			'Down',
+			'Up',
+			'Down',
 			'Forward',
 			],
 		name='Actor',
@@ -263,8 +263,8 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	RelativePoint(
 		drone_component = 'Drone',
 		xyz_point = relative_objective_point,
-		min_distance = 5,
-		max_distance = 200,
+		min_distance = 10,
+		max_distance = 190,
 		name = 'RelativePointReward',
 	)
 
@@ -304,7 +304,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 64,
+		max_steps = 50,
 		name = 'MaxSteps',
 	)
 

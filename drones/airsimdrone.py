@@ -44,24 +44,34 @@ class AirSimDrone(Drone):
 			self._client = None
 
 	def take_off(self):
-		self._client.takeoffAsync().join()
-		self.check_collision()
+		while self._client.getMultirotorState().landed_state == 0:
+			self._client.takeoffAsync().join()
+			#print('takeoff')
 
 	# TODO: having problems with it landing sometimes - if done right after a move() command
 	def land(self):
 		self._client.landAsync().join()
 	
+	## move to relative position
+	#def move(self, point, speed):
+	#	x_distance, y_distance, z_distance = point[0], point[1], point[2]
+	#	distance = math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
+	#	duration = distance / speed
+	#	x_speed = x_distance / duration
+	#	y_speed = y_distance / duration
+	#	z_speed = z_distance / duration
+	#	duration = distance / speed
+	#	#, yaw_mode={'is_rate':False,'yaw_or_rate':self._yaw_degrees}
+	#	print(self._client.getMultirotorState())
+	#	self._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
+	#	print('move_ve', x_speed, y_speed, z_speed, duration, self.get_position())
+	
 	# move to relative position
 	def move(self, point, speed):
 		x_distance, y_distance, z_distance = point[0], point[1], point[2]
-		distance = math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
-		duration = distance / speed
-		x_speed = x_distance/duration
-		y_speed = y_distance/duration
-		z_speed = z_distance/duration
-		duration = distance / speed
-		#, yaw_mode={'is_rate':False,'yaw_or_rate':self._yaw_degrees}
-		self._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
+		x_position, y_position, z_position = self.get_position()
+		self._prestate = self._client.getMultirotorState()
+		self._client.moveToPositionAsync(x_position+x_distance, y_position+y_distance, z_position+z_distance, speed).join()
 	
 	# move to absolute position
 	def move_to(self, point, speed):
@@ -75,19 +85,14 @@ class AirSimDrone(Drone):
 		pose.position.y_val = point[1]  
 		pose.position.z_val = point[2]  
 		self._client.simSetVehiclePose(pose, ignore_collision=True)
-		self.check_collision()
 
 	# sets yaw (different than rotating)
 	def set_yaw(self, yaw_degrees):
 		self._client.rotateToYawAsync(yaw_degrees, timeout_sec=10).join()
-		self.check_collision()
 
 	def get_position(self):
-		pos = self._client.getMultirotorState().kinematics_estimated.position.to_numpy_array().tolist()
-		pos[0] = float(pos[0])
-		pos[1] = float(pos[1])
-		pos[2] = float(pos[2])
-		return pos
+		pos = self._client.getMultirotorState().kinematics_estimated.position
+		return [pos.x_val, pos.y_val, pos.z_val]
 
 	# get rotation about the z-axis (yaw)
 	def get_yaw(self, radians=True):
