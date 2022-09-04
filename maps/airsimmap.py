@@ -1,48 +1,71 @@
-# handles airsim releases
 from maps.map import Map
-from utils import read_json, write_json
+import utils
 import subprocess
-from os import getcwd
+import os
 from component import _init_wrapper
 
+# handles airsim release executables
 class AirSimMap(Map):
 
-    # constructor, pass in a dictionary for settings or file paths to merge multiple settings .json files
+    # constructor, pass in a dictionary for settings and/or file paths to merge multiple settings .json files
     @_init_wrapper
-    def __init__(self, settings=None, settings_directory='maps/airsim_settings/', setting_files=['base'], 
-                    release_directory='resources/airsim_maps/', release_relative_path='Blocks/', release_name='Blocks.exe', 
-                    ):
+    def __init__(self,
+                 # can define json-structured settings
+                 settings:dict = None,
+                 # or define setting files to read in from given directory
+                 settings_directory:str = 'maps/airsim_settings/',
+                 # will aggregate passed in json settings and all files
+                 # update priority is given to the settings argument and last listed files
+                 # amoung the settings must be information for which sensors to use
+                 # below arg is a list of file names, see the maps/airsim_settings for examples
+                 setting_files:list = ['vanilla'],
+                 # directory to release .exe file to be launched
+                 release_directory:str = None,
+                 # name of release .exe file to be launched, inside relase_directory
+                 release_name:str = None, 
+                 ):
         super().__init__()
-        self._executable_path = release_directory + release_relative_path + release_name
-        if settings is None:
-            self.settings = self._read_settings(settings_directory, setting_files)
-        else:
+        # get path to release executable file to launch
+        self._release_path = os.path.join(release_directory, release_name)
+        # create setting dictionary
+        self.settings = {}
+        if settings is not None:
             self.settings = settings
-        self._settings_path = getcwd() + '/temp/overwrite_settings.json'
-        self._write_settings(self.settings, self._settings_path)
+        # read in any other settings files
+        other_settings = {}
+        if setting_files is not None:
+            other_settings = self.read_settings(settings_directory, setting_files)
+        # merge all settings
+        self.settings.update(other_settings)
+        # write to temp file to be read in when launching realease executable
+        self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
+        self.write_settings(self.settings, self._settings_path)
 
     # launch airsim map
     def connect(self):
         super().connect()
-        terminal_command = f'{self._executable_path} -settings=\"{self._settings_path}"'
+        # send command to terminal to launch the relase executable
+        terminal_command = f'{self._release_path} -settings=\"{self._settings_path}"'
         subprocess.Popen(terminal_command, close_fds=True)
-        print(f'Send any key when AirSim {self._executable_path} is fully launched, this make take several minutes....')
+        # prompt user to confirm when launch is successful (can launch manually if needs be)
+        print(f'Send any key when AirSim {self._release_path} is fully launched, this make take several minutes....')
         x = input()
 
-    # close airsim app
+    # close airsim map
     def disconnect(self):
+        # send command to terminal to kill the relase executable
         terminal_command = 'taskkill /f /im ' + self.release_name
         subprocess.call(terminal_command)
-
-    @staticmethod
-    def _read_settings(settings_directory, setting_files):
+    
+    # read several json files with Airsim settings and merge
+    def read_settings(self, settings_directory, setting_files):
         merged_settings = {}
-        for setting_component in setting_files:
-            setting_path = settings_directory + setting_component + '.json'
-            setting = read_json(setting_path)
+        for setting_file in setting_files:
+            setting_path = os.path.join(settings_directory, setting_file) + '.json'
+            setting = utils.read_json(setting_path)
             merged_settings.update(setting)
         return merged_settings
 
-    @staticmethod
-    def _write_settings(merged_settings, settings_path):
-        write_json(merged_settings, settings_path)
+    # write a json settings dictionary to file
+    def write_settings(self, merged_settings, settings_path):
+        utils.write_json(merged_settings, settings_path)

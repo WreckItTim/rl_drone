@@ -1,15 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\actions",
-    "\\drones",
-    "\\environments",
-    "\\maps",
-    "\\maps\\airsim_settings",
-    "\\others",
-    "\\temp",
-    "\\temp\\alpha_DQN_train"
+    "\\environments"
   ],
-  "SelectedNode": "\\environments\\environment.py",
+  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

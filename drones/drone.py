@@ -62,7 +62,7 @@ class Drone(Component):
 		raise NotImplementedError
 
 	# get rotation about the z-axis (yaw)
-	def get_yaw(self, radians=True):
+	def get_yaw(self):
 		raise NotImplementedError
 
 	# enter hover mode

@@ -1,6 +1,7 @@
 # drone launched through airsim api - requires an airsim relase map
 import setup_path # need this in same directory as python code for airsim
 import airsim
+import utils
 from drones.drone import Drone
 import math
 from component import _init_wrapper
@@ -22,7 +23,6 @@ class AirSimDrone(Drone):
 		self._client.reset()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)
-		self.check_collision()
 
 	# if something goes wrong
 	def stop(self):
@@ -39,75 +39,49 @@ class AirSimDrone(Drone):
 	def disconnect(self):
 		if self._client is not None:
 			self._client.armDisarm(False)
-			self._client.reset()
 			self._client.enableApiControl(False)
 			self._client = None
 
 	def take_off(self):
-		while self._client.getMultirotorState().landed_state == 0:
-			self._client.takeoffAsync().join()
-			#print('takeoff')
+		# this is just smoother and more reliable than using take_off
+		self._client.moveToPositionAsync(0, 0, -4, 2).join()
+		#while self._client.getMultirotorState().landed_state == 0:
+		#	self._client.takeoffAsync().join()
 
 	# TODO: having problems with it landing sometimes - if done right after a move() command
 	def land(self):
 		self._client.landAsync().join()
 	
-	## move to relative position
-	#def move(self, point, speed):
-	#	x_distance, y_distance, z_distance = point[0], point[1], point[2]
-	#	distance = math.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
-	#	duration = distance / speed
-	#	x_speed = x_distance / duration
-	#	y_speed = y_distance / duration
-	#	z_speed = z_distance / duration
-	#	duration = distance / speed
-	#	#, yaw_mode={'is_rate':False,'yaw_or_rate':self._yaw_degrees}
-	#	print(self._client.getMultirotorState())
-	#	self._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
-	#	print('move_ve', x_speed, y_speed, z_speed, duration, self.get_position())
-	
 	# move to relative position
-	def move(self, point, speed):
-		x_distance, y_distance, z_distance = point[0], point[1], point[2]
-		x_position, y_position, z_position = self.get_position()
-		self._prestate = self._client.getMultirotorState()
-		self._client.moveToPositionAsync(x_position+x_distance, y_position+y_distance, z_position+z_distance, speed).join()
+	def move(self, x_speed, y_speed, z_speed, duration):
+		self._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
 	
 	# move to absolute position
-	def move_to(self, point, speed):
-		x_position, y_position, z_position = point[0], point[1], point[2]
-		self._client.moveToPositionAsync(x_position, y_position, z_position, speed).join()
+	def move_to(self, x, y, z, speed):
+		self._client.moveToPositionAsync(x, y, z, speed).join()
 	
-	# teleports to position (ignores collisions)
-	def teleport(self, point):
-		pose = self._client.simGetVehiclePose()
-		pose.position.x_val = point[0] 
-		pose.position.y_val = point[1]  
-		pose.position.z_val = point[2]  
+	# teleports to position (ignores collisions), yaw in radians
+	def teleport(self, x, y, z, yaw):
+		pose = airsim.Pose(
+			airsim.Vector3r(x, y, z), 
+			airsim.to_quaternion(0, 0, yaw)
+		)
 		self._client.simSetVehiclePose(pose, ignore_collision=True)
 
-	# sets yaw (different than rotating)
+	# sets yaw by rotating
 	def set_yaw(self, yaw_degrees):
 		self._client.rotateToYawAsync(yaw_degrees, timeout_sec=10).join()
 
+	# get (x, y, z) positon, z is negative for up, x is positive for forward, y is positive for right (from origin)
 	def get_position(self):
 		pos = self._client.getMultirotorState().kinematics_estimated.position
 		return [pos.x_val, pos.y_val, pos.z_val]
 
-	# get rotation about the z-axis (yaw)
-	def get_yaw(self, radians=True):
+	# get rotation about the z-axis (yaw), returns in radians
+	def get_yaw(self):
 		q = self._client.getMultirotorState().kinematics_estimated.orientation
-		w, x, y, z = q.w_val, q.x_val, q.y_val, q.z_val, 
-		#yaw_radians = 2*math.acos(q.w_val)
-		t3 = +2.0 * (w * z + x * y)
-		t4 = +1.0 - 2.0 * (y * y + z * z)
-		yaw_radians = math.atan2(t3, t4)
-		# TODO: these two quads or off for somereason (current solution is a brute force quick fix, find real problem later)
-		#if yaw_radians < 0:
-		#    yaw_radians += 2*math.pi
-		if not radians:
-			return math.degrees(yaw_radians)
-		return yaw_radians
+		pitch, roll, yaw = airsim.to_eularian_angles(q)
+		return yaw
 
 	def hover(self):
 		self._client.hoverAsync().join()

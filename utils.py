@@ -1,6 +1,6 @@
 import json
 from time import localtime, time
-  
+import math
 
 def read_json(path):
 	return json.load(open(path, 'r'))
@@ -31,7 +31,19 @@ def debug_json(dictionary):
 			debug_json(dictionary[key])
 		else:
 			print(key, dictionary[key], type(dictionary[key]))
+			
+# assumes 0 pitch and roll, inputs yaw in radians
+def yaw_to_quaternion(yaw):
+	qx = 0
+	qy = 0
+	qz = nmath.sin(yaw/2)
+	qw = math.cos(yaw/2)
+	return qx, qy, qz, qw
 
+# assumes 0 pitch and roll, so only inputs qz, returns yaw in radians
+def quaternion_to_yaw(qz):
+	yaw = 2 * math.arcsin(qz)
+	return yaw
 
 global_parameters = {}
 def read_global_parameters(path = 'global_parameters.json'):
@@ -43,14 +55,11 @@ def write_global_parameters(path = 'global_parameters.json'):
 	write_json(global_parameters, path)
 
 def set_global_parameter(key, value):
-	if key not in global_parameters:
-		warning('key', key, 'not in global parameters')
-	else:
-		global_parameters[key] = value
+	global_parameters[key] = value
 
 def get_global_parameter(key):
 	if key not in global_parameters:
-		error('key', key, 'not in global parameters')
+		error(f'key {key} not in global parameters')
 	else:
 		return global_parameters[key]
 

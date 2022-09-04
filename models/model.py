@@ -14,10 +14,10 @@ class Model(Component):
         self._model_arguments = _model_arguments
         # set up write path
         if write_path is None:
-            self.write_path = utils.global_parameters['write_folder'] + 'model'
+            self.write_path = utils.get_global_parameter('working_directory') + 'model'
         # set up replay buffer path
         if replay_buffer_path is None:
-            self.replay_buffer_path = utils.global_parameters['write_folder'] + 'replay_buffer'
+            self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer'
         self._sb3model = None
         self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
 
@@ -42,8 +42,8 @@ class Model(Component):
         log_interval = -1,
         tb_log_name = None,
         eval_env = None,
-        eval_freq = -1,
-        n_eval_episodes = -1,
+        eval_freq = 2,
+        n_eval_episodes = 4,
         eval_log_path = None,
         reset_num_timesteps = False,
         ):
@@ -62,6 +62,10 @@ class Model(Component):
         )
         utils.speak('DONE LEARN')
 
+    def predict(self, rl_output):
+        rl_output, next_state = self._sb3model.predict(rl_output, deterministic=True)
+        return rl_output
+
     def save(self, path):
         self._sb3model.save(path)
 
@@ -79,30 +83,3 @@ class Model(Component):
     def debug(self):
         self.learn()
         self.evaluate(self._environment)
-
-    def evaluate(self,
-        evaluate_environment,
-        n_eval_episodes=1,
-        deterministic=True, 
-        render=False, 
-        callback=None, 
-        reward_threshold=None, 
-        return_episode_rewards=False, 
-        warn=False
-        ):
-        utils.speak('EVALUATE')
-        evaluate_environment._evaluating = True
-        # call sb3 evaluate method
-        evaluate_policy(
-            self._sb3model, 
-            evaluate_environment, 
-            n_eval_episodes=n_eval_episodes, 
-            deterministic=deterministic, 
-            render=render, 
-            callback=callback, 
-            reward_threshold=reward_threshold, 
-            return_episode_rewards=return_episode_rewards, 
-            warn=warn
-        )
-        evaluate_environment._evaluating = False
-        utils.speak('DONE EVALUATE')

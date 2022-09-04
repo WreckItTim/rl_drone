@@ -33,10 +33,10 @@ class Spawn(DataStruct):
         y = random.uniform(self.y_min, self.y_max)
         z = random.uniform(self.z_min, self.z_max)
         yaw = random.uniform(self.yaw_min, self.yaw_max)
-        return [x, y, z], yaw
+        return x, y, z, yaw
         
     def static_spawn(self):
-        return [self.x, self.y, self.z], self.yaw
+        return self.x, self.y, self.z, self.yaw
 
     # debug mode
     def debug(self):

@@ -5,11 +5,13 @@ from sys import getsizeof
 class Configuration():
 	active = None
 
-	def __init__(self, timestamp, repo_version):
-		self.timestamp = timestamp
-		self.repo_version = repo_version
+	def __init__(self, meta):
+		self.meta = meta
 		self.components = {}
 		self.benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
+
+	def update_meta(self, meta):
+		self.meta.update(meta)
 
 	def set_controller(self, controller):
 		self.controller = controller
@@ -34,7 +36,7 @@ class Configuration():
 	def log_benchmarks(self, write_path=None):
 		self.benchmark_memory()
 		if write_path is None:
-			write_path = utils.get_global_parameter('write_folder') + 'benchmarks.json'
+			write_path = utils.get_global_parameter('working_directory') + 'benchmarks.json'
 		utils.write_json(self.benchmarks, write_path)
 
 	# keeps track of components
@@ -128,36 +130,29 @@ class Configuration():
 	# serializes into a configuration json file
 	def serialize(self):
 		configuration_file = {
-			'timestamp':self.timestamp,
-			'repo_version':self.repo_version,
-			'controller':self.controller._to_json(),
+			'meta':self.meta,
+			'components':{}
 		}
 		for component_name in self.components:
 			component = self.get_component(component_name)
-			configuration_file[component._name] = component._to_json()
+			configuration_file['components'][component._name] = component._to_json()
 		return configuration_file
 
 	# deserializes a json file into a configuration
 	@staticmethod
 	def deserialize(configuration_file):
-		timestamp = configuration_file['timestamp']
-		repo_version = configuration_file['repo_version']
-		configuration = Configuration(timestamp, repo_version)
+		meta = configuration_file['meta']
+		configuration = Configuration(meta)
 		Configuration.set_active(configuration)
-		controller_arguments = configuration_file['controller']
-		controller = Component.deserialize(None, controller_arguments)
-		configuration.set_controller(controller)
-		for component_name in configuration_file:
-			if component_name in ['controller', 'timestamp', 'repo_version']:
-				continue
+		for component_name in configuration_file['components']:
 			component_arguments = configuration_file[component_name]
-			component = Component.deserialize(component_name, component_arguments)
+			_ = Component.deserialize(component_name, component_arguments)
 		return configuration
 
 	def save(self, write_path=None):
 		configuration_file = self.serialize()
 		if write_path is None:
-			write_path = utils.get_global_parameter('write_folder') + 'configuration.json'
+			write_path = utils.get_global_parameter('working_directory') + 'configuration.json'
 		utils.write_json(configuration_file, write_path)
 
 	@staticmethod

@@ -9,12 +9,12 @@ from configuration import Configuration
 # README - for all new classes that you make (I suggest everyone read this to understand how the repo works anyways):
 # all classes are children of this Component class 
 # this uses overlapping logic for serialization, connecting, running, logging, conflict management...
-# after you know how this works you can copy and paste new child classes and have them integrated into the repo, working in seconds with little extra coding required!
+# after you know how this works you can copy and paste new child classes and have them integrated into the repo, working in seconds
 # 1. if you are making a new parent class named {parent}: ---- note that it's probably easier to just make a new "Other" child class ----
 	# a. add a folder named '{parent}s' and within it add a python file named '{parent}.py'
 	# b. create a new class named '{Parent}' in the {parent}.py file
 	# c. have the {Parent} class inherit Component, such as 'class {Parent}(Component):' - note the capital P
-	# d. optionally, define any class methods as declared in the Component class, seen below
+	# d. optionally, define any class methods as wanted from the Component class, seen below
 	# e. define a {Parent}.connect() method that calls super, such as 'def connect(self): super().connect()'
 # 2. if you are making a new child class named {child} from the parent class named {parent}:
 	# a. add a python file named '{child}.py' inside the existing folder named '{parent}s'
@@ -22,41 +22,46 @@ from configuration import Configuration
 	# c. have the {Child} class inherit {Parent}, such as 'class {Child}({Parent}):' - note the capital C
 	# d. decorate {Child}.__init__() with @_init_wrapper - see definition below
 	# e. define any necesary (abstract) class methods as declared in {Parent}
-	# f. optionally, define any class methods as declared in the Component class, seen below
+	# f. optionally, define any class methods as wanted from the Component class, seen below
 	# g. if you redefine {Child}.connect() make sure to call super, such as 'def connect(self): super().connect() ...'
-# 3. if you want to have a Component class named {Component} as a member named {member} in another Class named {Class}:
-	# a. define an argument named {member}_component in the {Class}.__init__() method
-		# NOTE, so that order does not matter, for component creation, the following is done:
-		# (otherwise order can create conflicts) (this also allows for automatic serialization)
-		# let a global Class instance belonging to {Class} be {class_instance}
-		# let another global Component instance belonging to {Component} be {member_instance}
-		# such that we want: {class_instance}._{member}={member_instance} - note that member will be private (necesary for serialization)
-		# all global Component instances, needed for a given configuration, are first created before any Component members are properly set
-		# you can pass a string argument {member_name} when creating {member_instance}, such as {member_instance}={Component}.__init__(..., name={member_name})
-		# {member_instance} will set the unique string ID upon creation, such as {member_instance}._name={member_name}, and save it to the global component_list.
-		# This way you can define a {class_instance}.{member} before {member_instance} is even created!
-		# upon creation of {class_instance}, this is done: {class_instance}.{member}_component = {member_name}
-		# all class Component members are properly set during Component.connect(), such as {class_instance}._{member}=get_component({class_instance}.{member}_component) 
-		# the argument {member}_component passed into {Class}.__init__() can be the exact {member_instance} if already created, or {member_name} if otherwise not yet created
-		# all {member}_component arguments to {Class}.__init__() will automatically set a private class member after connect() is called, such as self._{member}={member_instance}
-		# deserialization, reading from a configuation file, also leverages the above methodology so that your component classes can automatically be serialized/deserialized
-		# if you want a component to connect first or last, set {class_instance}.connect_priority={x}. I typicaly set this from {Class}.__init__()
-		# priority will load lowest-to-highest positive {x} before all 0-priority (default) components, and highest-to-lowest negative {x} after all 0-priority (default) components
+# 3. if you want to have a Component class from {MyComponent} as a member {member} in another Class {MyClass}:
+	# NOTE, so that order of component creation does not matter, the following is done:
+	# NOTE, all global Component instances for a configuration are first created before connecting Component members
+	# NOTE, otherwise order can create conflicts, the following also allows for automatic serialization
+	# a. define an argument named {member}_component in the {MyClass}.__init__() method, such as {MyClass}.__init__(..., {member}_component)
+		# let a Class instance belonging to {MyClass} be {class_instance}
+		# let a Component instance belonging to {MyComponent} be {component_instance}
+		# such that we want: {class_instance}._{member}={component_instance} - note that member will be 'private' (necesary for serialization)
+		# during creation of a {component_instance}, you can pass a string argument {component_name} for {component_instance}
+			# , such as {component_instance}={MyComponent}.__init__(..., name={member_name})
+		# {component_instance} will set the unique string ID upon creation, such as {member_instance}._name={member_name}
+			# , and save it to the configuraition's component_list.
+		# This way you can pseudo-define a {class_instance}._{member}={component_instance} before {component_instance} is even created!
+		# upon creation of {class_instance}, this is done: {class_instance}.{member}_component = {component_name}
+		# after creating all components, the configuration object will call connect() for all components and set {member}
+			# , such as {class_instance}._{member}=get_component({class_instance}.{member}_component) 
+		# the argument {member}_component passed into {MyClass}.__init__() can also be the exact {component_instance} if already created
+		# NOTE, any {member}_component arguments to {MyClass}.__init__() will automatically set a private class member after connect() is called
+			# , such as {class_instance}._{member}={component_instance}
+		# NOTE, built-in, automatic deserialization leverages the above methodology as well
+		# now, if you want a component to connect first or last, set {class_instance}.connect_priority={x}. I typicaly set this from {MyClass}.__init__()
+		# priority will load lowest-to-highest positive {x}, then all 0-priority (default) components, then highest-to-lowest negative {x}
 		# priority load example: (1) (2) (3) (0) (0) (0) (0) (-1) (-2)
 		# ties in priority will run in order of instance creation
 		# similarily you can set {class_instance}.disconnect_priority={y}
-# 4. if you want to have a list of Component members named {members} in another Class named {Class}:
-	# a. add an argument named {member}_components to the {Class}.__init__() method - note the s at the end
-		# read secton 3, defining a list of components follows the same logic
-		# the {member}_components argument to {Class}.__init__() is a mixed list of {member_instance} and {member_name} like variables
-		# let {member_instances} be the hypothetical list of all the desired {member_instance} variables
-		# all {member}_components arguments to {Class}.__init__() will automatically set a private class member after connect() is called, such as self._{member}={member_instances}
-# IF you followed steps 1-5 correctly, than your new component class will:
+# 4. if you want to have a list of Component members {member} from various Component classes, in another Class {MyClass}:
+	# a. add an argument named {member}_components to the {MyClass}.__init__() method - note the 's' in components
+		# defining a list of components follows the same logic as in section 3 above...
+		# the {member}_components argument to {MyClass}.__init__() is a mixed list of {component_instance} and {component_name} variables
+		# let {component_instances} be the hypothetical list of all the desired {component_instance} variables
+		# all {member}_components arguments to {MyClass}.__init__() will automatically set a private class member after connect() is called
+			# , such as self._{member}={component_instances}
+# IF you followed the above steps, then your new component class will:
 	# a. be serializable (for configuration files)
 	# b. will avoid conflicts so the order of creation does not matter
 	# c. can be time/memory benchmarked
 	# d. can be used with other components
-	# e. can be used in the same manner as any parent-base class, for example you can make a new reward or action or sensor or whatever
+	# e. can be used in the same manner as any parent-base class, for example you can make a new reward or action or sensor or whatever class 
 	
 # times all funciton calls and saves to library (microseconds)
 def _timer_wrapper(configuration, method):
@@ -88,24 +93,10 @@ def _init_wrapper(init_method):
 		disconnect_priority = kwargs['disconnect_priority']
 		del kwargs['disconnect_priority']
 
-		# get configuration
+		# GET CONFIGURATION OBJECT
 		if configuration is None:
 			configuration = Configuration.get_active()
 		self._configuration = configuration
-
-		# SET UNIQUE NAME 
-		clone_id = 1
-		if arg_name is None:
-			partial_name = f'{self._child().__name__}'
-			try_name = f'{partial_name}__{clone_id}' 
-		else:
-			partial_name = arg_name
-			try_name = partial_name
-		clone_id = 2
-		while try_name in configuration.components:
-			try_name = f'{partial_name}__{clone_id}'
-			clone_id = clone_id + 1
-		self._name = try_name
 
 		# UPDATE ALL ARGS
 		bound = sig.bind(self, *args, **kwargs)
@@ -125,22 +116,27 @@ def _init_wrapper(init_method):
 			elif '_components' in key:
 				values = all_args[key]
 				member_name = '_' + key.replace('_components', '')
-				component_names = []
-				for value in values:
-					if isinstance(value, str):
-						component_name = value
-					elif isinstance(value, Component):
-						component_name = value._name
-					else:
-						utils.error('passed in argument as _component in _components list, but argument is not str or component type')
-					component_names.append(component_name)
+				if values is None:
+					component_names = None
+				else:
+					component_names = []
+					for value in values:
+						if isinstance(value, str):
+							component_name = value
+						elif isinstance(value, Component):
+							component_name = value._name
+						else:
+							utils.error('passed in argument as _component in _components list, but argument is not str or component type')
+						component_names.append(component_name)
 				self._connect_components_list.append((member_name, component_names))
 				setattr(self, key, component_names)
 			# individual components
 			elif '_component' in key:
 				value = all_args[key]
 				member_name = '_' + key.replace('_component', '')
-				if isinstance(value, str):
+				if value is None:
+					component_name = None
+				elif isinstance(value, str):
 					component_name = value
 				elif isinstance(value, Component):
 					component_name = value._name
@@ -153,8 +149,9 @@ def _init_wrapper(init_method):
 				setattr(self, key, all_args[key])
 
 		# CALL BASE INIT
-		self._add_to_configuration = True # change in base init method to false to not add
 		self._add_timers = True # change in base init method to false to not add
+		self._set_name = True # change in base init method to false to not add
+		self._add_to_configuration = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
 
 		# SET PIRORITIES for load orders, to default of 0 if not set yet or not passed in as argument
@@ -168,6 +165,21 @@ def _init_wrapper(init_method):
 			for method in dir(self):
 				if callable(getattr(self, method)) and method[0] != '_':
 					setattr(self, method, _timer_wrapper(configuration, getattr(self, method)))
+
+		# SET UNIQUE NAME
+		if self._set_name:
+			clone_id = 1
+			if arg_name is None:
+				partial_name = f'{self._child().__name__}'
+				try_name = f'{partial_name}__{clone_id}' 
+			else:
+				partial_name = arg_name
+				try_name = partial_name
+			clone_id = 2
+			while try_name in configuration.components:
+				try_name = f'{partial_name}__{clone_id}'
+				clone_id = clone_id + 1
+			self._name = try_name
 
 		# ADD TO LIST OF COMPONENTS
 		if self._add_to_configuration:
@@ -204,14 +216,20 @@ class Component():
 	def connect(self):
 		for components_pair in self._connect_components_list:
 			member_name, component_names = components_pair
-			components = []
-			for component_name in component_names:
-				component = self._configuration.get_component(component_name)
-				components.append(component)
+			if component_names is None:
+				components = None
+			else:
+				components = []
+				for component_name in component_names:
+					component = self._configuration.get_component(component_name)
+					components.append(component)
 			setattr(self, member_name, components)
 		for component_pair in self._connect_component_list:
 			member_name, component_name = component_pair
-			component = self._configuration.get_component(component_name)
+			if component_name is None:
+				component = None
+			else:
+				component = self._configuration.get_component(component_name)
 			setattr(self, member_name, component)
 
 	# kill connection, clean up as needed

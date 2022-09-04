@@ -18,7 +18,7 @@ class Observation:
 	# writes observation metadata to given dir path
 	def write(self, directory_path=None, file_name=None):
 		if directory_path is None:
-			directory_path = utils.get_global_parameter('write_folder') + '/observations/'
+			directory_path = utils.get_global_parameter('working_directory') + '/observations/'
 		if file_name is None:
 			file_name = self._name
 		file_path = directory_path + '/' + file_name

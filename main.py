@@ -1,88 +1,117 @@
 import os
 import utils
 from configuration import Configuration
+import math
 
-# USER PARAMETERS and setup'
-repo_version = 'gamma'
-test_version =  'gamma' # 'debug' 'alpha' 'beta' 'gamma'
+
+# USER PARAMETERS and SETUP
+# test version is just a name used for logging (optional)
+test_version =  'delta'
+# select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
-train_or_evaluate = 'train'
-run_name = test_version + '_' + model + '_' + train_or_evaluate
-timestamp = utils.get_timestamp() # timestamp used for default write folder, also used to stamp configuration file if write_configuration=True
-write_folder = f'temp/' + run_name + '/' # f'temp/{timestamp}/' # will write, by default, all files to this folder
-read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json' # path to read configuration file if read_configuration=True
-write_configuration_path = 'temp/' + run_name + '/configuration.json' # path to write configuration file if write_configuration=True
-utils.read_global_parameters() # True: sets all variables in the global_parameters.json file
+# set the controller type to use
+controller_type = 'train' # train evaluate debug
+# create run name (not unique) for logging (optional)
+run_name = test_version + '_' + model + '_' + controller_type
+# create working directory to read/write files to
+working_directory = f'temp/' + run_name + '/'
+# path to read configuration file from, if desired (optional)
+read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
+# tell program to make a new configuration, if False will read an old one from read_configuration_path
+make_new_configuration = True
+
+# make temp folder if not exists - required
 if not os.path.exists('temp/'):
 	os.makedirs('temp/')
-if not os.path.exists(write_folder):
-	os.makedirs(write_folder)
-utils.global_parameters['write_folder'] = write_folder # master, default folder to right run log/info to
+# make working directory if not exists
+if not os.path.exists(working_directory):
+	os.makedirs(working_directory)
+# save working directory path to global_parameters to be visible by all 
+utils.set_global_parameter('working_directory', working_directory)
 
-# force a new configuration even if read_configuration_path exists already
-MAKE_NEW = True
 
-# READ OLD CONFIGURATION FILE, you need do nothing else if path is set correctly above
-if not MAKE_NEW and os.path.exists(read_configuration_path):
-	utils.speak('reading configuration...')
-	configuration = Configuration.load(read_configuration_path)
-	Configuration.set_active(configuration)
-	
-	# ALTER ANY READ-IN COMPONENTS or make a new controller as needed here
-	if train_or_evaluate == 'evaluate':
-		from controllers.evaluaterl import EvaluateRL
-		controller = EvaluateRL(
-			model_component=model,
-			n_eval_episodes=4,
+# META data to log in configuration file - no required format, anything you want to note here
+meta = {
+	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
+	'timestamp': utils.get_timestamp(),
+	'repo_version': 'delta_1',
+	'run_name': run_name
+	}
+# select rather to overwrite meta data in configuration file (only if reading one)
+update_meta = False
+
+
+# create CONTROLLER - controls all components (mode)
+# debug mode will prompt user input for which component(s) to debug
+if controller_type == 'debug':
+	from controllers.debug import Debug
+	controller = Debug(
+		drone_component='Drone',
 		)
-	configuration.set_controller(controller)
+# train will create a new or read in a trained model and (continue) train
+elif controller_type == 'train':
+	from controllers.trainrl import TrainRL
+	controller = TrainRL(
+		model_component='Model',
+		)
+# evaluate willl read in a trained model and evaluate on given environment
+elif controller_type == 'evaluate':
+	from controllers.evaluaterl import EvaluateRL
+	controller = EvaluateRL(
+		model_component= 'Model',
+		)
 
 
-# MAKE NEW CONFIGURATION, set parameters, and create component objects one by one by code, as needed below (all packaged components are listed below with __init__ args)
-elif MAKE_NEW or not os.path.exists(read_configuration_path):
-	utils.speak('creating new configuration...')
-
-	# create configuration object and set active (will add components to this configuration)
-	configuration = Configuration(timestamp, repo_version)
+# READ OLD CONFIGURATION FILE
+# you do not need to do nothing else if reading a config file as is
+if not make_new_configuration:
+	# load configuration file and create object to save and connect components
+	configuration = Configuration.load(read_configuration_path)
+	if update_meta:
+		configuration.update_meta(meta)
 	Configuration.set_active(configuration)
+	configuration.set_controller(controller)
 	
-	# create controller object
-	controller_type = 'TrainRL' # Debug TrainRL EvaluateRL
-	# CONTROLLER
-	if controller_type == 'Debug':
-		from controllers.debug import Debug
-		controller = Debug(
-		drone_component='Drone'
-	)
-	elif controller_type == 'TrainRL':
-		from controllers.trainrl import TrainRL
-		controller = TrainRL(
-		model_component='Model',
-	)
-	elif controller_type == 'EvaluateRL':
-		from controllers.evaluaterl import EvaluateRL
-		controller = EvaluateRL(
-		model_component='Model',
-		n_eval_episodes=4,
-	)
+	# ALTER or CREATE any components as desired here
+
+
+# MAKE NEW CONFIGURATION
+# all packaged componets are listed here and created for debugging purposes
+# the below configuration is set to run the Delta Demonstration in our paper
+# edit as needed, suggested to use as a template
+elif make_new_configuration:
+	# create new configuration object to save and connect components
+	configuration = Configuration(meta)
+	Configuration.set_active(configuration)
 	configuration.set_controller(controller)
 	
 	# global parameters to be used by all components
+	# name of drone component to define agent commands
 	drone = 'AirSim' # AirSim Tello
+	# name of observer component to handle the observation space
 	observer = 'MultiStack' # Single SingleLag MultiStack
+	# names of sensor components to collect observations from environment
 	sensors = [
 		'Camera', 
 		'Distance',
 		]
-	output_height = 84 # output shape after processing
-	output_width = 84 # output shape after processing
-	relative_objective_point = (100, 0, 0)
-	start_z = 0
-	every_nEpisodes = 100
-	step_size = 5 # meters
-	speed = 4 # meters / second
+	# observation image height after processing
+	output_height = 84 
+	# observation image width after processing
+	output_width = 84 
+	# relative objective point for each episode
+	relative_objective_point = (100, 0, 0) 
+	# starting height of drone for each episode
+	start_z = -4 
+	# save and evaluate every n episodes, some model parameters are also a function of this
+	every_nEpisodes = 100 
+	# drone speed for steps in meters / second
+	step_size = 2 
+	# drone duration of steps in seconds
+	duration = 2 
 
-	# MAP
+	# MAP - controls the map that the drone agent will be traversing
+	# Microsoft AirSim, simulated map
 	if drone == 'AirSim':
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
@@ -90,16 +119,16 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				#'speedup', 
+				'speedup', 
 				'tellocamera', 
 				'bellydistance',
-				'nodisplay',
+				#'nodisplay',
 				],
-			release_directory = 'resources/airsim_maps/',
-			release_relative_path = 'Blocks/',
+			release_directory = 'resources/airsim_maps/Blocks/',
 			release_name = 'Blocks.exe',
 			name = 'Map',
 		)
+	# deploying to a field with no connectivity to the program, dummy object
 	elif drone == 'Tello':
 		from maps.field import Field
 		map_ = Field(
@@ -227,28 +256,28 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 		drone_component = 'Drone', 
 		move_type = 'Up', 
 		step_size = step_size,
-		speed = speed,
+		duration = duration,
 	)
 	FixedMove.get_move(
 		drone_component = 'Drone', 
 		move_type = 'Down', 
 		step_size = step_size,
-		speed = speed,
+		duration = duration,
 	)
 	FixedMove.get_move(
 		drone_component = 'Drone', 
 		move_type = 'Forward', 
 		step_size = step_size,
-		speed = speed,
+		duration = duration,
 	)
 
 	# ACTOR
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
-			'Up',
 			'Down',
 			'Forward',
+			'Up',
 			],
 		name='Actor',
 	)
@@ -263,8 +292,8 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	RelativePoint(
 		drone_component = 'Drone',
 		xyz_point = relative_objective_point,
-		min_distance = 10,
-		max_distance = 190,
+		min_distance = 4, 
+		max_distance = 104,
 		name = 'RelativePointReward',
 	)
 
@@ -277,7 +306,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 			],
 		reward_weights = [
 			1,
-			2,
+			1,
 			],
 		name = 'Rewarder',
 	)
@@ -292,8 +321,8 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	RelativePoint(
 		drone_component = 'Drone',
 		xyz_point = relative_objective_point,
-		min_distance = 5,
-		max_distance = 110,
+		min_distance = 4, 
+		max_distance = 120,
 		name = 'RelativePointTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
@@ -312,7 +341,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	if model == 'DQN':
 		from models.dqn import DQN
 		DQN(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-4,
 			buffer_size = every_nEpisodes*10,
@@ -344,7 +373,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	elif model == 'A2C':
 		from models.a2c import A2C
 		A2C(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 7e-4,
 			n_steps = 5,
@@ -372,11 +401,11 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	elif model == 'DDPG':
 		from models.ddpg import DDPG
 		DDPG(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
-			buffer_size = 1_000_000,
-			learning_starts = 100,
+			buffer_size = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,
@@ -400,7 +429,7 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	elif model == 'PPO':
 		from models.ppo import PPO
 		PPO(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
 			n_steps = 2048,
@@ -431,11 +460,11 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	elif model == 'SAC':
 		from models.sac import SAC
 		SAC(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
-			buffer_size = 1_000_000,
-			learning_starts = 100,
+			buffer_size = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 256,
 			tau = 0.005,
 			gamma = 0.99,
@@ -465,11 +494,11 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 	elif model == 'TD3':
 		from models.td3 import TD3
 		TD3(
-			environment_component = 'Environment',
+			environment_component = 'TrainEnvironment',
 			policy = 'CnnPolicy',
 			learning_rate = 1e-3,
-			buffer_size = 1_000_000,
-			learning_starts = 100,
+			buffer_size = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,
@@ -494,74 +523,69 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 			name='Model',
 		)
 
-	# OTHER
+	# SPAWNER
 	from others.spawner import Spawner
 	from datastructs.spawn import Spawn
 	Spawner(
-		Spawn(
-			x_min=-10, 
-			x_max=10,
-			y_min=-10, 
-			y_max=10, 
-			z_min=start_z, 
-			z_max=start_z,
-			yaw_max=360,
-			random=True,
+		spawns_components=[
+			Spawn(
+				x_min=-16,
+				x_max=16,
+				y_min=-16,
+				y_max=16,
+				z_min=start_z,
+				z_max=start_z,
+				yaw_max=2*math.pi,
+				random=True,
 			),
-		spawn_on_train=True,
-		spawn_on_evaluate=False,
-		name='Spawner',
+		],
+		name='TrainSpawner',
 	)
+	Spawner(
+		spawns_components=[
+			Spawn(
+				z=start_z,
+				random=False,
+				),
+			Spawn(
+				z=start_z,
+				yaw=math.radians(135),
+				random=False,
+				),
+			Spawn(
+				z=start_z,
+				yaw=math.radians(180),
+				random=False,
+				),
+			Spawn(
+				z=start_z,
+				yaw=math.radians(230),
+				random=False,
+				),
+			],
+		name='EvaluateSpawner',
+	)
+
+	# EVALUATOR
 	from others.evaluator import Evaluator
 	Evaluator(
-		model_component='Model',
-		drone_component='Drone',
-		environment_component='Environment',
-		spawners_components=[
-			Spawner(
-				Spawn(
-					z=start_z, 
-					random=False,
-				),
-			),
-			Spawner(
-				Spawn(
-					z=start_z, 
-					yaw=135, 
-					random=False,
-				),
-			),
-			Spawner(
-				Spawn(
-					z=start_z, 
-					yaw=180, 
-					random=False,
-				),
-			),
-			Spawner(
-				Spawn(
-					z=start_z, 
-					yaw=225, 
-					random=False,
-				),
-			),
-			],
-		evaluate_every_nEpisodes=every_nEpisodes, 
-		_write_folder=None, 
-		nEvaluations=0,
-		name='Evaluator',
+		environment_component = 'EvaluateEnvironment',
+		model_component = 'Model',
+		frequency = every_nEpisodes,
+		nEpisodes = 4,
+		name = 'Evaluator',
 	)
+
+	# SAVER
 	from others.saver import Saver
 	Saver(
 		model_component='Model', 
-		environment_component='Environment',
-		nEpisodes=0, 
-		save_every_nEpisodes=every_nEpisodes, 
+		environment_component='TrainEnvironment',
+		frequency=every_nEpisodes, 
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,
 		save_benchmarks=True,
-		_write_folder=None,
 		name='Saver',
 	)
 
@@ -575,15 +599,27 @@ elif MAKE_NEW or not os.path.exists(read_configuration_path):
 		terminators_components=[
 			'Collision',
 			'RelativePointTerminator',
-			#'RewardThresh',
 			'MaxSteps',
 			],
-		others_components=[
-			'Spawner',
-			'Evaluator',
-			'Saver',
+		saver_component='Saver',
+		evaluator_component='Evaluator',
+		spawner_component='TrainSpawner',
+		write_observations=False,
+		name = 'TrainEnvironment',
+	)
+	DroneRL(
+		drone_component='Drone', 
+		actor_component='Actor', 
+		observer_component='Observer', 
+		rewarder_component='Rewarder', 
+		terminators_components=[
+			'Collision',
+			'RelativePointTerminator',
+			'MaxSteps',
 			],
-		name = 'Environment'
+		spawner_component='EvaluateSpawner',
+		write_observations=True,
+		name = 'EvaluateEnvironment',
 	)
 utils.speak('configuration created!')
 

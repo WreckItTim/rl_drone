@@ -8,25 +8,26 @@ class Spawner(Other):
 
 	@_init_wrapper
 	def __init__(self, 
-			  spawn_component,
-			  drone_component='Drone', 
-			  environment_component='Environment',
-			  spawn_on_train=False,
-			  spawn_on_evaluate=True,
+			  spawns_components,
+			  drone_component='Drone',
 			 ):
-		pass
+		self._rotating_index = 0
+
+	def get_next_spawn(self):
+		next_spawn = self._spawns[self._rotating_index]
+		self._rotating_index += 1
+		if self._rotating_index >= len(self._spawns):
+			self._rotating_index = 0
+		return next_spawn
 
 	def spawn(self):
-		point, yaw = self._spawn.get_spawn()
-		self._drone.teleport(point)
+		next_spawn = self.get_next_spawn()
+		x, y, z, yaw = next_spawn.get_spawn()
 		self._drone.take_off()
-		self._drone.set_yaw(yaw)
+		self._drone.teleport(x, y, z, yaw)
 
 	def reset(self):
-		if not self._environment._evaluating and self.spawn_on_train:
-			self.spawn()
-		if self._environment._evaluating and self.spawn_on_evaluate:
-			self.spawn()
+		self.spawn()
 
 	# when using the debug controller
 	def debug(self):

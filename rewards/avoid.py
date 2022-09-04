@@ -13,7 +13,7 @@ class Avoid(Reward):
         if 'has_collided' not in state:
             state['has_collided'] = self._drone.check_collision()
         has_collided = state['has_collided']
-        total_reward = 1
+        value = 0
         if has_collided:
-            total_reward = -1
-        return total_reward
+            value = -1
+        return value

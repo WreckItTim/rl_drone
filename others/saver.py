@@ -6,10 +6,9 @@ import utils
 class Saver(Other):
 	@_init_wrapper
 	def __init__(self, 
-			  model_component, 
-			  environment_component,
-			  nEpisodes=0, 
-			  save_every_nEpisodes=10, 
+			  model_component=None, 
+			  environment_component=None,
+			  frequency=10, 
 			  save_model=True,
 			  save_replay_buffer=True,
 			  save_configuration_file=True,
@@ -17,7 +16,7 @@ class Saver(Other):
 			  _write_folder=None
 			  ):
 		if _write_folder is None:
-			self._write_folder = utils.get_global_parameter('write_folder')
+			self._write_folder = utils.get_global_parameter('working_directory')
 
 	def save(self):
 		print('SAVE')
@@ -31,10 +30,8 @@ class Saver(Other):
 			self._configuration.log_benchmarks(self._write_folder + 'benchmarks.json')
 
 	def reset(self):
-		if not self._environment._evaluating:
-			self.nEpisodes += 1
-			if self.nEpisodes % self.save_every_nEpisodes == 0:
-				self.save()
+		if self._environment.episode_counter % self.frequency == 0:
+			self.save()
 
 	# when using the debug controller
 	def debug(self):

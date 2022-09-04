@@ -28,12 +28,11 @@ class RelativePoint(Terminator):
         if distance > self.max_distance:
             state['termination_reason'] = 'max_distance'
             return True
-        return False 
-        return total_reward
+        return False
 
     def reset(self):
         position = self._drone.get_position()
-        yaw = self._drone.get_yaw(radians=True) # yaw counterclockwise rotationa bout z-axis
+        yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
         x = position[0] + self._x * math.cos(yaw) + self._y * math.sin(yaw)
         y = position[1] + self._y * math.cos(yaw) + self._x * math.sin(yaw)
         z = position[2] + self._z

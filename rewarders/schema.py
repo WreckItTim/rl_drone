@@ -1,24 +1,28 @@
-# penalizes colliding with objects
+
 from rewarders.rewarder import Rewarder
 from component import _init_wrapper
 
+# linear combination of rewards, that will default to lowest negative reward if exists
 class Schema(Rewarder):
-    # constructor
+
+    # constructor, set weights to each reward component
     @_init_wrapper
     def __init__(self, rewards_components, reward_weights):
         super().__init__()
         assert len(rewards_components) == len(reward_weights), 'not equal number of reward components and weights'
-        self._min_reward = -1. * sum(reward_weights)
-        self._max_reward = sum(reward_weights)
-        self._diff = self._max_reward - self._min_reward
         
     # calculates rewards from agent's current state (call to when taking a step)
     def reward(self, state):
         total_reward = 0
+        bad_reward = 0
         for idx, reward in enumerate(self._rewards):
             value = reward.reward(state)
+            if value < 0 and value < bad_reward:
+                bad_reward = value
             state['reward_from_' + reward._name] = value
             total_reward += self.reward_weights[idx] * value
-        # normalize total reward between [-1, 1]
-        total_reward = 2 * (total_reward - self._min_reward) / self._diff - 1
-        state['total_reward'] = total_reward
+        if bad_reward < 0:
+            state['total_reward'] = bad_reward
+        else:
+            state['total_reward'] = total_reward
+        return state['total_reward']

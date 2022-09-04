@@ -1,7 +1,5 @@
 from others.other import Other
 from component import _init_wrapper
-from models.model import Model
-import numpy as np
 import utils
 import os
 
@@ -9,59 +7,65 @@ import os
 class Evaluator(Other):
 	@_init_wrapper
 	def __init__(self, 
-			  model_component, 
-			  drone_component, 
-			  environment_component, 
-			  spawners_components,
-			  evaluate_every_nEpisodes=1000, 
-			  _write_folder=None, 
-			  nEvaluations=0
-			  ):
+			  environment_component,
+			  model_component,
+			  frequency = 1000,
+			  nEpisodes = 1,
+			  _write_folder = None, 
+			  set_counter = 0,
+			  ): 
+		# set folder path to write evaluations to
 		if _write_folder is None:
-			self._write_folder = utils.get_global_parameter('write_folder') + 'evaluations/'
+			self._write_folder = utils.get_global_parameter('working_directory') + 'evaluations/'
+		# create write directory if does not exist already
 		if not os.path.exists(self._write_folder):
 			os.makedirs(self._write_folder)
-		self._train_episode = 0
-		self._evaluation_episode = -1
-		self._nSpawns = len(spawners_components)
 
-	def step(self, state):
-		# save states while evaluating
-		if self._environment._evaluating:
-			freeze_state = state.copy()
-			self._states[self._evaluation_episode][self._nSteps] = freeze_state
-			self._nSteps += 1
+	# steps through one evaluation episode
+	def evaluate_episode(self):
+		# make states object to fill step by step
+		states = {}
+		# reset environment
+		self._environment.reset()
+		# get first observation
+		observation_numpy = self._environment._observer.observe().to_numpy()
+		# start of episode
+		for step in range(1, 1_000_000):
+			# get rl output
+			rl_output = self._model.predict(observation_numpy)
+			# take next step
+			observation_numpy, reward, done, state = self._environment.step(rl_output)
+			# freeze state
+			frozen_state = state.copy()
+			# save state
+			states[step] = frozen_state
+			# check if we are done
+			if done:
+				break
+		# end of episode
+		return states
 
-	def spawn(self):
-		self._spawners[self._evaluation_episode].spawn()
-				
+	# evaluates all episodes for this next set
+	def evaluate_set(self):
+		# allocate space to save states for all episodes
+		all_states = {}
+		# loop through all episodes
+		for episode in range(self.nEpisodes):
+			# step through next episode
+			all_states[episode] = self.evaluate_episode()
+		# write states to file
+		utils.write_json(all_states, self._write_folder + str(self.set_counter) + '.json')
+		# counter++
+		self.set_counter += 1
+
+	# handle resets while training		
 	def reset(self):
-		# handle resets while training - check when to do next set of evaluations
-		if not self._environment._evaluating:
-			if self._train_episode % self.evaluate_every_nEpisodes == 0:
-				self._model.evaluate(self._model._environment, n_eval_episodes=self._nSpawns)
-			self._train_episode += 1
-
-		# handle resets while evaluating
-		if self._environment._evaluating:
-			self._evaluation_episode += 1
-			
-			# start of all evaluations stuff here:
-			if self._evaluation_episode == 0:
-				self._states = {}
-			
-			# begin of a new evaluation episode stuff here:
-			if self._evaluation_episode >= 0 and self._evaluation_episode < self._nSpawns:
-				self.spawn()
-				self._nSteps = 0
-				self._states[self._evaluation_episode] = {}
-			
-			# end of all evaluations stuff here:
-			if self._evaluation_episode == self._nSpawns:
-				utils.write_json(self._states, self._write_folder + str(self.nEvaluations) + '.json')
-				self.nEvaluations += 1
-				self._evaluation_episode = -1 # reset to -1 for future evaluation sets
+		# check when to do next set of evaluations
+		if self._environment.episode_counter % self.frequency == 0:
+			# evaluate for a set of episodes
+			self.evaluate_set()
 
 	# when using the debug controller
 	def debug(self):
-		self.reset()
+		# evaluate for a set of episodes
+		self.evaluate_set()
