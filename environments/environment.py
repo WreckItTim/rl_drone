@@ -1,6 +1,8 @@
 # abstract class used to handle observations to input into rl algo
 from component import Component
-from matplotlib.pyplot import imshow, show
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
+from gym import spaces
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3
 class Environment(Component):
@@ -26,20 +28,20 @@ class Environment(Component):
 
 	def connect(self):
 		super().connect()
+		# even though we do not directly use the observation or action space, these fields are necesary for sb3
+		self.observation_space = self._observer.get_space()
+		self.action_space = self._actor.get_space()
 
 	# when using the debug controller
 	def debug(self):
-		observation_array = self.reset()
-		imshow(observation_array, cmap='gray')
-		show()
-		for step in range(2):
-			observation_array, reward, done, state = self.step(self.action_space.sample())
-			imshow(observation_array, cmap='gray')
-			print('printing state ... ', state)
-			show()
-		observation_array = self.reset()
-		imshow(observation_array, cmap='gray')
-		show()
+		# reset environment
+		self.reset()
+		# get first observation
+		observation_numpy = self._observer.observe().to_numpy()
+		# sample rl output
+		rl_output = self.action_space.sample()
+		# take a step
+		observation_numpy, reward, done, state = self._evaluate_environment.step(rl_output)
 
 	## methods that are expected to be defined and called from OpenAI Gym and Stable_Baselines3
 

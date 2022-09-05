@@ -16,9 +16,13 @@ class Observer(Component):
 		super().connect()
 
 	# returns observation transcribed for input into RL model
-	def observe(self):
+	def observe(self, write=False):
 		raise NotImplementedError
 
 	def reset(self):
 		for transformer in self._transformers:
 			transformer.reset()
+
+	# returns observation space for this observer
+	def get_space(self):
+		raise NotImplementedError

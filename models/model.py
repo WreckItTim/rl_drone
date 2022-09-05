@@ -1,8 +1,5 @@
 # abstract class used to handle RL model
 from component import Component
-from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 import utils
 from os.path import exists
 from component import _init_wrapper
@@ -23,9 +20,6 @@ class Model(Component):
 
     def connect(self):
         super().connect()
-        # wrap environment for sb3
-        #wrapped_environment = VecTransposeImage(DummyVecEnv([lambda: Monitor(self._environment)]))
-        #self._model_arguments['env'] = wrapped_environment
         self._model_arguments['env'] = self._environment
         # create model object if needs be
         if self._sb3model is None:

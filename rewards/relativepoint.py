@@ -14,24 +14,23 @@ class RelativePoint(Reward):
         self._y = self.xyz_point[1]
         self._z = self.xyz_point[2]
         # set reward function
-        self._reward_function = lambda distance : math.exp(-1.0 * distance)
+        self._reward_function = lambda x : math.exp(-2.0 * x)
         self.init_normalization()
 
     # calculate constants for normalization
     def init_normalization(self):
-        # get and min and max reward outputs from inputting min and max distances
-        self.y_min = self._reward_function(self.min_distance)
-        y_max = self._reward_function(self.max_distance)
-        self.y_diff = y_max - self.y_min
+        # normalize to min and max distances
+        self._diff = self.max_distance - self.min_distance
 
     # normalize reward value between 0 and 1
     def normalize_reward(self, distance):
-        # clip to min-max distance
-        clipped_distance = min(self.max_distance, max(self.min_distance, distance))
-        # get value from decaying exponential (heavier rewards for closer)
-        y = self._reward_function(clipped_distance)
-        # min-max normalize between 0 and 1
-        return (y - self.y_min) / self.y_diff
+        # clip to min_distance so reward does not go over 1
+        clipped_distance = max(self.min_distance, distance)
+        # normalize distance to fit desired behavior of reward function
+        normalized_distance = (clipped_distance - self.min_distance) / self._diff
+        # get value from reward function
+        value = self._reward_function(normalized_distance)
+        return value
     
     # get reward based on distance to point 
     def reward(self, state):

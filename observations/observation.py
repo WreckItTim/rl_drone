@@ -13,7 +13,7 @@ class Observation:
 		self._data = np.array(_data)
 		self.transformations = []
 		Observation.nObservations += 1
-		self._name = 'Observation_' + str(Observation.nObservations)
+		self._name = type(self).__name__ + str(Observation.nObservations)
 
 	# writes observation metadata to given dir path
 	def write(self, directory_path=None, file_name=None):
@@ -36,7 +36,8 @@ class Observation:
 	def display(self):
 		raise NotImplementedError
 
-	# converts observation into an nd numpy array
+	# converts observation into an nd numpy array 
+	# some observation types are already numpy arrays
 	def to_numpy(self):
 		return self._data
 
@@ -48,7 +49,3 @@ class Observation:
 	def save_transformation(self, transformer, data):
 		#self.transformations.append(transformer._to_json())
 		self.set_data(data)
-
-	# turns observation in numpy array to be stacked with other arrays
-	def to_stack(self, output_height, output_width):
-		return self.to_numpy()

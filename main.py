@@ -6,7 +6,7 @@ import math
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'delta'
+test_version =  'epsilon'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -34,7 +34,7 @@ utils.set_global_parameter('working_directory', working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'delta_1',
+	'repo_version': 'epsilon_1',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -85,33 +85,43 @@ elif make_new_configuration:
 	Configuration.set_active(configuration)
 	configuration.set_controller(controller)
 	
-	# global parameters to be used by all components
-	# name of drone component to define agent commands
+	# **** SET PARAMETERS ****
+	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
-	# name of observer component to handle the observation space
-	observer = 'MultiStack' # Single SingleLag MultiStack
-	# names of sensor components to collect observations from environment
+	# set sensors to use
 	sensors = [
 		'Camera', 
 		'Distance',
 		]
-	# observation image height after processing
-	output_height = 84 
-	# observation image width after processing
-	output_width = 84 
-	# relative objective point for each episode
+	# set modality being used
+	observation = 'Multi' # Image Vector Multi
+	# set observer component to handle the observation space
+	observer = 'Multi' if observation == 'Multi' else 'Single'
+	# if inputing images, set final observation image height after processing
+	image_height = 84 
+	# if inputing images, set final observation image width after processing
+	image_width = 84 
+	# if inputing images, set final observation image number of bands
+	image_bands = 1
+	# if inputing vectors, set final observation vector number of components
+	vector_length = 1
+	# set relative objective point for each episode
 	relative_objective_point = (100, 0, 0) 
-	# starting height of drone for each episode
+	# set starting height of drone for each episode
 	start_z = -4 
 	# save and evaluate every n episodes, some model parameters are also a function of this
 	every_nEpisodes = 100 
-	# drone speed for steps in meters / second
-	step_size = 2 
-	# drone duration of steps in seconds
-	duration = 2 
+	# set drone speed for steps in meters / second
+	move_speed = 2 
+	# set rotate speed for steps in degrees / second
+	yaw_rate = 22.5
+	# set drone duration of each step in seconds
+	step_duration = 2 
+	
+
+	# **** CREATE COMPONENTS ****
 
 	# MAP - controls the map that the drone agent will be traversing
-	# Microsoft AirSim, simulated map
 	if drone == 'AirSim':
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
@@ -159,7 +169,7 @@ elif make_new_configuration:
 			compress = False,
 			is_gray = True,
 			name = 'Camera',
-		)
+			)
 	if drone == 'AirSim' and 'Distance' in sensors:
 		from sensors.airsimdistance import AirSimDistance
 		AirSimDistance(
@@ -174,110 +184,108 @@ elif make_new_configuration:
 		)
 
 	# TRANSFORMER
+	from transformers.normalize import Normalize
+	Normalize(
+		min_input = 0, # min depth of 0m
+		max_input = 100, # max depth of 100m
+		min_output = 0, # SB3 uses 0-1 floating point values
+		max_output = 1, # SB3 uses 0-1 floating point values
+		name = 'NormalizeVector',
+	)
+	Normalize(
+		min_input = 0, # min depth of 0m
+		max_input = 100, # max depth of 100m
+		min_output = 0, # SB3 uses 0-255 pixel values
+		max_output = 255, # SB3 uses 0-255 pixel values
+		name = 'NormalizeImage',
+	)
 	from transformers.resizeimage import ResizeImage
 	ResizeImage(
-		image_shape = (output_height, output_width, 1),
+		image_shape = (image_height, image_width, image_bands),
 		name = 'ResizeImage',
 	)
-	from transformers.normalizedepth import NormalizeDepth
-	NormalizeDepth(
-		min_depth = 0,
-		max_depth = 100,
-		name = 'NormalizeDepth',
-	)
-
-	# OBSERVER
+	
+		# OBSERVER
 	if observer == 'Single':
 		from observers.single import Single
+		if observation == 'Image':
+			transformers = [
+				'ResizeImage',
+				'NormalizeImage',
+				]
+		if observation == 'Vector':
+			transformers = [
+				'NormalizeVector',
+				]
 		Single(
 			sensor_component = sensors[0], 
-			transformers_components = [
-				'ResizeImage', 
-				'NormalizeDepth',
-				],
-			output_height = output_height,
-			output_width = output_width,
+			vector_length = vector_length,
+			is_image = observation == 'Image',
+			image_height = image_height, 
+			image_width = image_width,
+			image_bands = image_bands,
+			transformers_components = transformers,
 			name = 'Observer',
 		)
-	elif observer == 'SingleLag':
-		from observers.singlelag import SingleLag
-		SingleLag(
-			sensor_component = sensors[0], 
-			transformers_components = [
-				'ResizeImage', 
-				'NormalizeDepth',
-				],
-			n_frames_lag = 2,
-			output_height = output_height,
-			output_width = output_width,
-			name = 'Observer',
-		)
-	elif observer == 'MultiStack':
-		distance_thickness = 20
-		resize = ResizeImage(
-			image_shape=(output_height-distance_thickness, output_width, 1),
-		)
-		normalize_distance = NormalizeDepth(
-			min_depth = 0,
-			max_depth = 40,
-		)
+	if observer == 'Multi':
 		from observers.single import Single
-		observers = [
-			Single(
-				sensor_component = 'Camera', 
-				transformers_components = [
-					resize,
-					'NormalizeDepth',
+		Single(
+			sensor_component = 'Distance', 
+			vector_length = vector_length,
+			is_image = False,
+			transformers_components = [
+				'NormalizeVector',
 				],
-				output_height = output_height-distance_thickness,
-				output_width = output_width,
-			),
-			Single(
-				sensor_component = 'Distance', 
-				transformers_components = [
-					normalize_distance,
-				],
-				output_height = distance_thickness,
-				output_width = output_width,
-			),
-			]
-		from observers.multistack import MultiStack
-		MultiStack(
-			observers_components = observers,
-			output_height = output_height,
-			output_width = output_width,
-			stack='v',
-			name='Observer',
+			name = 'ObserverVector',
 		)
+		Single(
+			sensor_component = 'Camera', 
+			is_image = True,
+			image_height = image_height, 
+			image_width = image_width,
+			image_bands = image_bands,
+			transformers_components = [
+				'ResizeImage',
+				'NormalizeImage',
+				],
+			name = 'ObserverImage',
+		)
+		from observers.multi import Multi
+		Multi(
+			vector_observer_component = 'ObserverVector',
+			image_observer_component = 'ObserverImage',
+			name = 'Observer',
+			)
 
 	# ACTION
 	from actions.fixedmove import FixedMove 
-	FixedMove.get_move(
+	FixedMove(
 		drone_component = 'Drone', 
-		move_type = 'Up', 
-		step_size = step_size,
-		duration = duration,
+		x_speed = move_speed, 
+		duration = step_duration,
+		name = 'MoveForward',
 	)
-	FixedMove.get_move(
-		drone_component = 'Drone', 
-		move_type = 'Down', 
-		step_size = step_size,
-		duration = duration,
+	from actions.fixedrotate import FixedRotate 
+	FixedRotate(
+		drone_component = 'Drone',  
+		yaw_rate = yaw_rate,
+		duration = step_duration,
+		name = 'RotateRight',
 	)
-	FixedMove.get_move(
-		drone_component = 'Drone', 
-		move_type = 'Forward', 
-		step_size = step_size,
-		duration = duration,
+	FixedRotate(
+		drone_component = 'Drone',  
+		yaw_rate = -1 * yaw_rate,
+		duration = step_duration,
+		name = 'RotateLeft',
 	)
 
 	# ACTOR
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
-			'Down',
-			'Forward',
-			'Up',
+			'MoveForward',
+			'RotateRight',
+			'RotateLeft',
 			],
 		name='Actor',
 	)
@@ -322,7 +330,7 @@ elif make_new_configuration:
 		drone_component = 'Drone',
 		xyz_point = relative_objective_point,
 		min_distance = 4, 
-		max_distance = 120,
+		max_distance = 104,
 		name = 'RelativePointTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
@@ -338,11 +346,14 @@ elif make_new_configuration:
 	)
 
 	# MODEL
+	if observation == 'Image': policy = 'CNNPolicy'
+	if observation == 'Vector': policy = 'MlpPolicy'
+	if observation == 'Multi': policy = 'MultiInputPolicy'
 	if model == 'DQN':
 		from models.dqn import DQN
 		DQN(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 1e-4,
 			buffer_size = every_nEpisodes*10,
 			learning_starts = every_nEpisodes,
@@ -374,7 +385,7 @@ elif make_new_configuration:
 		from models.a2c import A2C
 		A2C(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 7e-4,
 			n_steps = 5,
 			gamma = 0.99,
@@ -402,7 +413,7 @@ elif make_new_configuration:
 		from models.ddpg import DDPG
 		DDPG(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*10,
 			learning_starts = every_nEpisodes,
@@ -430,7 +441,7 @@ elif make_new_configuration:
 		from models.ppo import PPO
 		PPO(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 1e-3,
 			n_steps = 2048,
 			batch_size = 64,
@@ -461,7 +472,7 @@ elif make_new_configuration:
 		from models.sac import SAC
 		SAC(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*10,
 			learning_starts = every_nEpisodes,
@@ -495,7 +506,7 @@ elif make_new_configuration:
 		from models.td3 import TD3
 		TD3(
 			environment_component = 'TrainEnvironment',
-			policy = 'CnnPolicy',
+			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*10,
 			learning_starts = every_nEpisodes,
@@ -531,8 +542,8 @@ elif make_new_configuration:
 			Spawn(
 				x_min=-16,
 				x_max=16,
-				y_min=-16,
-				y_max=16,
+				y_min=-12,
+				y_max=12,
 				z_min=start_z,
 				z_max=start_z,
 				yaw_max=2*math.pi,
@@ -569,7 +580,8 @@ elif make_new_configuration:
 	# EVALUATOR
 	from others.evaluator import Evaluator
 	Evaluator(
-		environment_component = 'EvaluateEnvironment',
+		train_environment_component = 'TrainEnvironment',
+		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
 		frequency = every_nEpisodes,
 		nEpisodes = 4,

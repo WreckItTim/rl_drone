@@ -7,7 +7,7 @@ class Sensor(Component):
 		pass
 
 	# fetch a response from sensor
-	def sense(self):
+	def sense(self, logging_info=None):
 		raise NotImplementedError
 
 	# when using the debug controller
@@ -17,7 +17,3 @@ class Sensor(Component):
 
 	def connect(self):
 		super().connect()
-
-	# creates a new observation object from passed in data
-	def create_observation(self, data):
-		raise NotImplementedError

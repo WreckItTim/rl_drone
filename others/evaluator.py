@@ -7,7 +7,8 @@ import os
 class Evaluator(Other):
 	@_init_wrapper
 	def __init__(self, 
-			  environment_component,
+			  train_environment_component,
+			  evaluate_environment_component,
 			  model_component,
 			  frequency = 1000,
 			  nEpisodes = 1,
@@ -26,15 +27,15 @@ class Evaluator(Other):
 		# make states object to fill step by step
 		states = {}
 		# reset environment
-		self._environment.reset()
+		self._evaluate_environment.reset()
 		# get first observation
-		observation_numpy = self._environment._observer.observe().to_numpy()
+		observation_data, observation_name = self._evaluate_environment._observer.observe()
 		# start of episode
 		for step in range(1, 1_000_000):
 			# get rl output
-			rl_output = self._model.predict(observation_numpy)
+			rl_output = self._model.predict(observation_data)
 			# take next step
-			observation_numpy, reward, done, state = self._environment.step(rl_output)
+			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
 			# freeze state
 			frozen_state = state.copy()
 			# save state
@@ -47,6 +48,8 @@ class Evaluator(Other):
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
+		print('EVALUATE')
+		print(self.nEpisodes, self.set_counter)
 		# allocate space to save states for all episodes
 		all_states = {}
 		# loop through all episodes
@@ -61,7 +64,7 @@ class Evaluator(Other):
 	# handle resets while training		
 	def reset(self):
 		# check when to do next set of evaluations
-		if self._environment.episode_counter % self.frequency == 0:
+		if self._train_environment.episode_counter % self.frequency == 0:
 			# evaluate for a set of episodes
 			self.evaluate_set()
 

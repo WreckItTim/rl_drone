@@ -1,6 +1,5 @@
 from environments.environment import Environment
 from component import _init_wrapper
-from gym import spaces
 import numpy as np
 import utils
 
@@ -27,9 +26,6 @@ class DroneRL(Environment):
 
 	def connect(self):
 		super().connect()
-		# even though we do not directly use the observation or action space, these fields are necesary for sb3
-		self.observation_space = spaces.Box(0, 255, shape=self._observer._output_shape, dtype=np.uint8)
-		self.action_space = spaces.Discrete(len(self._actor._actions))
 			
 	# activate needed components
 	def step(self, rl_output):
@@ -42,10 +38,8 @@ class DroneRL(Environment):
 		transcribed_action = self._actor.act(rl_output)
 		state['transcribed_action'] = transcribed_action
 		# get observation
-		observation = self._observer.observe()
-		if self.write_observations:
-			observation.write()
-		state['observation_component'] = observation._name
+		observation_data, observation_name = self._observer.observe(self.write_observations)
+		state['observation_component'] = observation_name
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
@@ -59,7 +53,7 @@ class DroneRL(Environment):
 		if done:
 			self.episode_counter += 1
 		# state is passed to stable-baselines3 callbacks
-		return observation.to_numpy(), total_reward, done, state
+		return observation_data, total_reward, done, state
 
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
@@ -83,4 +77,5 @@ class DroneRL(Environment):
 		for terminator in self._terminators:
 			terminator.reset()
 		self._nSteps = 0
-		return self._observer.observe().to_numpy()
+		observation_data, observation_name = self._observer.observe()
+		return observation_data
