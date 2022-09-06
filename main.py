@@ -299,9 +299,9 @@ elif make_new_configuration:
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
-			#'MoveForward',
+			'MoveForward',
 			'RotateRight',
-			#'RotateLeft',
+			'RotateLeft',
 			],
 		name='Actor',
 	)

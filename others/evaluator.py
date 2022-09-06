@@ -49,7 +49,6 @@ class Evaluator(Other):
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
 		print('EVALUATE')
-		print(self.nEpisodes, self.set_counter)
 		# allocate space to save states for all episodes
 		all_states = {}
 		# loop through all episodes
