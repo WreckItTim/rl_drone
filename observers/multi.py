@@ -30,6 +30,7 @@ class Multi(Observer):
 		return data_dict, 'Mutli_' + vector_name + '_' + image_name
 
 	def reset(self):
+		super().reset()
 		self._vector_observer.reset()
 		self._image_observer.reset()
 

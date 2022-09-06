@@ -10,20 +10,23 @@ class DroneState(Sensor):
 	def __init__(self,
 				 drone_component,
 				 get_yaw = True,
+				 transformers_components=None,
 				 ):
 		super().__init__()
 
 	# get state information from drone
-	def sense(self, logging_info=None):
+	def sense(self):
 		data = []
+		names = []
 		if self.get_yaw:
 			# fetch yaw
 			yaw = self._drone.get_yaw()
 			# normalize yaw between 0 and 1
 			yaw_normalized = yaw / math.pi / 2
 			data.append(yaw_normalized)
+			names.append('yaw_normalized')
 		observation = Vector(
 			_data = data,
-			names = logging_info,
+			names = names,
 		)
-		return observation
+		return self.transform(observation)

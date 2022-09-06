@@ -20,8 +20,7 @@ class Observer(Component):
 		raise NotImplementedError
 
 	def reset(self):
-		for transformer in self._transformers:
-			transformer.reset()
+		pass
 
 	# returns observation space for this observer
 	def get_space(self):

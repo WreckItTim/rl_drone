@@ -11,7 +11,10 @@ class Vector(Observation):
 			  data_path = None,
 		   ):
 		super().__init__(_data = _data, data_path = data_path)
+		# create dict from data
 		self.names = names
+		if names is None:
+			self.names = [str(idx) for idx in range(len(self._data))]
 
 	# displays observation to console
 	def display(self):
@@ -27,8 +30,5 @@ class Vector(Observation):
 			file_name = file_name,
 			)
 		self.data_path = file_path + '.json'
-		# create dict from data
-		if self.names is None:
-			self.names = [str(idx) for idx in range(len(self._data))]
 		data_dict = {name:self._data[idx] for idx, name in enumerate(self.names)}
 		utils.write_json(data_dict, self.data_path)

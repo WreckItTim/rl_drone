@@ -9,18 +9,17 @@ import numpy as np
 
 class Single(Observer):
 	
-	# constructor
+	# and observer with same observation types (can be multiple sensors)
+	# observation type is either vector or image
 	@_init_wrapper
 	def __init__(
 		self, 
-		sensor_component,
+		sensors_components,
 		vector_length = -1,
-		vector_names = None,
 		is_image = False,
 		image_height = None, 
 		image_width = None,
 		image_bands = None,
-		transformers_components = [],
 	):
 		super().__init__(
 		)
@@ -31,18 +30,25 @@ class Single(Observer):
 		
 	# gets observations
 	def observe(self, write=False):
-		# get obeservation
-		observation = self._sensor.sense(logging_info = self.vector_names)
-		# make any transformations
-		for transformer in self._transformers:
-			transformer.transform(observation)
-		if write: 
-			observation.write()
-		return observation.to_numpy(), observation._name
+		# make observations and stack into global image/vector
+		arrays = []
+		name = 'Single'
+		for sensor in self._sensors:
+			# get obeservation
+			observation = sensor.sense()
+			if write: 
+				observation.write()
+			arrays.append(observation.to_numpy())
+			name += '_' + observation._name
+		# concatenate observations
+		axis = 2 if self.is_image else 0
+		array = np.concatenate(arrays, axis)
+		return array, name
 
 	def reset(self):
 		super().reset()
-		self._sensor.reset()
+		for sensor in self._sensors:
+			sensor.reset()
 
 	# returns box space with proper dimensions
 	def get_space(self):

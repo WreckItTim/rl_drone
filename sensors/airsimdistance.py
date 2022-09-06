@@ -10,7 +10,9 @@ class AirSimDistance(Sensor):
 
 	# constructor
 	@_init_wrapper
-	def __init__(self):
+	def __init__(self,
+			  transformers_components=None,
+			  ):
 		super().__init__()
 		self._client = None
 
@@ -25,9 +27,9 @@ class AirSimDistance(Sensor):
 		self._client.confirmConnection()
 
 	# takes a picture with camera
-	def sense(self, logging_info=None):
+	def sense(self):
 		distance = np.array(self._client.getDistanceSensorData().distance)
 		observation = Vector(
 			_data=[distance], 
 		)
-		return observation
+		return self.transform(observation)

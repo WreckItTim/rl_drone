@@ -7,8 +7,14 @@ class Sensor(Component):
 		pass
 
 	# fetch a response from sensor
-	def sense(self, logging_info=None):
+	def sense(self):
 		raise NotImplementedError
+
+	def transform(self, observation):
+		if self._transformers is not None:
+			for transformer in self._transformers:
+				transformer.transform(observation)
+		return observation
 
 	# when using the debug controller
 	def debug(self):

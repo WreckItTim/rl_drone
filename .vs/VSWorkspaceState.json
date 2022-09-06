@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\observations",
-    "\\sensors"
+    "\\sensors",
+    "\\transformers"
   ],
-  "SelectedNode": "\\observations\\vector.py",
+  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

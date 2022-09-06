@@ -9,7 +9,11 @@ from component import _init_wrapper
 class PortCamera(Sensor):
 	# constructor
 	@_init_wrapper
-	def __init__(self, port='udp://0.0.0.0:11111', is_gray=False):
+	def __init__(self, 
+			  port='udp://0.0.0.0:11111', 
+			  is_gray=False,
+			  transformers_components=None,
+			  ):
 		super().__init__()
 		self._camera = None
 
@@ -22,12 +26,12 @@ class PortCamera(Sensor):
 			self._camera.release()
 
 	# takes a picture with camera
-	def sense(self, logging_info=None):
+	def sense(self):
 		ret = False
 		while not ret:
 			ret, img_array = self._camera.read()
-		image = Image(
+		observation = Image(
 			_data=img_array, 
 			is_gray=self.is_gray,
 		)
-		return image
+		return self.transform(observation)

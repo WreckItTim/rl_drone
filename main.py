@@ -34,7 +34,7 @@ utils.set_global_parameter('working_directory', working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'epsilon_1',
+	'repo_version': 'epsilon_2',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -89,22 +89,22 @@ elif make_new_configuration:
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
-	sensors = [
+	image_sensors = [
 		'Camera', 
-		'Distance',
 		]
+	image_bands = 1
+	image_height = 84 
+	image_width = 84 
+	vector_sensors = [
+		#'Distance',
+		#'DroneState',
+		'Objective',
+		]
+	vector_length = len(vector_sensors)
 	# set modality being used
-	observation = 'Multi' # Image Vector Multi
+	observation = 'Vector' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
-	# if inputing images, set final observation image height after processing
-	image_height = 84 
-	# if inputing images, set final observation image width after processing
-	image_width = 84 
-	# if inputing images, set final observation image number of bands
-	image_bands = 1
-	# if inputing vectors, set final observation vector number of components
-	vector_length = 1
 	# set relative objective point for each episode
 	relative_objective_point = (100, 0, 0) 
 	# set starting height of drone for each episode
@@ -159,30 +159,6 @@ elif make_new_configuration:
 			name='Drone',
 		)
 
-	# SENSOR
-	if drone == 'AirSim' and 'Camera' in sensors:
-		from sensors.airsimcamera import AirSimCamera
-		AirSimCamera(
-			camera_view = '0',
-			image_type = 2,
-			as_float = True,
-			compress = False,
-			is_gray = True,
-			name = 'Camera',
-			)
-	if drone == 'AirSim' and 'Distance' in sensors:
-		from sensors.airsimdistance import AirSimDistance
-		AirSimDistance(
-			name = 'Distance',
-		)
-	if drone == 'Tello' and 'Camera' in sensors:
-		from sensors.portcamera import PortCamera
-		PortCamera(
-			port = 'udp://0.0.0.0:11111',
-			is_gray = False,
-			name = 'Camera',
-		)
-
 	# TRANSFORMER
 	from transformers.normalize import Normalize
 	Normalize(
@@ -190,64 +166,104 @@ elif make_new_configuration:
 		max_input = 100, # max depth of 100m
 		min_output = 0, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
-		name = 'NormalizeVector',
+		name = 'NormalizeDistance',
+	)
+	Normalize(
+		min_input = 0,
+		max_input = 2*math.pi,
+		min_output = 0,
+		max_output = 1,
+		name = 'NormalizeYaw',
 	)
 	Normalize(
 		min_input = 0, # min depth of 0m
 		max_input = 100, # max depth of 100m
 		min_output = 0, # SB3 uses 0-255 pixel values
 		max_output = 255, # SB3 uses 0-255 pixel values
-		name = 'NormalizeImage',
+		name = 'NormalizeDepth',
 	)
 	from transformers.resizeimage import ResizeImage
 	ResizeImage(
 		image_shape = (image_height, image_width, image_bands),
 		name = 'ResizeImage',
 	)
+
+	# SENSOR
+	if drone == 'AirSim' and 'Camera' in image_sensors:
+		from sensors.airsimcamera import AirSimCamera
+		AirSimCamera(
+			camera_view = '0',
+			image_type = 2,
+			as_float = True,
+			compress = False,
+			is_gray = True,
+			transformers_components = [
+				'ResizeImage',
+				'NormalizeDepth',
+				],
+			name = 'Camera',
+			)
+	if drone == 'AirSim' and 'Distance' in vector_sensors:
+		from sensors.airsimdistance import AirSimDistance
+		AirSimDistance(
+			transformers_components = [
+				'NormalizeDistance',
+				],
+			name = 'Distance',
+		)
+	if drone == 'Tello' and 'Camera' in image_sensors:
+		from sensors.portcamera import PortCamera
+		PortCamera(
+			port = 'udp://0.0.0.0:11111',
+			is_gray = False,
+			transformers_components = [
+				'ResizeImage',
+				'NormalizeDepth',
+				],
+			name = 'Camera',
+		)
+	if 'Objective' in vector_sensors:
+		from sensors.objective import Objective
+		Objective(
+			drone_component = 'Drone',
+			xyz_point = relative_objective_point,
+			get_yaw_difference = True,
+			transformers_components = [
+				'NormalizeYaw',
+				],
+			name = 'Objective',
+		)
 	
 		# OBSERVER
 	if observer == 'Single':
 		from observers.single import Single
-		if observation == 'Image':
-			transformers = [
-				'ResizeImage',
-				'NormalizeImage',
-				]
 		if observation == 'Vector':
-			transformers = [
-				'NormalizeVector',
-				]
+			sensor_array = vector_sensors
+		if observation == 'Image':
+			sensor_array = image_sensors
 		Single(
-			sensor_component = sensors[0], 
+			sensors_components = sensor_array, 
 			vector_length = vector_length,
 			is_image = observation == 'Image',
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
-			transformers_components = transformers,
 			name = 'Observer',
 		)
 	if observer == 'Multi':
 		from observers.single import Single
 		Single(
-			sensor_component = 'Distance', 
+			sensors_components = vector_sensors, 
 			vector_length = vector_length,
 			is_image = False,
-			transformers_components = [
-				'NormalizeVector',
-				],
 			name = 'ObserverVector',
 		)
 		Single(
-			sensor_component = 'Camera', 
+			sensors_components = image_sensors, 
 			is_image = True,
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
-			transformers_components = [
-				'ResizeImage',
-				'NormalizeImage',
-				],
 			name = 'ObserverImage',
 		)
 		from observers.multi import Multi
@@ -283,9 +299,9 @@ elif make_new_configuration:
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
-			'MoveForward',
+			#'MoveForward',
 			'RotateRight',
-			'RotateLeft',
+			#'RotateLeft',
 			],
 		name='Actor',
 	)
@@ -341,12 +357,12 @@ elif make_new_configuration:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 50,
+		max_steps = 8,
 		name = 'MaxSteps',
 	)
 
 	# MODEL
-	if observation == 'Image': policy = 'CNNPolicy'
+	if observation == 'Image': policy = 'CnnPolicy'
 	if observation == 'Vector': policy = 'MlpPolicy'
 	if observation == 'Multi': policy = 'MultiInputPolicy'
 	if model == 'DQN':

@@ -27,7 +27,14 @@ class AirSimCamera(Sensor):
 		# OpticalFlowVis = 9
 	# constructor
 	@_init_wrapper
-	def __init__(self, camera_view='0', image_type=2, as_float=True, compress=False, is_gray=False):
+	def __init__(self, 
+			  camera_view='0', 
+			  image_type=2, 
+			  as_float=True, 
+			  compress=False, 
+			  is_gray=False,
+			  transformers_components=None,
+			  ):
 		super().__init__()
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
 		self._client = None
@@ -45,7 +52,7 @@ class AirSimCamera(Sensor):
 		self._client.confirmConnection()
 
 	# takes a picture with camera
-	def sense(self, logging_info=None):
+	def sense(self):
 		response = self._client.simGetImages([self._image_request])[0]
 		if self.as_float:
 			np_flat = np.array(response.image_data_float, dtype=np.float)
@@ -55,8 +62,8 @@ class AirSimCamera(Sensor):
 			img_array = np.reshape(np_flat, (response.height, response.width))
 		else:
 			img_array = np.reshape(np_flat, (response.height, response.width, 3))
-		image = Image(
+		observation = Image(
 			_data=img_array, 
 			is_gray=self.is_gray,
 		)
-		return image
+		return self.transform(observation)

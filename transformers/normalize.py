@@ -1,6 +1,7 @@
 from transformers.transformer import Transformer
 import numpy as np
 from component import _init_wrapper
+from observations.vector import Vector
 
 # MinMax normalizes observations
 class Normalize(Transformer):
@@ -21,4 +22,10 @@ class Normalize(Transformer):
 						 (self.min_input, self.max_input),
 						 (self.min_output, self.max_output),
 						 )
+		if type(observation) == Vector:
+			print(normalized, normalized.shape)
+			normalized = np.reshape(normalized, (len(normalized),))
+			print(normalized, normalized.shape)
+			for idx, name in enumerate(observation.names):
+				observation.names[idx] = observation.names[idx] + '_normalized'
 		observation.save_transformation(self, normalized)
