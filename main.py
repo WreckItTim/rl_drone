@@ -357,7 +357,7 @@ elif make_new_configuration:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 8,
+		max_steps = 60,
 		name = 'MaxSteps',
 	)
 
