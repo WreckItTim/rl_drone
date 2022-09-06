@@ -23,9 +23,7 @@ class Normalize(Transformer):
 						 (self.min_output, self.max_output),
 						 )
 		if type(observation) == Vector:
-			print(normalized, normalized.shape)
 			normalized = np.reshape(normalized, (len(normalized),))
-			print(normalized, normalized.shape)
 			for idx, name in enumerate(observation.names):
 				observation.names[idx] = observation.names[idx] + '_normalized'
 		observation.save_transformation(self, normalized)
