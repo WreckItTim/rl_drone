@@ -102,7 +102,7 @@ elif make_new_configuration:
 		]
 	vector_length = len(vector_sensors)
 	# set modality being used
-	observation = 'Vector' # Image Vector Multi
+	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# set relative objective point for each episode
