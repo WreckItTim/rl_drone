@@ -59,7 +59,7 @@ elif controller_type == 'train':
 		total_timesteps = 1_000_000,
 		callback = None,
 		log_interval = -1,
-		tb_log_name = None,
+		tb_log_name = 'tb_log',
 		eval_env = None,
 		eval_freq = -1,
 		n_eval_episodes = -1,
