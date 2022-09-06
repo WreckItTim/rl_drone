@@ -67,7 +67,6 @@ class Single(Observer):
 				self._history[save_to] = self._history[load_from]
 			save_to = slice(0, self.vector_length)
 			self._history[save_to] = array
-		pickle.dump(self._history, open('temp/trash/' + name + '.pkl','wb'))
 		return self._history, name
 
 	def reset(self):
