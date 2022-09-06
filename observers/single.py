@@ -6,6 +6,7 @@ from sensors.sensor import Sensor
 from transformers.transformer import Transformer
 from gym import spaces
 import numpy as np
+import pickle
 
 class Single(Observer):
 	
@@ -20,30 +21,54 @@ class Single(Observer):
 		image_height = None, 
 		image_width = None,
 		image_bands = None,
+		nTimesteps = 1
 	):
 		super().__init__(
 		)
 		if is_image:
-			self._output_shape = (image_height, image_width, image_bands)
+			self._output_shape = (image_height, image_width, image_bands * nTimesteps)
 		else:
-			self._output_shape = (vector_length,)
+			self._output_shape = (vector_length * nTimesteps,)
+		self._history = np.zeros(self._output_shape)
 		
 	# gets observations
 	def observe(self, write=False):
 		# make observations and stack into global image/vector
-		arrays = []
-		name = 'Single'
+		next_array = []
+		name = ''
 		for sensor in self._sensors:
 			# get obeservation
 			observation = sensor.sense()
 			if write: 
 				observation.write()
-			arrays.append(observation.to_numpy())
+			next_array.append(observation.to_numpy())
 			name += '_' + observation._name
 		# concatenate observations
 		axis = 2 if self.is_image else 0
-		array = np.concatenate(arrays, axis)
-		return array, name
+		array = np.concatenate(next_array, axis)
+		if self.nTimesteps == 1:
+			return array, name
+		# rotate saved timesteps in history
+		if self.is_image:
+			for i in range(self.nTimesteps-1, 0, -1):
+				start_i = i * self.image_bands
+				save_to = slice(start_i, start_i + self.image_bands)
+				start_i = (i-1) * self.image_bands
+				load_from = slice(start_i, start_i + self.image_bands)
+				self._history[:,:,save_to] = self._history[:,:,load_from]
+			save_to = slice(0, self.image_bands)
+			self._history[:,:,save_to] = array
+		else:
+			for i in range(self.nTimesteps-1, 0, -1):
+				start_i = i * self.vector_length
+				save_to = slice(start_i, start_i + self.vector_length)
+				start_i = (i-1) * self.vector_length
+				load_from = slice(start_i, start_i + self.vector_length)
+				self._history[save_to] = self._history[load_from]
+			save_to = slice(0, self.vector_length)
+			self._history[save_to] = array
+		pickle.dump(self._history, open('temp/trash/' + name + '.pkl','wb'))
+		return self._history, name
 
 	def reset(self):
 		super().reset()

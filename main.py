@@ -6,7 +6,7 @@ import math
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'epsilon'
+test_version =  'zeta'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -34,7 +34,7 @@ utils.set_global_parameter('working_directory', working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'epsilon_2',
+	'repo_version': 'zeta',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -48,11 +48,23 @@ if controller_type == 'debug':
 	controller = Debug(
 		drone_component='Drone',
 		)
-# train will create a new or read in a trained model and (continue) train
+# train will create a new or read in a previously trained model
+# set continue_training=True to pick up where learning loop last saved
+# or set continue_training=False to keep weights but start new learning loop
 elif controller_type == 'train':
 	from controllers.trainrl import TrainRL
 	controller = TrainRL(
-		model_component='Model',
+		model_component = 'Model',
+		environment_component = 'TrainEnvironment',
+		total_timesteps = 1_000_000,
+		callback = None,
+		log_interval = -1,
+		tb_log_name = None,
+		eval_env = None,
+		eval_freq = -1,
+		n_eval_episodes = -1,
+		eval_log_path = None,
+		continue_training = True,
 		)
 # evaluate willl read in a trained model and evaluate on given environment
 elif controller_type == 'evaluate':
@@ -100,13 +112,17 @@ elif make_new_configuration:
 		#'DroneState',
 		'Objective',
 		]
-	vector_length = len(vector_sensors)
+	vector_length = 1
+	# set number of timesteps to keep in current state
+	nTimesteps = 2
 	# set modality being used
 	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# set relative objective point for each episode
-	relative_objective_point = (100, 0, 0) 
+	relative_objective_point = (100, 0, 0)
+	# detrmine to include z-axis (vertical) in objective during calulations
+	include_z = False
 	# set starting height of drone for each episode
 	start_z = -4 
 	# save and evaluate every n episodes, some model parameters are also a function of this
@@ -248,6 +264,7 @@ elif make_new_configuration:
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
+			nTimesteps = 2,
 			name = 'Observer',
 		)
 	if observer == 'Multi':
@@ -256,6 +273,7 @@ elif make_new_configuration:
 			sensors_components = vector_sensors, 
 			vector_length = vector_length,
 			is_image = False,
+			nTimesteps = 2,
 			name = 'ObserverVector',
 		)
 		Single(
@@ -264,6 +282,7 @@ elif make_new_configuration:
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
+			nTimesteps = 2,
 			name = 'ObserverImage',
 		)
 		from observers.multi import Multi
@@ -317,7 +336,8 @@ elif make_new_configuration:
 		drone_component = 'Drone',
 		xyz_point = relative_objective_point,
 		min_distance = 4, 
-		max_distance = 104,
+		max_distance = 110,
+		include_z = include_z,
 		name = 'RelativePointReward',
 	)
 
@@ -347,6 +367,7 @@ elif make_new_configuration:
 		xyz_point = relative_objective_point,
 		min_distance = 4, 
 		max_distance = 104,
+		include_z = include_z,
 		name = 'RelativePointTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
@@ -362,9 +383,12 @@ elif make_new_configuration:
 	)
 
 	# MODEL
-	if observation == 'Image': policy = 'CnnPolicy'
-	if observation == 'Vector': policy = 'MlpPolicy'
-	if observation == 'Multi': policy = 'MultiInputPolicy'
+	if observation == 'Image': 
+		policy = 'CnnPolicy'
+	if observation == 'Vector': 
+		policy = 'MlpPolicy'
+	if observation == 'Multi': 
+		policy = 'MultiInputPolicy'
 	if model == 'DQN':
 		from models.dqn import DQN
 		DQN(
@@ -431,8 +455,8 @@ elif make_new_configuration:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*10,
-			learning_starts = every_nEpisodes,
+			buffer_size = every_nEpisodes*100,
+			learning_starts = every_nEpisodes*10,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,
@@ -490,8 +514,8 @@ elif make_new_configuration:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*10,
-			learning_starts = every_nEpisodes,
+			buffer_size = every_nEpisodes*100,
+			learning_starts = every_nEpisodes*10,
 			batch_size = 256,
 			tau = 0.005,
 			gamma = 0.99,
@@ -524,8 +548,8 @@ elif make_new_configuration:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*10,
-			learning_starts = every_nEpisodes,
+			buffer_size = every_nEpisodes*100,
+			learning_starts = every_nEpisodes*10,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,

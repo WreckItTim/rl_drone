@@ -7,7 +7,13 @@ import math
 class RelativePoint(Terminator):
     # constructor
     @_init_wrapper
-    def __init__(self, drone_component, xyz_point, min_distance=5, max_distance=99999):
+    def __init__(self, 
+                 drone_component, 
+                 xyz_point, 
+                 min_distance=5, 
+                 max_distance=99999, 
+                 include_z=True,
+                 ):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
         self._x = self.xyz_point[0]
@@ -16,12 +22,12 @@ class RelativePoint(Terminator):
 
     # checks if within distance of point
     def terminate(self, state):
-        if 'drone_position' not in state:
-            state['drone_position'] = self._drone.get_position()
-        drone_position = np.array(state['drone_position'], dtype=float)
-        if 'distance' not in state:
-            state['distance'] = np.linalg.norm(drone_position - self.xyz_point)
-        distance = state['distance']
+        _drone_position = self._drone.get_position()
+        _xyz_point = self.xyz_point
+        if not self.include_z:
+            _drone_position = np.array([_drone_position[0], _drone_position[1]], dtype=float)
+            _xyz_point = np.array([_xyz_point[0], _xyz_point[1]], dtype=float)
+        distance = np.linalg.norm(_drone_position - _xyz_point)
         if distance < self.min_distance:
             state['termination_reason'] = 'min_distance'
             return True

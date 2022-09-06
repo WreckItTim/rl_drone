@@ -7,7 +7,13 @@ import math
 class RelativePoint(Reward):
     # constructor, set the relative point and min-max distances to normalize by
     @_init_wrapper
-    def __init__(self, drone_component, xyz_point, min_distance, max_distance):
+    def __init__(self,
+                 drone_component, 
+                 xyz_point, 
+                 min_distance, 
+                 max_distance, 
+                 include_z=True,
+                 ):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
         self._x = self.xyz_point[0]
@@ -34,12 +40,12 @@ class RelativePoint(Reward):
     
     # get reward based on distance to point 
     def reward(self, state):
-        if 'drone_position' not in state:
-            state['drone_position'] = self._drone.get_position()
-        drone_position = np.array(state['drone_position'], dtype=float)
-        if 'distance' not in state:
-            state['distance'] = float(np.linalg.norm(drone_position - self.xyz_point))
-        distance = state['distance']
+        _drone_position = self._drone.get_position()
+        _xyz_point = self.xyz_point
+        if not self.include_z:
+            _drone_position = np.array([_drone_position[0], _drone_position[1]], dtype=float)
+            _xyz_point = np.array([_xyz_point[0], _xyz_point[1]], dtype=float)
+        distance = np.linalg.norm(_drone_position - _xyz_point)
         value = self.normalize_reward(distance)
         return value
 

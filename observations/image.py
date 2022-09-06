@@ -28,5 +28,5 @@ class Image(Observation):
             if self.is_gray:
                 imsave(file_path + '.png', self._data.reshape([self._data.shape[0], self._data.shape[1]]), cmap='gray', vmin=0, vmax=255)
             else:
-                imsave(file_path + '.png', self._data)
+                imsave(file_path + '.png', self._data, vmin=0, vmax=255)
         self.data_path = file_path + '.png'

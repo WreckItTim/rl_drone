@@ -21,6 +21,7 @@ class DroneRL(Environment):
 				 saver_component=None,
 				 write_observations=False,
 				 episode_counter=0, 
+				 step_counter=0, 
 				 ):
 		super().__init__()
 
@@ -33,6 +34,7 @@ class DroneRL(Environment):
 		state = {'rl_output':float(rl_output)}
 		# increment number of steps
 		self._nSteps += 1
+		self.step_counter += 1
 		state['nSteps'] = self._nSteps 
 		# take action
 		transcribed_action = self._actor.act(rl_output)

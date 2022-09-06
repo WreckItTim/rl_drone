@@ -1,9 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\others",
-    "\\transformers"
+    "\\observations",
+    "\\observers",
+    "\\temp"
   ],
-  "SelectedNode": "\\main.py",
+  "SelectedNode": "\\notes.txt",
   "PreviewInSolutionExplorer": false
 }

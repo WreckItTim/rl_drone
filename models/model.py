@@ -22,22 +22,26 @@ class Model(Component):
         super().connect()
         self._model_arguments['env'] = self._environment
         # create model object if needs be
-        if self._sb3model is None:
-            if self.write_path is not None and exists(self.write_path):
-                self.load()
-            else:
-                self._sb3model = self.sb3Type(**self._model_arguments)
-        if self.replay_buffer_path is not None and exists(self.replay_buffer_path):
-            self._sb3model.load_replay_buffer(self.replay_buffer_path)
+        _model_path = self.write_path + '.zip'
+        if exists(_model_path):
+            self.load(_model_path)
+            self._sb3model.set_env(self._model_arguments['env'])
+            print('loaded model from file')
+        else:
+            self._sb3model = self.sb3Type(**self._model_arguments)
+        _replay_buffer_path = self.replay_buffer_path + '.pkl'
+        if exists(_replay_buffer_path):
+            self._sb3model.load_replay_buffer(_replay_buffer_path)
+            print('loaded replay buffer from file')
 
     def learn(self, 
-        total_timesteps=1_000_000,
+        total_timesteps=10_000,
         callback = None,
         log_interval = -1,
         tb_log_name = None,
         eval_env = None,
-        eval_freq = 2,
-        n_eval_episodes = 4,
+        eval_freq = -1,
+        n_eval_episodes = -1,
         eval_log_path = None,
         reset_num_timesteps = False,
         ):
@@ -59,19 +63,21 @@ class Model(Component):
     def predict(self, rl_output):
         rl_output, next_state = self._sb3model.predict(rl_output, deterministic=True)
         return rl_output
-
+    
+    # save sb3 model to path (sb3 auto appends file type at end)
     def save(self, path):
         self._sb3model.save(path)
-
+        
+    # save sb3 replay buffer to path (sb3 auto appends file type at end)
     def save_replay_buffer(self, path):
         self._sb3model.save_replay_buffer(path)
 
-    # loading is class specific - so must specify the stable-baselines3, or whatever, model type from child
+    # load sb3 model from path, must set sb3Load from child
     def load(self, path):
-        if exists(path):
+        if not exists(path):
             utils.error(f'invalid Model.load() path:{path}')
         else:
-            self._sb3model = self.sb3Type.load(path)
+            self._sb3model = self.sb3Load(path)
 
     # when using the debug controller
     def debug(self):

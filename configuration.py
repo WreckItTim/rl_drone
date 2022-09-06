@@ -145,7 +145,7 @@ class Configuration():
 		configuration = Configuration(meta)
 		Configuration.set_active(configuration)
 		for component_name in configuration_file['components']:
-			component_arguments = configuration_file[component_name]
+			component_arguments = configuration_file['components'][component_name]
 			_ = Component.deserialize(component_name, component_arguments)
 		return configuration
 
