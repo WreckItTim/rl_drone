@@ -8,7 +8,7 @@ class Other(Component):
 	def step(self, state):
 		pass
 
-	def reset(self):
+	def reset(self, reset_state):
 		pass
 
 	# when using the debug controller

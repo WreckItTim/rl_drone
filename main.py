@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'zeta2'
+test_version =  'eta'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -37,7 +37,7 @@ utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'zeta',
+	'repo_version': 'eta',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -59,10 +59,11 @@ elif controller_type == 'train':
 	controller = TrainRL(
 		model_component = 'Model',
 		environment_component = 'TrainEnvironment',
+		evaluator_component = 'Evaluator',
 		total_timesteps = 1_000_000,
 		callback = None,
 		log_interval = -1,
-		tb_log_name = 'run1',
+		tb_log_name = 'phase1',
 		eval_env = None,
 		eval_freq = -1,
 		n_eval_episodes = -1,
@@ -123,13 +124,13 @@ elif make_new_configuration:
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# set relative objective point for each episode
-	relative_objective_point = (100, 0, 0)
+	relative_objective_point = (16, 0, 0)
 	# detrmine to include z-axis (vertical) in objective during calulations
 	include_z = False
 	# set starting height of drone for each episode
 	start_z = -4 
 	# save and evaluate every n episodes, some model parameters are also a function of this
-	every_nEpisodes = 100 
+	every_nEpisodes = 40 
 	# set drone speed for steps in meters / second
 	move_speed = 2 
 	# set rotate speed for steps in degrees / second
@@ -153,7 +154,7 @@ elif make_new_configuration:
 				'lightweight', 
 				'speedup', 
 				'tellocamera', 
-				'bellydistance',
+				#'bellydistance',
 				#'nodisplay',
 				],
 			release_directory = 'resources/airsim_maps/Blocks/',
@@ -164,7 +165,7 @@ elif make_new_configuration:
 	elif drone == 'Tello':
 		from maps.field import Field
 		map_ = Field(
-            voxels_component=None,
+            voxels_component='Voxels' if use_voxels else None,
 		)
 
 	# VOXELS - 2d representation of map (not required)
@@ -364,6 +365,7 @@ elif make_new_configuration:
 		min_distance = 0, 
 		max_distance = np.linalg.norm(relative_objective_point),
 		include_z = include_z,
+        random_yaw = True,
 		name = 'RelativePointReward',
 	)
 
@@ -393,8 +395,9 @@ elif make_new_configuration:
 		map_component = 'Map',
 		xyz_point = relative_objective_point,
 		min_distance = 4, 
-		max_distance = 104,
+		max_distance = math.sqrt(2)*np.linalg.norm(relative_objective_point),
 		include_z = include_z,
+        random_yaw = True,
 		name = 'RelativePointTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
@@ -405,7 +408,7 @@ elif make_new_configuration:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 85,
+		max_steps = 20,
 		name = 'MaxSteps',
 	)
 
@@ -422,7 +425,7 @@ elif make_new_configuration:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes*10,
+			buffer_size = every_nEpisodes * 100,
 			learning_starts = every_nEpisodes,
 			batch_size = 32,
 			tau = 1.0,
@@ -432,7 +435,7 @@ elif make_new_configuration:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = every_nEpisodes,
+			target_update_interval = every_nEpisodes*4,
 			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.05,
@@ -483,7 +486,7 @@ elif make_new_configuration:
 			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*100,
-			learning_starts = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,
@@ -542,7 +545,7 @@ elif make_new_configuration:
 			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*100,
-			learning_starts = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 256,
 			tau = 0.005,
 			gamma = 0.99,
@@ -576,7 +579,7 @@ elif make_new_configuration:
 			policy = policy,
 			learning_rate = 1e-3,
 			buffer_size = every_nEpisodes*100,
-			learning_starts = every_nEpisodes*10,
+			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
 			gamma = 0.99,
@@ -608,8 +611,8 @@ elif make_new_configuration:
 		spawns_components=[
 			Spawn(
 				map_component = 'Map',
-				x_min=0,
-				x_max=50,
+				x_min=-16,
+				x_max=16,
 				y_min=-12,
 				y_max=12,
 				z_min=start_z,
@@ -653,6 +656,10 @@ elif make_new_configuration:
 		model_component = 'Model',
 		frequency = every_nEpisodes,
 		nEpisodes = 4,
+		stopping_total_success = 4,
+		n_success_buffer = 0,
+		stopping_improved_steps = 4,
+		n_steps_buffer = 4,
 		name = 'Evaluator',
 	)
 

@@ -14,5 +14,8 @@ class Terminator(Component):
 	def debug(self):
 		return self.terminate({})
 
+	def reset(self, reset_state):
+		pass
+
 	def connect(self):
 		super().connect()

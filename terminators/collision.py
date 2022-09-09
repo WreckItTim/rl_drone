@@ -15,4 +15,5 @@ class Collision(Terminator):
         has_collided = state['has_collided']
         if has_collided:
             state['termination_reason'] = 'collided'
+            state['termination_result'] = 'failure'
         return has_collided

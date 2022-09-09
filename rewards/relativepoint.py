@@ -3,6 +3,7 @@ from component import _init_wrapper
 import numpy as np
 import math
 import utils
+import random
 
 # calculates distance between drone and point relative to starting position/orientation
 class RelativePoint(Reward):
@@ -15,6 +16,7 @@ class RelativePoint(Reward):
                  min_distance, 
                  max_distance, 
                  include_z=True,
+                 random_yaw=False,
                  ):
         super().__init__()
         self.xyz_point = np.array(xyz_point, dtype=float)
@@ -22,7 +24,8 @@ class RelativePoint(Reward):
         self._y = self.xyz_point[1]
         self._z = self.xyz_point[2]
         # set reward function
-        self._reward_function = lambda x : math.exp(-2.0 * x)
+        #self._reward_function = lambda x : math.exp(-2.0 * x)
+        self._reward_function = lambda x : 1-x
         self.init_normalization()
 
     # calculate constants for normalization
@@ -32,8 +35,8 @@ class RelativePoint(Reward):
 
     # normalize reward value between 0 and 1
     def normalize_reward(self, distance):
-        # clip to min_distance so reward does not go over 1
-        clipped_distance = max(self.min_distance, distance)
+        # clip distance
+        clipped_distance = max(self.min_distance, min(self.max_distance, distance))
         # normalize distance to fit desired behavior of reward function
         normalized_distance = (clipped_distance - self.min_distance) / self._diff
         # get value from reward function
@@ -59,15 +62,22 @@ class RelativePoint(Reward):
         return x, y, z, in_object
 
     # need to recalculate relative point at each reset
-    def reset(self):
-        position = self._drone.get_position()
-        yaw = self._drone.get_yaw()  # yaw counterclockwise rotation about z-axis
-        # shorten the distance until not in object (this is a cheap trick, better to think about points first)
-        alpha = 1
-        in_object = True
-        while in_object:
-            x, y, z, in_object = self.get_xyz(position, yaw, alpha)
-            alpha -= 0.1
-            if alpha < 0.1:
-                utils.error('invalid objective point')
-        self.xyz_point = np.array([x, y, z], dtype=float)
+    def reset(self, reset_state):
+        if 'goal' in reset_state:
+            self.xyz_point = np.array(reset_state['goal'], dtype=float)
+        else:
+            position = self._drone.get_position()
+            if self.random_yaw:
+                yaw = random.uniform(0, 2*math.pi)
+            else:
+                yaw = self._drone.get_yaw()  # yaw counterclockwise rotation about z-axis
+            # shorten the distance until not in object (this is a cheap trick, better to think about points first)
+            alpha = 1
+            in_object = True
+            while in_object:
+                x, y, z, in_object = self.get_xyz(position, yaw, alpha)
+                alpha -= 0.1
+                if alpha < 0.1:
+                    utils.error('invalid objective point')
+            reset_state['goal'] = [x, y, z]
+            self.xyz_point = np.array([x, y, z], dtype=float)

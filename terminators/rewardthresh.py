@@ -8,6 +8,7 @@ class RewardThresh(Terminator):
     def __init__(self, 
                  rewarder_component,
                  min_reward=0,
+                 max_reward=0,
                  ):
         super().__init__()
 
@@ -17,5 +18,10 @@ class RewardThresh(Terminator):
             self._rewarder.reward(state)
         if state['total_reward'] < self.min_reward:
             state['termination_reason'] = 'min_reward'
+            state['termination_result'] = 'failure'
+            return True
+        if state['total_reward'] > self.max_reward:
+            state['termination_reason'] = 'max_reward'
+            state['termination_result'] = 'success'
             return True
         return False

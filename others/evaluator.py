@@ -14,6 +14,13 @@ class Evaluator(Other):
 			  nEpisodes = 1,
 			  _write_folder = None, 
 			  set_counter = 0,
+			  stopping_total_success = 4,
+			  n_success_buffer = 0,
+			  stopping_improved_steps = 4,
+			  n_steps_buffer = 2,
+			  best_steps = 999_999,
+			  total_success_streak = 0,
+			  improved_steps_streak = 0,
 			  ): 
 		# set folder path to write evaluations to
 		if _write_folder is None:
@@ -31,6 +38,7 @@ class Evaluator(Other):
 		# get first observation
 		observation_data, observation_name = self._evaluate_environment._observer.observe()
 		# start of episode
+		success = False
 		for step in range(1, 1_000_000):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
@@ -42,23 +50,50 @@ class Evaluator(Other):
 			states[step] = frozen_state
 			# check if we are done
 			if done:
+				if frozen_state['termination_result'] == 'success':
+					success = True
 				break
 		# end of episode
-		return states
+		return states, self._evaluate_environment._nSteps, success
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
 		print('EVALUATE')
+		# keep track of stopping stats
+		total_steps = 0
+		nSuccess = 0
 		# allocate space to save states for all episodes
 		all_states = {}
 		# loop through all episodes
 		for episode in range(self.nEpisodes):
 			# step through next episode
-			all_states[episode] = self.evaluate_episode()
+			states, steps, success = self.evaluate_episode()
+			# log results
+			all_states[episode] = states
+			total_steps += steps
+			nSuccess += success
 		# write states to file
 		utils.write_json(all_states, self._write_folder + str(self.set_counter) + '.json')
 		# counter++
 		self.set_counter += 1
+		# check if all evluations were successful
+		if nSuccess - self.n_success_buffer >= self.nEpisodes:
+			self.total_success_streak += 1
+		else:
+			self.total_success_streak = 0
+		# check if number of steps not improved by tolerance
+		delta_steps = total_steps - self.best_steps
+		if delta_steps < -1 * self.n_steps_buffer:
+			self.best_steps = total_steps
+			self.improved_steps_streak = 0
+		else:
+			self.improved_steps_streak += 1
+		# check stop criteria
+		stop = False
+		if self.total_success_streak >= self.stopping_total_success:
+			if self.improved_steps_streak >= self.stopping_improved_steps:
+				stop = True
+		return stop
 
 	# handle resets while training		
 	def reset(self):

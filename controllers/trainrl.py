@@ -9,6 +9,7 @@ class TrainRL(Controller):
 	def __init__(self, 
 				 model_component,
 				 environment_component,
+				 evaluator_component = None,
 				 total_timesteps = 1_000_000,
 				 callback = None,
 				 log_interval = -1,
@@ -37,6 +38,11 @@ class TrainRL(Controller):
 			_reset_num_timesteps = True
 			self._environment.episode_counter = 0
 			self._environment.step_counter = 0
+			if self._evaluator is not None:
+				self._evaluator.best_steps = 999_999
+				self._evaluator.total_success_streak = 0
+				self._evaluator.improved_steps_streak = 0
+				self._evaluator.set_counter = 0
 		# learn baby learn
 		self._model.learn(
 			total_timesteps = _total_timesteps,

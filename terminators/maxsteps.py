@@ -15,8 +15,9 @@ class MaxSteps(Terminator):
         self._nSteps += 1
         if self._nSteps >= self.max_steps:
             state['termination_reason'] = 'max_steps'
+            state['termination_result'] = 'failure'
             return True
         return False
 
-    def reset(self):
+    def reset(self, reset_state):
         self._nSteps = 0

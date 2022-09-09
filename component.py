@@ -185,7 +185,12 @@ def _init_wrapper(init_method):
 		if self._add_to_configuration:
 			configuration.add_component(self)
 		
-	return partialmethod(_wrapper, configuration=None, name=None, connect_priority=None, disconnect_priority=None)
+	return partialmethod(_wrapper, 
+					  configuration = None, 
+					  name = None, 
+					  connect_priority = None, 
+					  disconnect_priority = None,
+					  )
 
 # the component class itself
 class Component():
