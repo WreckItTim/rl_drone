@@ -3,12 +3,14 @@ from terminators.terminator import Terminator
 from component import _init_wrapper
 import numpy as np
 import math
+import utils
 
 class RelativePoint(Terminator):
     # constructor
     @_init_wrapper
     def __init__(self, 
                  drone_component, 
+                 map_component,
                  xyz_point, 
                  min_distance=5, 
                  max_distance=99999, 
@@ -36,10 +38,22 @@ class RelativePoint(Terminator):
             return True
         return False
 
+    def get_xyz(self, position, yaw, alpha):
+        x = position[0] + alpha*self._x * math.cos(yaw) + alpha*self._y * math.sin(yaw)
+        y = position[1] + alpha*self._y * math.cos(yaw) + alpha*self._x * math.sin(yaw)
+        z = position[2] + self._z
+        in_object = self._map.at_object_2d(x, y)
+        return x, y, z, in_object
+
     def reset(self):
         position = self._drone.get_position()
         yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
-        x = position[0] + self._x * math.cos(yaw) + self._y * math.sin(yaw)
-        y = position[1] + self._y * math.cos(yaw) + self._x * math.sin(yaw)
-        z = position[2] + self._z
+        # shorten the distance until not in object (this is a cheap trick, better to think about points first)
+        alpha = 1
+        in_object = True
+        while in_object:
+            x, y, z, in_object = self.get_xyz(position, yaw, alpha)
+            alpha -= 0.1
+            if alpha < 0.1:
+                utils.error('invalid objective point')
         self.xyz_point = np.array([x, y, z], dtype=float)

@@ -9,6 +9,7 @@ class Model(Component):
     # NOTE: env=None as training and evaluation enivornments are handeled by controller
     def __init__(self, write_path=None, replay_buffer_path=None, _model_arguments=None):
         self._model_arguments = _model_arguments
+        print(_model_arguments)
         # set up write path
         if write_path is None:
             self.write_path = utils.get_global_parameter('working_directory') + 'model'
@@ -49,14 +50,14 @@ class Model(Component):
         # call sb3 learn method
         self._sb3model.learn(
             total_timesteps,
-            callback=callback,
-            log_interval=log_interval,
-            tb_log_name = log_interval,
-            eval_env=eval_env,
-            eval_freq=eval_freq,
-            n_eval_episodes=n_eval_episodes,
-            eval_log_path=eval_log_path,
-            reset_num_timesteps=reset_num_timesteps,
+            callback = callback,
+            log_interval= log_interval,
+            tb_log_name = tb_log_name,
+            eval_env = eval_env,
+            eval_freq = eval_freq,
+            n_eval_episodes = n_eval_episodes,
+            eval_log_path = eval_log_path,
+            reset_num_timesteps = reset_num_timesteps,
         )
         utils.speak('DONE LEARN')
 

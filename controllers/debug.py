@@ -24,6 +24,10 @@ class Debug(Controller):
                     print(idx, ':', component_name)
             elif user_input == 'reset':
                 self._drone.reset()
+            elif user_input == 'move':
+                user_input = input()
+                x, y, z, yaw = [float(_) for _ in user_input.split(' ')]
+                self._drone.teleport(x, y, z, yaw)
             else:
                 if user_input in component_names: 
                     print(configuration.get_component(user_input).debug())

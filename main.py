@@ -2,11 +2,12 @@ import os
 import utils
 from configuration import Configuration
 import math
+import numpy as np
 
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'zeta'
+test_version =  'zeta2'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -27,7 +28,9 @@ if not os.path.exists('temp/'):
 if not os.path.exists(working_directory):
 	os.makedirs(working_directory)
 # save working directory path to global_parameters to be visible by all 
-utils.set_global_parameter('working_directory', working_directory)
+utils.set_global_parameter('working_directory', working_directory) # relative to rep
+# absoulte path on local computer to repo
+utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder paths with /
 
 
 # META data to log in configuration file - no required format, anything you want to note here
@@ -133,6 +136,8 @@ elif make_new_configuration:
 	yaw_rate = 22.5
 	# set drone duration of each step in seconds
 	step_duration = 2 
+	# control if load voxels in to check valid spawn/objective points and visualize results
+	use_voxels = True
 	
 
 	# **** CREATE COMPONENTS ****
@@ -141,6 +146,7 @@ elif make_new_configuration:
 	if drone == 'AirSim':
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
+            voxels_component='Voxels' if use_voxels else None,
 			settings = None,
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
@@ -158,8 +164,27 @@ elif make_new_configuration:
 	elif drone == 'Tello':
 		from maps.field import Field
 		map_ = Field(
-			name='Map',
+            voxels_component=None,
 		)
+
+	# VOXELS - 2d representation of map (not required)
+	if use_voxels:
+		from datastructs.voxels import Voxels
+		Voxels(absolute_path = (
+			utils.get_global_parameter('absolute_path') 
+			+ utils.get_global_parameter('working_directory')
+			+ 'map_voxels.binvox'
+			),
+				map_component = 'Map',
+				make_new = True,
+				floor_z = None,
+				center = [0,0,0],
+				resolution = 1,
+				x_length = 200,
+				y_length = 200,
+				z_length = 100,
+				name = 'Voxels',
+			)
 
 	# DRONE
 	if drone == 'AirSim':
@@ -334,9 +359,10 @@ elif make_new_configuration:
 	from rewards.relativepoint import RelativePoint
 	RelativePoint(
 		drone_component = 'Drone',
+		map_component = 'Map',
 		xyz_point = relative_objective_point,
-		min_distance = 4, 
-		max_distance = 110,
+		min_distance = 0, 
+		max_distance = np.linalg.norm(relative_objective_point),
 		include_z = include_z,
 		name = 'RelativePointReward',
 	)
@@ -364,6 +390,7 @@ elif make_new_configuration:
 	from terminators.relativepoint import RelativePoint
 	RelativePoint(
 		drone_component = 'Drone',
+		map_component = 'Map',
 		xyz_point = relative_objective_point,
 		min_distance = 4, 
 		max_distance = 104,
@@ -378,7 +405,7 @@ elif make_new_configuration:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 60,
+		max_steps = 85,
 		name = 'MaxSteps',
 	)
 
@@ -580,8 +607,9 @@ elif make_new_configuration:
 	Spawner(
 		spawns_components=[
 			Spawn(
-				x_min=-16,
-				x_max=16,
+				map_component = 'Map',
+				x_min=0,
+				x_max=50,
 				y_min=-12,
 				y_max=12,
 				z_min=start_z,
