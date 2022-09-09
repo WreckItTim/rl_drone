@@ -27,7 +27,7 @@ class Multi(Observer):
 			"vec": vector_data,
 			"img": image_data,
 			}
-		return data_dict, vector_name + image_name
+		return data_dict, vector_name + '_' + image_name
 
 	def reset(self):
 		super().reset()

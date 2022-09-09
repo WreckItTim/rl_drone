@@ -19,5 +19,5 @@ class MaxSteps(Terminator):
             return True
         return False
 
-    def reset(self, reset_state):
+    def reset(self):
         self._nSteps = 0

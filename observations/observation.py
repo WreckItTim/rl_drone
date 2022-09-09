@@ -13,7 +13,7 @@ class Observation:
 		self._data = np.array(_data)
 		self.transformations = []
 		Observation.nObservations += 1
-		self._name = type(self).__name__ + str(Observation.nObservations)
+		self._name = type(self).__name__[0] + str(Observation.nObservations)
 
 	# writes observation metadata to given dir path
 	def write(self, directory_path=None, file_name=None):

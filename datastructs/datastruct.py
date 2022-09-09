@@ -8,3 +8,9 @@ class DataStruct(Component):
 
     def connect(self):
         super().connect()
+
+    def reset(self):
+        pass
+
+    def step(self, state):
+        pass

@@ -31,6 +31,41 @@ def debug_json(dictionary):
 			debug_json(dictionary[key])
 		else:
 			print(key, dictionary[key], type(dictionary[key]))
+
+# gets yaw from position vector (relative to 0 origin)
+# returns yaw from 0 to 2pi
+def position_to_yaw(xyz_point):
+	# get magniute of angle for yaw relative origin
+	if xyz_point[0] == 0:
+		if xyz_point[1] == 0:
+			yaw = 0
+		elif xyz_point[1] > 0:
+			yaw = math.pi/2
+		else:
+			yaw = 3*math.pi/2
+	elif xyz_point[1] == 0:
+		if xyz_point[0] > 0:
+			yaw = 0
+		else:
+			yaw = math.pi
+	else:
+		yaw_magnitude = abs(math.atan(xyz_point[1] / xyz_point[0]))
+		# get exact angle depending on quadrant
+		if xyz_point[1] > 0:
+			# yaw quad 1
+			if xyz_point[0] > 0:
+				yaw = yaw_magnitude
+			# yaw quad 2
+			if xyz_point[0] < 0:
+				yaw = yaw_magnitude + math.pi/2
+		else:
+			# yaw quad 3
+			if xyz_point[0] < 0:
+				yaw = yaw_magnitude + math.pi
+			# yaw quad 4
+			if xyz_point[0] > 0:
+				yaw = yaw_magnitude + 3*math.pi/2
+	return yaw
 			
 # assumes 0 pitch and roll, inputs yaw in radians
 def yaw_to_quaternion(yaw):

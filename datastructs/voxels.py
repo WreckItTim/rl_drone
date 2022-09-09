@@ -28,16 +28,16 @@ class Voxels(DataStruct):
 			  # ABSOLUTE path, must be absolute
 			  absolute_path:str,
 			  map_component,
-			  make_new = True,
+			  make_new = False,
 			  # can leave below blank (if reading from file rather than making new)
 			  floor_z = None, # index of largest z-axis index for surface of floor from voxels 
 				# None will auto find floor_dim from origin, assumes there is no object there in map upon connect() (excluding drone)
 			  # voxel params if make new voxels (else these are set from read)
-			  center = [0,0,0], # in meters
-			  resolution = 1, # in meters
-			  x_length = 200, # total x-axis meters (split around center)
-			  y_length = 200, # total y-axis  meters (split around center)
-			  z_length = 200, # total z-axis  meters (split around center)
+			  center = None, # in meters
+			  resolution = None, # in meters
+			  x_length = None, # total x-axis meters (split around center)
+			  y_length = None, # total y-axis  meters (split around center)
+			  z_length = None, # total z-axis  meters (split around center)
 			  ):
 		super().__init__()
 		self._map_2d = None

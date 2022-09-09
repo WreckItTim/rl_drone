@@ -28,7 +28,7 @@ if not os.path.exists('temp/'):
 if not os.path.exists(working_directory):
 	os.makedirs(working_directory)
 # save working directory path to global_parameters to be visible by all 
-utils.set_global_parameter('working_directory', working_directory) # relative to rep
+utils.set_global_parameter('working_directory', working_directory) # relative to repo
 # absoulte path on local computer to repo
 utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder paths with /
 
@@ -37,7 +37,7 @@ utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'eta',
+	'repo_version': 'eta2',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -114,7 +114,7 @@ elif make_new_configuration:
 	vector_sensors = [
 		#'Distance',
 		#'DroneState',
-		'Objective',
+		'GoalSensor',
 		]
 	vector_length = 1
 	# set number of timesteps to keep in current state
@@ -123,8 +123,6 @@ elif make_new_configuration:
 	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
-	# set relative objective point for each episode
-	relative_objective_point = (16, 0, 0)
 	# detrmine to include z-axis (vertical) in objective during calulations
 	include_z = False
 	# set starting height of drone for each episode
@@ -139,9 +137,24 @@ elif make_new_configuration:
 	step_duration = 2 
 	# control if load voxels in to check valid spawn/objective points and visualize results
 	use_voxels = True
+	# set goal (objective point) - can be relative or absolute
+	goal = [16, 0, 0]
 	
 
 	# **** CREATE COMPONENTS ****
+
+	# GOAL - make sure to add this to your environment others_components
+	from datastructs.relativegoal import RelativeGoal
+	RelativeGoal(
+		drone_component = 'Drone',
+		map_component = 'Map',
+		xyz_point = goal,
+		random_yaw = True,
+		random_yaw_min = 0,
+		random_yaw_max = 2 * math.pi,
+        reset_on_step=False,
+		name = 'Goal',
+		)
 
 	# MAP - controls the map that the drone agent will be traversing
 	if drone == 'AirSim':
@@ -171,21 +184,22 @@ elif make_new_configuration:
 	# VOXELS - 2d representation of map (not required)
 	if use_voxels:
 		from datastructs.voxels import Voxels
-		Voxels(absolute_path = (
-			utils.get_global_parameter('absolute_path') 
-			+ utils.get_global_parameter('working_directory')
-			+ 'map_voxels.binvox'
-			),
-				map_component = 'Map',
-				make_new = True,
-				floor_z = None,
-				center = [0,0,0],
-				resolution = 1,
-				x_length = 200,
-				y_length = 200,
-				z_length = 100,
-				name = 'Voxels',
-			)
+		if drone == 'AirSim':
+			Voxels(absolute_path = (
+				utils.get_global_parameter('absolute_path') 
+				+ utils.get_global_parameter('working_directory')
+				+ 'map_voxels.binvox'
+				),
+					map_component = 'Map',
+					make_new = True,
+					floor_z = None,
+					center = [0,0,0],
+					resolution = 1,
+					x_length = 200,
+					y_length = 200,
+					z_length = 100,
+					name = 'Voxels',
+				)
 
 	# DRONE
 	if drone == 'AirSim':
@@ -264,16 +278,16 @@ elif make_new_configuration:
 				],
 			name = 'Camera',
 		)
-	if 'Objective' in vector_sensors:
-		from sensors.objective import Objective
-		Objective(
+	if 'GoalSensor' in vector_sensors:
+		from sensors.goal import Goal
+		Goal(
 			drone_component = 'Drone',
-			xyz_point = relative_objective_point,
+			goal_component = 'Goal',
 			get_yaw_difference = True,
 			transformers_components = [
 				'NormalizeYaw',
 				],
-			name = 'Objective',
+			name = 'GoalSensor',
 		)
 	
 		# OBSERVER
@@ -357,15 +371,13 @@ elif make_new_configuration:
 		drone_component = 'Drone',
 		name = 'AvoidReward',
 	)
-	from rewards.relativepoint import RelativePoint
-	RelativePoint(
+	from rewards.goal import Goal
+	Goal(
 		drone_component = 'Drone',
-		map_component = 'Map',
-		xyz_point = relative_objective_point,
+		goal_component = 'Goal',
 		min_distance = 0, 
-		max_distance = np.linalg.norm(relative_objective_point),
+		max_distance = np.linalg.norm(goal),
 		include_z = include_z,
-        random_yaw = True,
 		name = 'RelativePointReward',
 	)
 
@@ -389,15 +401,13 @@ elif make_new_configuration:
 		drone_component = 'Drone',
 		name = 'Collision',
 	)
-	from terminators.relativepoint import RelativePoint
-	RelativePoint(
+	from terminators.goal import Goal
+	Goal(
 		drone_component = 'Drone',
-		map_component = 'Map',
-		xyz_point = relative_objective_point,
+		goal_component = 'Goal',
 		min_distance = 4, 
-		max_distance = math.sqrt(2)*np.linalg.norm(relative_objective_point),
+		max_distance = math.sqrt(2)*np.linalg.norm(goal),
 		include_z = include_z,
-        random_yaw = True,
 		name = 'RelativePointTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
@@ -691,6 +701,9 @@ elif make_new_configuration:
 		saver_component='Saver',
 		evaluator_component='Evaluator',
 		spawner_component='TrainSpawner',
+		others_components=[
+			'Goal',
+			],
 		write_observations=False,
 		name = 'TrainEnvironment',
 	)
@@ -705,6 +718,9 @@ elif make_new_configuration:
 			'MaxSteps',
 			],
 		spawner_component='EvaluateSpawner',
+		others_components=[
+			'Goal',
+			],
 		write_observations=True,
 		name = 'EvaluateEnvironment',
 	)

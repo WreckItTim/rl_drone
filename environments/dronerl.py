@@ -19,6 +19,7 @@ class DroneRL(Environment):
 				 spawner_component=None,
 				 evaluator_component=None,
 				 saver_component=None,
+				 others_components=None,
 				 write_observations=False,
 				 episode_counter=0, 
 				 step_counter=0, 
@@ -45,6 +46,13 @@ class DroneRL(Environment):
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
+		# take step for other components
+		if self._others is not None:
+			for other in self._others:
+				other.step(state)
+		if 'goal' in state and self._nSteps == 1:
+			goal_yaw = utils.position_to_yaw(state['goal'])
+			print('goal:', state['goal'], goal_yaw)
 		# assign rewards (stores total rewards and individual rewards in state)
 		total_reward = self._rewarder.reward(state)
 		# check for termination
@@ -53,7 +61,7 @@ class DroneRL(Environment):
 			done = done or terminator.terminate(state)
 		state['done'] = done
 		if done:
-			print(state['termination_reason'],state['termination_result'])
+			print('terminated:', state['termination_reason'], state['termination_result'])
 			self.episode_counter += 1
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, state
@@ -73,18 +81,18 @@ class DroneRL(Environment):
 			stop = self._evaluator.reset()
 			if stop:
 				raise Exception('EARLY STOPPING TRIGGERED, learning complete')
-		reset_state = {}
 		self._drone.reset()
 		if self._spawner is not None:
 			self._spawner.reset()
+		if self._others is not None:
+			for other in self._others:
+				other.reset()
 		self._actor.reset()
 		self._observer.reset()
-		self._rewarder.reset(reset_state)
+		self._rewarder.reset()
 		for terminator in self._terminators:
-			terminator.reset(reset_state)
+			terminator.reset()
 		self._nSteps = 0
 		observation_data, observation_name = self._observer.observe()
-		print('spawn:', self._drone.get_position(), self._drone.get_yaw(),
-			'goal:', reset_state['goal'],
-			)
+		print('spawn:', self._drone.get_position(), self._drone.get_yaw(),)
 		return observation_data

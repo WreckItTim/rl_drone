@@ -17,5 +17,5 @@ class Reward(Component):
 	def connect(self):
 		super().connect()
 
-	def reset(self, reset_state):
+	def reset(self):
 		pass
