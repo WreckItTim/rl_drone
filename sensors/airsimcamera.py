@@ -34,8 +34,9 @@ class AirSimCamera(Sensor):
 			  compress=False, 
 			  is_gray=False,
 			  transformers_components=None,
+			  offline = False,
 			  ):
-		super().__init__()
+		super().__init__(offline)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
 		self._client = None
 		if image_type in [1, 2, 3, 4]:

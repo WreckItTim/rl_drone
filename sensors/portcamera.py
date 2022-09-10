@@ -13,8 +13,9 @@ class PortCamera(Sensor):
 			  port='udp://0.0.0.0:11111', 
 			  is_gray=False,
 			  transformers_components=None,
+			  offline = False,
 			  ):
-		super().__init__()
+		super().__init__(offline)
 		self._camera = None
 
 	def connect(self):

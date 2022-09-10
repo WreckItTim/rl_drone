@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'eta'
+test_version =  'eta3'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -257,6 +257,7 @@ elif make_new_configuration:
 				'ResizeImage',
 				'NormalizeDepth',
 				],
+			offline = True,
 			name = 'Camera',
 			)
 	if drone == 'AirSim' and 'Distance' in vector_sensors:
@@ -385,12 +386,12 @@ elif make_new_configuration:
 	from rewarders.schema import Schema
 	Schema(
 		rewards_components = [
-			'AvoidReward',
+			#'AvoidReward',
 			'RelativePointReward',
 			],
 		reward_weights = [
 			1,
-			1,
+			#1,
 			],
 		name = 'Rewarder',
 	)

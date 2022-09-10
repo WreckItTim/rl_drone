@@ -12,8 +12,9 @@ class AirSimDistance(Sensor):
 	@_init_wrapper
 	def __init__(self,
 			  transformers_components=None,
+			  offline = False,
 			  ):
-		super().__init__()
+		super().__init__(offline)
 		self._client = None
 
 	# resets on episode

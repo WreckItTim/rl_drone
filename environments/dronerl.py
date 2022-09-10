@@ -52,6 +52,7 @@ class DroneRL(Environment):
 				other.step(state)
 		if 'goal' in state and self._nSteps == 1:
 			goal_yaw = utils.position_to_yaw(state['goal'])
+			state['goal_yaw'] = goal_yaw
 			print('goal:', state['goal'], goal_yaw)
 		# assign rewards (stores total rewards and individual rewards in state)
 		total_reward = self._rewarder.reward(state)

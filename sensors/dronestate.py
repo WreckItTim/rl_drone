@@ -11,8 +11,9 @@ class DroneState(Sensor):
 				 drone_component,
 				 get_yaw = True,
 				 transformers_components=None,
-				 ):
-		super().__init__()
+				 offline = False,
+			  ):
+		super().__init__(offline)
 
 	# get state information from drone
 	def sense(self):

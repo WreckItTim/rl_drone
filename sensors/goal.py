@@ -16,8 +16,9 @@ class Goal(Sensor):
                  goal_component, 
 				 get_yaw_difference = True,
 				 transformers_components = None,
-				 ):
-		super().__init__()
+				 offline = False,
+			  ):
+		super().__init__(offline)
 		
 	# get information reltaive between current and objective point
 	def sense(self):

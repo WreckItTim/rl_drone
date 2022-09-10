@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\temp"
+    "\\environments",
+    "\\observations",
+    "\\observers"
   ],
-  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

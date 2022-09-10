@@ -2,8 +2,10 @@
 from component import Component
 
 class Sensor(Component):
-	# constructor
-	def __init__(self):
+	# constructor, offline is a boolean that handles if sensor goes off line
+	def __init__(self,
+			  offline,
+			  ):
 		pass
 
 	# fetch a response from sensor

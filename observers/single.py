@@ -39,11 +39,21 @@ class Single(Observer):
 		new_names = []
 		for sensor in self._sensors:
 			# get obeservation
-			observation = sensor.sense()
-			if write: 
-				observation.write()
-			next_array.append(observation.to_numpy())
-			new_names.append(observation._name)
+			if sensor.offline:
+				if self.is_image:
+					empty_array = np.zeros((self.image_height, self.image_width, self.image_bands), dtype=np.uint8)
+					empty_name = 'I0'
+				else:
+					empty_array = np.zeros((self.vector_length,), dtype=np.float64)
+					empty_name = 'V0'
+				next_array.append(empty_array)
+				new_names.append(empty_name)
+			else:
+				observation = sensor.sense()
+				if write: 
+					observation.write()
+				next_array.append(observation.to_numpy())
+				new_names.append(observation._name)
 		# concatenate observations
 		axis = 2 if self.is_image else 0
 		array = np.concatenate(next_array, axis)
