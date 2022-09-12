@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'temp4'
+test_version =  'temp5'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -19,7 +19,7 @@ working_directory = f'temp/' + run_name + '/'
 # path to read configuration file from, if desired (optional)
 read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
 # tell program to make a new configuration, if False will read an old one from read_configuration_path
-make_new_configuration = False
+make_new_configuration = True
 
 # make temp folder if not exists - required
 if not os.path.exists('temp/'):
@@ -44,8 +44,8 @@ meta = {
 update_meta = False
 
 # learning params
-total_timesteps = 100_000
-every_nEpisodes = 1000
+total_timesteps = 1_000_000
+every_nEpisodes = 400
 
 # create CONTROLLER - controls all components (mode)
 # debug mode will prompt user input for which component(s) to debug
@@ -107,7 +107,7 @@ else:
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
 	image_sensors = [
-		#'Camera', 
+		'Camera', 
 		]
 	# image shape is hard coded
 	image_bands = 1
@@ -115,17 +115,19 @@ else:
 	image_width = 84 
 	vector_sensors = [
 		#'Distance',
-		#'DronePosition',
-		#'DroneOrientation',
-		#'GoalPosition',
+		'DronePosition',
+		'DroneOrientation',
+		'GoalPosition',
 		'GoalOrientation',
+		'DroneToGoalDistance',
+		'DroneToGoalYaw',
 		]
 	# vector shape is hard coded
-	vector_length = 1
+	vector_length = 13
 	# set number of timesteps to keep in current state
-	nTimesteps = 1
+	nTimesteps = 4
 	# set modality being used
-	observation = 'Vector' # Image Vector Multi
+	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
@@ -133,17 +135,18 @@ else:
 	# set starting height of drone for each episode
 	start_z = -4 
 	# set drone speed for steps in meters / second
-	move_speed = 4 
+	move_speed = 2 
 	# set rotate speed for steps in degrees / second
-	yaw_rate = 22.5
+	yaw_rate = 11.25
 	# set drone duration of each step in seconds
 	step_duration = 2 
 	# control if load voxels in to check valid spawn/objective points and visualize results
 	use_voxels = True
 	# set goal (objective point) - can be relative or absolute
-	goal = [6, 0, 0]
+	goal = [8, 0, 0]
 	goal_tolerance = 2
-	max_steps = 2
+	max_steps = 16
+	max_distance = math.sqrt(2)*np.linalg.norm(goal)
 	
 
 	# **** CREATE COMPONENTS ****
@@ -170,7 +173,7 @@ else:
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				#'speedup', 
+				'speedup', 
 				'tellocamera', 
 				#'bellydistance',
 				#'nodisplay',
@@ -230,7 +233,7 @@ else:
 		name = 'NormalizePosition',
 	)
 	Normalize(
-		min_input = 0, # min angle
+		min_input = -1 * math.pi, # min angle
 		max_input = math.pi, # max angle
 		min_output = 0, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
@@ -316,13 +319,34 @@ else:
 	if 'GoalOrientation' in vector_sensors:
 		from sensors.orientation import Orientation
 		Orientation(
-			misc_component = 'Drone',
-			misc2_component = 'Goal',
+			misc_component = 'Goal',
 			prefix = 'goal',
 			transformers_components = [
 				'NormalizeOrientation',
 				],
 			name = 'GoalOrientation',
+		)
+	if 'DroneToGoalPosition' in vector_sensors:
+		from sensors.position import Position
+		Position(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			prefix = 'drone_to_goal',
+			transformers_components = [
+				'NormalizePosition',
+				], 
+			name = 'DroneToGoalPosition',
+		)
+	if 'DroneToGoalOrientation' in vector_sensors:
+		from sensors.orientation import Orientation
+		Orientation(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			prefix = 'drone_to_goal',
+			transformers_components = [
+				'NormalizeOrientation',
+				],
+			name = 'DroneToGoalOrientation',
 		)
 	
 	# OBSERVER
@@ -388,21 +412,14 @@ else:
 		duration = step_duration,
 		name = 'RotateLeft',
 	)
-	from actions.test import Test
-	Test(
-		drone_component = 'Drone', 
-		goal_component = 'Goal',   
-		name = 'TestAction',
-	)
 
 	# ACTOR
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
 			'MoveForward',
-			'TestAction',
-			#'RotateRight',
-			#'RotateLeft',
+			'RotateRight',
+			'RotateLeft',
 			],
 		name='Actor',
 	)
@@ -417,8 +434,8 @@ else:
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = 0, 
-		max_distance = np.linalg.norm(goal),
+		min_distance = goal_tolerance, 
+		max_distance = max_distance,
         goal_tolerance = goal_tolerance,
 		include_z = include_z,
 		name = 'GoalReward',
@@ -449,7 +466,7 @@ else:
 		drone_component = 'Drone',
 		goal_component = 'Goal',
 		min_distance = goal_tolerance, 
-		max_distance = 20,#math.sqrt(2)*np.linalg.norm(goal),
+		max_distance = max_distance,
 		include_z = include_z,
 		name = 'GoalTerminator',
 	)
@@ -666,10 +683,10 @@ else:
 		spawns_components=[
 			Spawn(
 				map_component = 'Map',
-				x_min=-12,
-				x_max=12,
-				y_min=-12,
-				y_max=12,
+				x_min=-8,
+				x_max=8,
+				y_min=-8,
+				y_max=8,
 				z_min=start_z,
 				z_max=start_z,
 				yaw_min = -1 * math.pi,
@@ -711,7 +728,7 @@ else:
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
 		frequency = every_nEpisodes,
-		nEpisodes = 4,
+		nEpisodes = 100,
 		stopping_total_success = 4,
 		n_success_buffer = 0,
 		stopping_improved_steps = 4,
@@ -763,7 +780,7 @@ else:
 			'GoalTerminator',
 			'MaxSteps',
 			],
-		spawner_component='EvaluateSpawner',
+		spawner_component='TrainSpawner',
 		others_components=[
 			'Goal',
 			],
