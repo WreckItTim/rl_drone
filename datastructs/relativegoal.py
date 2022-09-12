@@ -54,6 +54,7 @@ class RelativeGoal(DataStruct):
 				utils.error('invalid objective point')
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_yaw, alpha)
 			alpha -= 0.1
+		print('goal:', utils._round(self.get_position()), utils._round(self.get_yaw()))
 
 	# if reset on each step
 	def step(self, state):
@@ -65,4 +66,3 @@ class RelativeGoal(DataStruct):
 	# when using the debug controller
 	def debug(self):
 		self.reset()
-		print('Relative Goal:', self.get_position(), self.get_yaw())

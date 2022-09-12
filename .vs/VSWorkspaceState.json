@@ -1,8 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\drones",
-    "\\sensors"
+    "\\rewards"
   ],
   "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false

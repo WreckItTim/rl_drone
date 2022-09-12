@@ -28,7 +28,7 @@ class DroneRL(Environment):
 
 	def connect(self):
 		super().connect()
-			
+
 	# activate needed components
 	def step(self, rl_output):
 		# initialize state with rl_output
@@ -40,12 +40,14 @@ class DroneRL(Environment):
 		# take action
 		transcribed_action = self._actor.act(rl_output)
 		state['transcribed_action'] = transcribed_action
+		print('action:', state['transcribed_action'])
 		# get observation
 		observation_data, observation_name = self._observer.observe(self.write_observations)
 		state['observation_component'] = observation_name
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
+		print('pos:', utils._round(state['drone_position']), 'yaw:', utils._round(state['yaw']))
 		# take step for other components
 		if self._others is not None:
 			for other in self._others:
@@ -58,9 +60,10 @@ class DroneRL(Environment):
 			done = done or terminator.terminate(state)
 		state['done'] = done
 		if done:
-			#print('terminated:', state['termination_reason'], state['termination_result'])
+			print('terminated:', state['termination_reason'], state['termination_result'])
+			print('steps:', self.step_counter)
 			self.episode_counter += 1
-		print(state)
+		#print(state)
 		#x = input()
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, state
@@ -68,10 +71,10 @@ class DroneRL(Environment):
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
-		if self.write_observations:
-			print('evaluation episode', self.episode_counter)
-		else:
-			print('train episode', self.episode_counter)
+		#if self.write_observations:
+		#	print('evaluation episode', self.episode_counter)
+		#else:
+		#	print('train episode', self.episode_counter)
 		# reset all components, several reset() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
 		if self._saver is not None:
@@ -83,6 +86,8 @@ class DroneRL(Environment):
 		self._drone.reset()
 		if self._spawner is not None:
 			self._spawner.reset()
+		print()
+		print('spawn:', utils._round(self._drone.get_position()), utils._round(self._drone.get_yaw(),))
 		if self._others is not None:
 			for other in self._others:
 				other.reset()
@@ -93,5 +98,4 @@ class DroneRL(Environment):
 			terminator.reset()
 		self._nSteps = 0
 		observation_data, observation_name = self._observer.observe()
-		print('spawn:', self._drone.get_position(), self._drone.get_yaw(),)
 		return observation_data

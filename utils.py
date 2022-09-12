@@ -1,6 +1,14 @@
 import json
 from time import localtime, time
 import math
+			
+def _round(x, digits=2):
+	if type(x) == list:
+		for i, _x in enumerate(x):
+			x[i] = round(_x, digits)
+	else:
+		x = round(x, digits)
+	return x
 
 def read_json(path):
 	return json.load(open(path, 'r'))

@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'temp'
+test_version =  'temp4'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -19,7 +19,7 @@ working_directory = f'temp/' + run_name + '/'
 # path to read configuration file from, if desired (optional)
 read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
 # tell program to make a new configuration, if False will read an old one from read_configuration_path
-make_new_configuration = True
+make_new_configuration = False
 
 # make temp folder if not exists - required
 if not os.path.exists('temp/'):
@@ -44,10 +44,8 @@ meta = {
 update_meta = False
 
 # learning params
-nEpochs = 2000
-max_steps = 2
-total_timesteps = int(nEpochs * max_steps)
-every_nEpisodes = int(total_timesteps / 100)
+total_timesteps = 100_000
+every_nEpisodes = 1000
 
 # create CONTROLLER - controls all components (mode)
 # debug mode will prompt user input for which component(s) to debug
@@ -98,7 +96,7 @@ if not make_new_configuration and os.path.exists(read_configuration_path):
 # all packaged componets are listed here and created for debugging purposes
 # the below configuration is set to run the Delta Demonstration in our paper
 # edit as needed, suggested to use as a template
-if make_new_configuration:
+else:
 	# create new configuration object to save and connect components
 	configuration = Configuration(meta)
 	Configuration.set_active(configuration)
@@ -109,7 +107,7 @@ if make_new_configuration:
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
 	image_sensors = [
-		'Camera', 
+		#'Camera', 
 		]
 	# image shape is hard coded
 	image_bands = 1
@@ -145,6 +143,7 @@ if make_new_configuration:
 	# set goal (objective point) - can be relative or absolute
 	goal = [6, 0, 0]
 	goal_tolerance = 2
+	max_steps = 2
 	
 
 	# **** CREATE COMPONENTS ****
@@ -473,27 +472,27 @@ if make_new_configuration:
 		policy = 'MlpPolicy'
 	if observation == 'Multi': 
 		policy = 'MultiInputPolicy'
-	policy_kwargs = {'net_arch':[2]}
+	policy_kwargs = None
 	if model == 'DQN':
 		from models.dqn import DQN
 		DQN(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
+			buffer_size = every_nEpisodes * 100,
+			learning_starts = every_nEpisodes * 5,
 			batch_size = 32,
-			tau = 1.0,
-			gamma = 0.99,
+			tau = 1e-2,
+			gamma = 0.9999,
 			train_freq = 4,
 			gradient_steps = 1,
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = every_nEpisodes*4,
-			exploration_fraction = 0.1,
+			target_update_interval = every_nEpisodes,
+			exploration_fraction = 0.4,
 			exploration_initial_eps = 1.0,
-			exploration_final_eps = 0.05,
+			exploration_final_eps = 0.1,
 			max_grad_norm = 10,
 			tensorboard_log = working_directory + 'tensorboard/',
 			create_eval_env = False,

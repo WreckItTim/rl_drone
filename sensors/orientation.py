@@ -35,7 +35,6 @@ class Orientation(Sensor):
 			yaw_1_2 = utils.position_to_yaw(distance_vector)
 			yaw1 = self._misc.get_yaw()
 			yaw_diff = math.pi - abs(abs(yaw_1_2 - yaw1) - math.pi)
-			print('yaw_diff', yaw_diff)
 			data.append(yaw_diff)
 			names.append(self.prefix+'_yaw_diff')
 		observation = Vector(
