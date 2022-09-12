@@ -1,9 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\environments",
-    "\\observations",
-    "\\observers"
+    "\\drones",
+    "\\sensors"
   ],
+  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

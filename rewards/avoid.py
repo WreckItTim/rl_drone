@@ -15,5 +15,5 @@ class Avoid(Reward):
         has_collided = state['has_collided']
         value = 0
         if has_collided:
-            value = -1
+            value = -10
         return value

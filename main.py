@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'eta3'
+test_version =  'temp'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -37,12 +37,17 @@ utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'eta2',
+	'repo_version': 'eta3',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
 update_meta = False
 
+# learning params
+nEpochs = 2000
+max_steps = 2
+total_timesteps = int(nEpochs * max_steps)
+every_nEpisodes = int(total_timesteps / 100)
 
 # create CONTROLLER - controls all components (mode)
 # debug mode will prompt user input for which component(s) to debug
@@ -60,7 +65,7 @@ elif controller_type == 'train':
 		model_component = 'Model',
 		environment_component = 'TrainEnvironment',
 		evaluator_component = 'Evaluator',
-		total_timesteps = 1_000_000,
+		total_timesteps = total_timesteps,
 		callback = None,
 		log_interval = -1,
 		tb_log_name = 'phase1',
@@ -80,22 +85,20 @@ elif controller_type == 'evaluate':
 
 # READ OLD CONFIGURATION FILE
 # you do not need to do nothing else if reading a config file as is
-if not make_new_configuration:
+if not make_new_configuration and os.path.exists(read_configuration_path):
 	# load configuration file and create object to save and connect components
 	configuration = Configuration.load(read_configuration_path)
 	if update_meta:
 		configuration.update_meta(meta)
 	Configuration.set_active(configuration)
 	configuration.set_controller(controller)
-	
-	# ALTER or CREATE any components as desired here
 
 
 # MAKE NEW CONFIGURATION
 # all packaged componets are listed here and created for debugging purposes
 # the below configuration is set to run the Delta Demonstration in our paper
 # edit as needed, suggested to use as a template
-elif make_new_configuration:
+if make_new_configuration:
 	# create new configuration object to save and connect components
 	configuration = Configuration(meta)
 	Configuration.set_active(configuration)
@@ -108,29 +111,31 @@ elif make_new_configuration:
 	image_sensors = [
 		'Camera', 
 		]
+	# image shape is hard coded
 	image_bands = 1
 	image_height = 84 
 	image_width = 84 
 	vector_sensors = [
 		#'Distance',
-		#'DroneState',
-		'GoalSensor',
+		#'DronePosition',
+		#'DroneOrientation',
+		#'GoalPosition',
+		'GoalOrientation',
 		]
+	# vector shape is hard coded
 	vector_length = 1
 	# set number of timesteps to keep in current state
-	nTimesteps = 2
+	nTimesteps = 1
 	# set modality being used
-	observation = 'Multi' # Image Vector Multi
+	observation = 'Vector' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
 	include_z = False
 	# set starting height of drone for each episode
 	start_z = -4 
-	# save and evaluate every n episodes, some model parameters are also a function of this
-	every_nEpisodes = 40 
 	# set drone speed for steps in meters / second
-	move_speed = 2 
+	move_speed = 4 
 	# set rotate speed for steps in degrees / second
 	yaw_rate = 22.5
 	# set drone duration of each step in seconds
@@ -138,7 +143,8 @@ elif make_new_configuration:
 	# control if load voxels in to check valid spawn/objective points and visualize results
 	use_voxels = True
 	# set goal (objective point) - can be relative or absolute
-	goal = [16, 0, 0]
+	goal = [6, 0, 0]
+	goal_tolerance = 2
 	
 
 	# **** CREATE COMPONENTS ****
@@ -150,9 +156,9 @@ elif make_new_configuration:
 		map_component = 'Map',
 		xyz_point = goal,
 		random_yaw = True,
-		random_yaw_min = 0,
-		random_yaw_max = 2 * math.pi,
-        reset_on_step=False,
+		random_yaw_min = -1 * math.pi,
+		random_yaw_max = math.pi,
+		reset_on_step=False,
 		name = 'Goal',
 		)
 
@@ -160,12 +166,12 @@ elif make_new_configuration:
 	if drone == 'AirSim':
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
-            voxels_component='Voxels' if use_voxels else None,
+			voxels_component='Voxels' if use_voxels else None,
 			settings = None,
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				'speedup', 
+				#'speedup', 
 				'tellocamera', 
 				#'bellydistance',
 				#'nodisplay',
@@ -178,7 +184,7 @@ elif make_new_configuration:
 	elif drone == 'Tello':
 		from maps.field import Field
 		map_ = Field(
-            voxels_component='Voxels' if use_voxels else None,
+			voxels_component='Voxels' if use_voxels else None,
 		)
 
 	# VOXELS - 2d representation of map (not required)
@@ -218,22 +224,22 @@ elif make_new_configuration:
 	# TRANSFORMER
 	from transformers.normalize import Normalize
 	Normalize(
-		min_input = 0, # min depth of 0m
-		max_input = 100, # max depth of 100m
+		min_input = -200, # min distance
+		max_input = 200, # max distance
 		min_output = 0, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
-		name = 'NormalizeDistance',
+		name = 'NormalizePosition',
 	)
 	Normalize(
-		min_input = 0,
-		max_input = 2*math.pi,
-		min_output = 0,
-		max_output = 1,
-		name = 'NormalizeYaw',
+		min_input = 0, # min angle
+		max_input = math.pi, # max angle
+		min_output = 0, # SB3 uses 0-1 floating point values
+		max_output = 1, # SB3 uses 0-1 floating point values
+		name = 'NormalizeOrientation',
 	)
 	Normalize(
-		min_input = 0, # min depth of 0m
-		max_input = 100, # max depth of 100m
+		min_input = 0, # min depth
+		max_input = 100, # max depth
 		min_output = 0, # SB3 uses 0-255 pixel values
 		max_output = 255, # SB3 uses 0-255 pixel values
 		name = 'NormalizeDepth',
@@ -257,7 +263,6 @@ elif make_new_configuration:
 				'ResizeImage',
 				'NormalizeDepth',
 				],
-			offline = True,
 			name = 'Camera',
 			)
 	if drone == 'AirSim' and 'Distance' in vector_sensors:
@@ -279,19 +284,49 @@ elif make_new_configuration:
 				],
 			name = 'Camera',
 		)
-	if 'GoalSensor' in vector_sensors:
-		from sensors.goal import Goal
-		Goal(
-			drone_component = 'Drone',
-			goal_component = 'Goal',
-			get_yaw_difference = True,
+	if 'DronePosition' in vector_sensors:
+		from sensors.position import Position
+		Position(
+			misc_component = 'Drone',
+			prefix = 'drone',
 			transformers_components = [
-				'NormalizeYaw',
+				'NormalizePosition',
 				],
-			name = 'GoalSensor',
+			name = 'DronePosition',
+		)
+	if 'DroneOrientation' in vector_sensors:
+		from sensors.orientation import Orientation
+		Orientation(
+			misc_component = 'Drone',
+			prefix = 'drone',
+			transformers_components = [
+				'NormalizeOrientation',
+				],
+			name = 'DroneOrientation',
+		)
+	if 'GoalPosition' in vector_sensors:
+		from sensors.position import Position
+		Position(
+			misc_component = 'Goal',
+			prefix = 'goal',
+			transformers_components = [
+				'NormalizePosition',
+				],
+			name = 'GoalPosition',
+		)
+	if 'GoalOrientation' in vector_sensors:
+		from sensors.orientation import Orientation
+		Orientation(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			prefix = 'goal',
+			transformers_components = [
+				'NormalizeOrientation',
+				],
+			name = 'GoalOrientation',
 		)
 	
-		# OBSERVER
+	# OBSERVER
 	if observer == 'Single':
 		from observers.single import Single
 		if observation == 'Vector':
@@ -305,7 +340,7 @@ elif make_new_configuration:
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
-			nTimesteps = 2,
+			nTimesteps = nTimesteps,
 			name = 'Observer',
 		)
 	if observer == 'Multi':
@@ -314,7 +349,7 @@ elif make_new_configuration:
 			sensors_components = vector_sensors, 
 			vector_length = vector_length,
 			is_image = False,
-			nTimesteps = 2,
+			nTimesteps = nTimesteps,
 			name = 'ObserverVector',
 		)
 		Single(
@@ -323,7 +358,7 @@ elif make_new_configuration:
 			image_height = image_height, 
 			image_width = image_width,
 			image_bands = image_bands,
-			nTimesteps = 2,
+			nTimesteps = nTimesteps,
 			name = 'ObserverImage',
 		)
 		from observers.multi import Multi
@@ -354,14 +389,21 @@ elif make_new_configuration:
 		duration = step_duration,
 		name = 'RotateLeft',
 	)
+	from actions.test import Test
+	Test(
+		drone_component = 'Drone', 
+		goal_component = 'Goal',   
+		name = 'TestAction',
+	)
 
 	# ACTOR
 	from actors.discreteactor import DiscreteActor
 	DiscreteActor(
 		actions_components=[
 			'MoveForward',
-			'RotateRight',
-			'RotateLeft',
+			'TestAction',
+			#'RotateRight',
+			#'RotateLeft',
 			],
 		name='Actor',
 	)
@@ -378,8 +420,9 @@ elif make_new_configuration:
 		goal_component = 'Goal',
 		min_distance = 0, 
 		max_distance = np.linalg.norm(goal),
+        goal_tolerance = goal_tolerance,
 		include_z = include_z,
-		name = 'RelativePointReward',
+		name = 'GoalReward',
 	)
 
 	# REWARDER
@@ -387,11 +430,11 @@ elif make_new_configuration:
 	Schema(
 		rewards_components = [
 			#'AvoidReward',
-			'RelativePointReward',
+			'GoalReward',
 			],
 		reward_weights = [
-			1,
 			#1,
+			1,
 			],
 		name = 'Rewarder',
 	)
@@ -406,10 +449,10 @@ elif make_new_configuration:
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = 4, 
-		max_distance = math.sqrt(2)*np.linalg.norm(goal),
+		min_distance = goal_tolerance, 
+		max_distance = 20,#math.sqrt(2)*np.linalg.norm(goal),
 		include_z = include_z,
-		name = 'RelativePointTerminator',
+		name = 'GoalTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
 	RewardThresh(
@@ -419,7 +462,7 @@ elif make_new_configuration:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 20,
+		max_steps = max_steps,
 		name = 'MaxSteps',
 	)
 
@@ -430,13 +473,14 @@ elif make_new_configuration:
 		policy = 'MlpPolicy'
 	if observation == 'Multi': 
 		policy = 'MultiInputPolicy'
+	policy_kwargs = {'net_arch':[2]}
 	if model == 'DQN':
 		from models.dqn import DQN
 		DQN(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes * 100,
+			buffer_size = every_nEpisodes * 10,
 			learning_starts = every_nEpisodes,
 			batch_size = 32,
 			tau = 1.0,
@@ -453,7 +497,7 @@ elif make_new_configuration:
 			max_grad_norm = 10,
 			tensorboard_log = working_directory + 'tensorboard/',
 			create_eval_env = False,
-			policy_kwargs = None,
+			policy_kwargs = policy_kwargs,
 			verbose = 0,
 			seed = None,
 			device = "auto",
@@ -614,6 +658,7 @@ elif make_new_configuration:
 			replay_buffer_path = None,
 			name='Model',
 		)
+	
 
 	# SPAWNER
 	from others.spawner import Spawner
@@ -622,13 +667,14 @@ elif make_new_configuration:
 		spawns_components=[
 			Spawn(
 				map_component = 'Map',
-				x_min=-16,
-				x_max=16,
+				x_min=-12,
+				x_max=12,
 				y_min=-12,
 				y_max=12,
 				z_min=start_z,
 				z_max=start_z,
-				yaw_max=2*math.pi,
+				yaw_min = -1 * math.pi,
+				yaw_max = math.pi,
 				random=True,
 			),
 		],
@@ -652,7 +698,7 @@ elif make_new_configuration:
 				),
 			Spawn(
 				z=start_z,
-				yaw=math.radians(230),
+				yaw=math.radians(-130),
 				random=False,
 				),
 			],
@@ -696,7 +742,7 @@ elif make_new_configuration:
 		rewarder_component='Rewarder', 
 		terminators_components=[
 			'Collision',
-			'RelativePointTerminator',
+			'GoalTerminator',
 			'MaxSteps',
 			],
 		saver_component='Saver',
@@ -715,7 +761,7 @@ elif make_new_configuration:
 		rewarder_component='Rewarder', 
 		terminators_components=[
 			'Collision',
-			'RelativePointTerminator',
+			'GoalTerminator',
 			'MaxSteps',
 			],
 		spawner_component='EvaluateSpawner',
@@ -730,6 +776,8 @@ utils.speak('configuration created!')
 
 # CONNECT COMPONENTS
 configuration.connect_all()
+print(configuration.get_component('Model')._sb3model.q_net)
+print(configuration.get_component('Model')._sb3model.q_net_target)
 
 # WRITE CONFIGURATION
 configuration.save()

@@ -37,14 +37,11 @@ class AirSimDrone(Drone):
 		self.reset() # this seems repetitive but needed to reset state info
 	
 	def disconnect(self):
-		if self._client is not None:
-			self._client.armDisarm(False)
-			self._client.enableApiControl(False)
-			self._client = None
+		pass
 
 	def take_off(self):
 		# this is just smoother and more reliable than using take_off
-		self._client.moveByVelocityAsync(0, 0, -2, 2)
+		self._client.moveByVelocityAsync(0, 0, -1, 2)
 		self.check_collision()
 		#while self._client.getMultirotorState().landed_state == 0:
 		#	self._client.takeoffAsync().join()
@@ -82,9 +79,7 @@ class AirSimDrone(Drone):
 	def get_yaw(self):
 		q = self._client.getMultirotorState().kinematics_estimated.orientation
 		pitch, roll, yaw = airsim.to_eularian_angles(q)
-		# get positive only
-		yaw_positive = yaw % (2*math.pi)
-		return yaw_positive
+		return yaw
 
 	def hover(self):
 		self._client.hoverAsync().join()

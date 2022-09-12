@@ -12,12 +12,14 @@ class Goal(Reward):
                  goal_component, 
                  min_distance, 
                  max_distance, 
+                 goal_tolerance=0,
                  include_z=True,
                  ):
         super().__init__()
         # set reward function
         #self._reward_function = lambda x : math.exp(-2.0 * x)
-        self._reward_function = lambda x : 1-x
+        #self._reward_function = lambda x : 1-x
+        #self._reward_function = lambda x : 1-x
         self.init_normalization()
 
     # calculate constants for normalization
@@ -38,10 +40,14 @@ class Goal(Reward):
     # get reward based on distance to point 
     def reward(self, state):
         _drone_position = self._drone.get_position()
-        _xyz_point = self._goal.xyz_point
+        _goal_position = self._goal.get_position()
         if not self.include_z:
             _drone_position = np.array([_drone_position[0], _drone_position[1]], dtype=float)
-            _xyz_point = np.array([_xyz_point[0], _xyz_point[1]], dtype=float)
-        distance = np.linalg.norm(_drone_position - _xyz_point)
-        value = self.normalize_reward(distance)
-        return value 
+            _goal_position = np.array([_goal_position[0], _goal_position[1]], dtype=float)
+        distance = np.linalg.norm(_drone_position - _goal_position)
+        print('distance_to_goal', distance)
+        if distance <= self.goal_tolerance:
+            return 1
+        return 0
+        #value = self.normalize_reward(distance)
+        #return value 

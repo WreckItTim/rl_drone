@@ -19,11 +19,11 @@ class Goal(Terminator):
     # checks if within distance of point
     def terminate(self, state):
         _drone_position = self._drone.get_position()
-        _xyz_point = self._goal.xyz_point
+        _goal_position = self._goal.get_position()
         if not self.include_z:
             _drone_position = np.array([_drone_position[0], _drone_position[1]], dtype=float)
-            _xyz_point = np.array([_xyz_point[0], _xyz_point[1]], dtype=float)
-        distance = np.linalg.norm(_drone_position - _xyz_point)
+            _goal_position = np.array([_goal_position[0], _goal_position[1]], dtype=float)
+        distance = np.linalg.norm(_drone_position - _goal_position)
         if distance < self.min_distance:
             state['termination_reason'] = 'min_distance'
             state['termination_result'] = 'success'

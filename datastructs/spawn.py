@@ -28,6 +28,10 @@ class Spawn(DataStruct):
 			self.get_spawn = self.random_spawn
 		else:
 			self.get_spawn = self.static_spawn
+			self._x = x
+			self._y = y
+			self._z = z
+			self._yaw = yaw
 
 	def get_random_pos(self):
 		x = random.uniform(self.x_min, self.x_max)
@@ -39,12 +43,18 @@ class Spawn(DataStruct):
 	def random_spawn(self):
 		in_object = True
 		while(in_object):
-			x, y, z, in_object = self.get_random_pos()
-		yaw = random.uniform(self.yaw_min, self.yaw_max)
-		return x, y, z, yaw
+			self._x, self._y, self._z, in_object = self.get_random_pos()
+		self._yaw = random.uniform(self.yaw_min, self.yaw_max)
+		return [self._x, self._y, self._z], self._yaw
 		
 	def static_spawn(self):
-		return self.x, self.y, self.z, self.yaw
+		return [self._x, self._y, self._z], self._yaw
+
+	def get_position(self):
+		return [self._x, self._y, self._z]
+	
+	def get_yaw(self):
+		return self._yaw
 
 	# debug mode
 	def debug(self):

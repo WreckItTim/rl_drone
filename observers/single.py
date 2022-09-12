@@ -16,7 +16,7 @@ class Single(Observer):
 	def __init__(
 		self, 
 		sensors_components,
-		vector_length = -1,
+		vector_length = None,
 		is_image = False,
 		image_height = None, 
 		image_width = None,
