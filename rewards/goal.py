@@ -55,6 +55,8 @@ class Goal(Reward):
 			value = 10
 		else:
 			value = - 1 * yaw_to_goal - 1 * distance
+		state['yaw_reward'] = - 1 * yaw_to_goal
+		state['pos_reward'] = - 1 * distance
 		print('distance:', utils._round(distance), 'angle:', utils._round(yaw_to_goal), 'reward:', value)
 		return value
 		#value = self.normalize_reward(distance)

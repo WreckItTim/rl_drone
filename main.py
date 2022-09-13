@@ -7,7 +7,7 @@ import numpy as np
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'temp5'
+test_version =  'temp6'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -44,7 +44,7 @@ meta = {
 update_meta = False
 
 # learning params
-total_timesteps = 1_000_000
+total_timesteps = 100_000
 every_nEpisodes = 400
 
 # create CONTROLLER - controls all components (mode)
@@ -125,9 +125,9 @@ else:
 	# vector shape is hard coded
 	vector_length = 13
 	# set number of timesteps to keep in current state
-	nTimesteps = 4
+	nTimesteps = 1
 	# set modality being used
-	observation = 'Multi' # Image Vector Multi
+	observation = 'Vector' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
@@ -144,7 +144,7 @@ else:
 	use_voxels = True
 	# set goal (objective point) - can be relative or absolute
 	goal = [8, 0, 0]
-	goal_tolerance = 2
+	goal_tolerance = 4
 	max_steps = 16
 	max_distance = math.sqrt(2)*np.linalg.norm(goal)
 	
