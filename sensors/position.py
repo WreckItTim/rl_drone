@@ -1,7 +1,7 @@
 from sensors.sensor import Sensor
 from observations.vector import Vector
 from component import _init_wrapper
-from numpy import np
+import numpy as np
 
 # gets position from a miscellaneous component
 # can send in a second component to get positoin and distance between two
@@ -21,7 +21,7 @@ class Position(Sensor):
 	def sense(self):
 		data = []
 		names = []
-		if self._misc is None:
+		if self._misc2 is None:
 			position = self._misc.get_position()
 			data.append(position[0])
 			names.append(self.prefix+'_x')

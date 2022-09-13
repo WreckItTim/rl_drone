@@ -119,8 +119,8 @@ else:
 		'DroneOrientation',
 		'GoalPosition',
 		'GoalOrientation',
-		'DroneToGoalDistance',
-		'DroneToGoalYaw',
+		'DroneToGoalPosition',
+		'DroneToGoalOrientation',
 		]
 	# vector shape is hard coded
 	vector_length = 13
