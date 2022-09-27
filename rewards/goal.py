@@ -47,17 +47,25 @@ class Goal(Reward):
 			_goal_position = np.array([_goal_position[0], _goal_position[1]], dtype=float)
 		distance_vector = _goal_position - _drone_position
 		distance = np.linalg.norm(distance_vector)
+		distance_reward = -0.5 * distance / self.max_distance
+
 		goal_yaw = utils.position_to_yaw(distance_vector)
 		drone_yaw = self._drone.get_yaw()
 		yaw_to_goal = math.pi - abs(abs(goal_yaw - drone_yaw) - math.pi)
+		yaw_reward = -0.5 * yaw_to_goal / math.pi
+
 		value = 0
 		if distance <= self.goal_tolerance:
 			value = 10
+		elif distance >= self.max_distance:
+			value = -10
 		else:
-			value = - 1 * yaw_to_goal - 1 * distance
-		state['yaw_reward'] = - 1 * yaw_to_goal
-		state['pos_reward'] = - 1 * distance
+			value = yaw_reward + distance_reward
+
+		state['yaw_reward'] = yaw_reward
+		state['pos_reward'] = distance_reward
 		print('distance:', utils._round(distance), 'angle:', utils._round(yaw_to_goal), 'reward:', value)
 		return value
+
 		#value = self.normalize_reward(distance)
 		#return value 

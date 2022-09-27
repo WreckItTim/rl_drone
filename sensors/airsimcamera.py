@@ -55,7 +55,7 @@ class AirSimCamera(Sensor):
 	# takes a picture with camera
 	def sense(self):
 		img_array = []
-		while len(img_array <= 0): # loop for dead images (happens some times)
+		while len(img_array) <= 0: # loop for dead images (happens some times)
 			response = self._client.simGetImages([self._image_request])[0]
 			if self.as_float:
 				np_flat = np.array(response.image_data_float, dtype=np.float)

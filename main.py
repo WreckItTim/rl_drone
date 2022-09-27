@@ -3,11 +3,12 @@ import utils
 from configuration import Configuration
 import math
 import numpy as np
+from time import localtime, time
 
 
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'temp6'
+test_version =  'temp9'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -19,7 +20,7 @@ working_directory = f'temp/' + run_name + '/'
 # path to read configuration file from, if desired (optional)
 read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
 # tell program to make a new configuration, if False will read an old one from read_configuration_path
-make_new_configuration = True
+make_new_configuration = False
 
 # make temp folder if not exists - required
 if not os.path.exists('temp/'):
@@ -44,7 +45,7 @@ meta = {
 update_meta = False
 
 # learning params
-total_timesteps = 100_000
+total_timesteps = 1_000_000
 every_nEpisodes = 400
 
 # create CONTROLLER - controls all components (mode)
@@ -125,9 +126,9 @@ else:
 	# vector shape is hard coded
 	vector_length = 13
 	# set number of timesteps to keep in current state
-	nTimesteps = 1
+	nTimesteps = 4
 	# set modality being used
-	observation = 'Vector' # Image Vector Multi
+	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
@@ -799,7 +800,11 @@ print(configuration.get_component('Model')._sb3model.q_net_target)
 configuration.save()
 
 # RUN CONTROLLER
+t1 = time()
 configuration.controller.run()
+t2 = time()
+delta_t = (t2 - t1) / 3600
+print('finished in', delta_t, 'hours')
 
 # DISCONNECT COMPONENTS
 configuration.disconnect_all()
