@@ -43,7 +43,7 @@ class AirSimMap(Map):
 	def connect(self):
 		super().connect()
 		# prompt user to confirm when launch is successful (can launch manually if needs be)
-		print(f'Send any key when AirSim {self._release_path} is fully launched, this make take several minutes....')
+		print(f'Manually launch AirSim map, and press any key when complete...')
 		x = input()
 
 	# close airsim map
