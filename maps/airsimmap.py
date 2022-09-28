@@ -15,38 +15,8 @@ class AirSimMap(Map):
 	def __init__(self,
 				 # voxels for 2d/3d numpy array represtation of objects
 				 voxels_component=None,
-				 # can define json-structured settings
-				 settings:dict = None,
-				 # or define setting files to read in from given directory
-				 settings_directory:str = 'maps/airsim_settings/',
-				 # will aggregate passed in json settings and all files
-				 # update priority is given to the settings argument and last listed files
-				 # amoung the settings must be information for which sensors to use
-				 # below arg is a list of file names, see the maps/airsim_settings for examples
-				 setting_files:list = ['vanilla'],
-				 # directory to release .exe file to be launched
-				 release_directory:str = None,
-				 # name of release .exe file to be launched, inside relase_directory
-				 release_name:str = None,
-				 # controls if to make a voxels object on connect
-				 make_voxels_on_connect = False,
 				 ):
 		super().__init__()
-		# get path to release executable file to launch
-		self._release_path = os.path.join(release_directory, release_name)
-		# create setting dictionary
-		self.settings = {}
-		if settings is not None:
-			self.settings = settings
-		# read in any other settings files
-		other_settings = {}
-		if setting_files is not None:
-			other_settings = self.read_settings(settings_directory, setting_files)
-		# merge all settings
-		self.settings.update(other_settings)
-		# write to temp file to be read in when launching realease executable
-		self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
-		self.write_settings(self.settings, self._settings_path)
 
 	def make_voxels(self,
 			  # ABSOLUTE path to right to, must be absolute
@@ -72,9 +42,6 @@ class AirSimMap(Map):
 	# launch airsim map
 	def connect(self):
 		super().connect()
-		# send command to terminal to launch the relase executable
-		terminal_command = f'{self._release_path} -settings=\"{self._settings_path}"'
-		subprocess.Popen(terminal_command, close_fds=True)
 		# prompt user to confirm when launch is successful (can launch manually if needs be)
 		print(f'Send any key when AirSim {self._release_path} is fully launched, this make take several minutes....')
 		x = input()
