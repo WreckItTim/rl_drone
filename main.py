@@ -170,17 +170,6 @@ else:
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
 			voxels_component='Voxels' if use_voxels else None,
-			settings = None,
-			settings_directory = 'maps/airsim_settings/',
-			setting_files = [
-				'lightweight', 
-				'speedup', 
-				'tellocamera', 
-				#'bellydistance',
-				#'nodisplay',
-				],
-			release_directory = 'resources/airsim_maps/Blocks/',
-			release_name = 'Blocks.exe',
 			name = 'Map',
 		)
 	# deploying to a field with no connectivity to the program, dummy object
