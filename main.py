@@ -6,9 +6,16 @@ import numpy as np
 from time import localtime, time
 
 
+# get Operating System
+import platform
+OS = platform.system()
+utils.set_global_parameter('OS', OS)
+print('detected operating system:', OS)
+
+
 # USER PARAMETERS and SETUP
 # test version is just a name used for logging (optional)
-test_version =  'temp9'
+test_version =  'temp11'
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -20,7 +27,7 @@ working_directory = f'temp/' + run_name + '/'
 # path to read configuration file from, if desired (optional)
 read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
 # tell program to make a new configuration, if False will read an old one from read_configuration_path
-make_new_configuration = False
+make_new_configuration = True
 
 # make temp folder if not exists - required
 if not os.path.exists('temp/'):
@@ -38,7 +45,7 @@ utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'eta3',
+	'repo_version': 'theta',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (only if reading one)
@@ -170,17 +177,19 @@ else:
 		from maps.airsimmap import AirSimMap
 		AirSimMap(
 			voxels_component='Voxels' if use_voxels else None,
-			settings = None,
+			settings = {
+				'LocalHostIp': '127.0.0.1',
+				'ClockSpeed': 1,
+				#"ViewMode": "NoDisplay",
+				},
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				'speedup', 
 				'tellocamera', 
 				#'bellydistance',
-				#'nodisplay',
 				],
-			release_directory = 'resources/airsim_maps/Blocks/',
-			release_name = 'Blocks.exe',
+			release_directory = 'resources/airsim_maps/',
+			release_name = 'Blocks',
 			name = 'Map',
 		)
 	# deploying to a field with no connectivity to the program, dummy object

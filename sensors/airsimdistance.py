@@ -2,6 +2,7 @@
 from sensors.sensor import Sensor
 import setup_path # need this in same directory as python code for airsim
 import airsim
+import utils
 from observations.vector import Vector
 import numpy as np
 from component import _init_wrapper
@@ -24,7 +25,7 @@ class AirSimDistance(Sensor):
 
 	def connect(self):
 		super().connect()
-		self._client = airsim.MultirotorClient()
+		self._client = airsim.MultirotorClient(ip=utils.get_global_parameter('LocalHostIp'))
 		self._client.confirmConnection()
 
 	# takes a picture with camera

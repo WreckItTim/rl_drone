@@ -30,7 +30,7 @@ class AirSimDrone(Drone):
 
 	def connect(self):
 		super().connect()
-		self._client = airsim.MultirotorClient()
+		self._client = airsim.MultirotorClient(ip=utils.get_global_parameter('LocalHostIp'))
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)

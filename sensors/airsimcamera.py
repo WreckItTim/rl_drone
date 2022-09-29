@@ -5,6 +5,7 @@ import airsim
 from observations.image import Image
 import numpy as np
 from component import _init_wrapper
+import utils
 
 # see https://microsoft.github.io/AirSim/image_apis/
 class AirSimCamera(Sensor):
@@ -49,7 +50,7 @@ class AirSimCamera(Sensor):
 
 	def connect(self):
 		super().connect()
-		self._client = airsim.MultirotorClient()
+		self._client = airsim.MultirotorClient(ip=utils.get_global_parameter('LocalHostIp'))
 		self._client.confirmConnection()
 
 	# takes a picture with camera
