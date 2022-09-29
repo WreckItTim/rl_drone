@@ -6,11 +6,10 @@ class EvaluateRL(Controller):
     # constructor
     @_init_wrapper
     def __init__(self, 
-                 model_component, 
-                 n_eval_episodes=1,
+                 evaluator_component, 
                  ):
         super().__init__()
 
     # runs control on components
     def run(self):
-        self._model.evaluate(self._model._environment, n_eval_episodes=self.n_eval_episodes)
+        self._evaluator.evaluate_set()

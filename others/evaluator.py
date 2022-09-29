@@ -2,6 +2,7 @@ from others.other import Other
 from component import _init_wrapper
 import utils
 import os
+from configuration import Configuration
 
 # objective is set x-meters in front of drone and told to go forward to it
 class Evaluator(Other):
@@ -14,13 +15,9 @@ class Evaluator(Other):
 			  nEpisodes = 1,
 			  _write_folder = None, 
 			  set_counter = 0,
-			  stopping_total_success = 4,
-			  n_success_buffer = 0,
-			  stopping_improved_steps = 4,
-			  n_steps_buffer = 2,
-			  best_steps = 999_999,
-			  total_success_streak = 0,
-			  improved_steps_streak = 0,
+			  stopping_patience = 4,
+			  stopping_percent_success = 0.9,
+			  stopping_success_streak = 0,
 			  ): 
 		# set folder path to write evaluations to
 		if _write_folder is None:
@@ -28,6 +25,11 @@ class Evaluator(Other):
 		# create write directory if does not exist already
 		if not os.path.exists(self._write_folder):
 			os.makedirs(self._write_folder)
+
+	# if reset learning loop
+	def reset_stopping(self):
+		self.stopping_success_streak = 0
+		self.set_counter = 0
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
@@ -76,23 +78,17 @@ class Evaluator(Other):
 		utils.write_json(all_states, self._write_folder + str(self.set_counter) + '.json')
 		# counter++
 		self.set_counter += 1
-		# check if all evluations were successful
-		if nSuccess - self.n_success_buffer >= self.nEpisodes:
-			self.total_success_streak += 1
-		else:
-			self.total_success_streak = 0
-		# check if number of steps not improved by tolerance
-		delta_steps = total_steps - self.best_steps
-		if delta_steps < -1 * self.n_steps_buffer:
-			self.best_steps = total_steps
-			self.improved_steps_streak = 0
-		else:
-			self.improved_steps_streak += 1
-		# check stop criteria
+
+		# CHECK STOPPING CRITERIA
 		stop = False
-		if self.total_success_streak >= self.stopping_total_success:
-			if self.improved_steps_streak >= self.stopping_improved_steps:
-				stop = True
+		# check percent of evaluations that were successful
+		percent_success = nSuccess / self.nEpisodes
+		if percent_success >= self.stopping_percent_success:
+			self.stopping_success_streak += 1
+		else:
+			self.stopping_success_streak = 0
+		if self.stopping_success_streak >= self.stopping_patience:
+			stop = True
 		return stop
 
 	# handle resets while training		
@@ -100,9 +96,12 @@ class Evaluator(Other):
 		# check when to do next set of evaluations
 		if self._train_environment.episode_counter % self.frequency == 0:
 			# evaluate for a set of episodes
-			self.evaluate_set()
+			stop = self.evaluate_set()
+			if stop:
+				Configuration.get_active().controller.stop()
 
 	# when using the debug controller
 	def debug(self):
 		# evaluate for a set of episodes
-		self.evaluate_set()
+		stop = self.evaluate_set()
+		print('Stopping Criteria Met?', stop)

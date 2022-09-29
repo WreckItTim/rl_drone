@@ -7,15 +7,8 @@ from component import _init_wrapper
 class Model(Component):
     # WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
     # NOTE: env=None as training and evaluation enivornments are handeled by controller
-    def __init__(self, write_path=None, replay_buffer_path=None, _model_arguments=None):
+    def __init__(self, model_path=None, replay_buffer_path=None, _model_arguments=None):
         self._model_arguments = _model_arguments
-        print(_model_arguments)
-        # set up write path
-        if write_path is None:
-            self.write_path = utils.get_global_parameter('working_directory') + 'model'
-        # set up replay buffer path
-        if replay_buffer_path is None:
-            self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer'
         self._sb3model = None
         self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
 
@@ -23,17 +16,21 @@ class Model(Component):
         super().connect()
         self._model_arguments['env'] = self._environment
         # create model object if needs be
-        _model_path = self.write_path + '.zip'
-        if exists(_model_path):
+        _model_path = self.model_path
+        if _model_path is not None and exists(_model_path):
             self.load(_model_path)
             self._sb3model.set_env(self._model_arguments['env'])
             print('loaded model from file')
         else:
             self._sb3model = self.sb3Type(**self._model_arguments)
-        _replay_buffer_path = self.replay_buffer_path + '.pkl'
-        if exists(_replay_buffer_path):
+        _replay_buffer_path = self.replay_buffer_path
+        if _replay_buffer_path is not None and exists(_replay_buffer_path):
             self._sb3model.load_replay_buffer(_replay_buffer_path)
             print('loaded replay buffer from file')
+        # set up model path to write to
+        self.model_path = utils.get_global_parameter('working_directory') + 'model.zip'
+        # set up replay buffer path to write to
+        self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
     def learn(self, 
         total_timesteps=10_000,
@@ -71,7 +68,8 @@ class Model(Component):
         
     # save sb3 replay buffer to path (sb3 auto appends file type at end)
     def save_replay_buffer(self, path):
-        self._sb3model.save_replay_buffer(path)
+        if self.has_replay_buffer:
+            self._sb3model.save_replay_buffer(path)
 
     # load sb3 model from path, must set sb3Load from child
     def load(self, path):

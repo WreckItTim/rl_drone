@@ -32,7 +32,7 @@ class DroneRL(Environment):
 	# activate needed components
 	def step(self, rl_output):
 		# initialize state with rl_output
-		state = {'rl_output':float(rl_output)}
+		state = {'rl_output':rl_output}
 		# increment number of steps
 		self._nSteps += 1
 		self.step_counter += 1

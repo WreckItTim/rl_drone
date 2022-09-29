@@ -28,6 +28,8 @@ class AirSimMap(Map):
 				 release_directory:str = None,
 				 # name of release .exe/.sh file to be launched, inside relase_directory
 				 release_name:str = None,
+				 # optional flags to put in command line when launching
+				 console_flags = None,
 				 # controls if to make a voxels object on connect
 				 make_voxels_on_connect = False,
 				 ):
@@ -77,11 +79,14 @@ class AirSimMap(Map):
 	def connect(self):
 		super().connect()
 		OS = utils.get_global_parameter('OS')
+		flags = ''
+		if self.console_flags is not None:
+			flags = self.console_flags.join(' ')
 		if OS == 'Windows':
 			# send command to terminal to launch the relase executable, if can
 			if os.path.exists(self._release_path):
 				print('Launching AirSim at given path')
-				terminal_command = f'{self._release_path}.exe -settings=\"{self._settings_path}"'
+				terminal_command = f'{self._release_path}.exe {flags} -settings=\"{self._settings_path}\"'
 				subprocess.Popen(terminal_command, close_fds=True)
 			else:
 				print('Please manually launch Airsim.')
@@ -89,7 +94,7 @@ class AirSimMap(Map):
 			# send command to terminal to launch the relase executable, if can
 			if os.path.exists(self._release_path):
 				print('Launching AirSim at given path')
-				terminal_command = f'sh {self._release_path}.sh -settings=\"{self._settings_path}"'
+				terminal_command = f'sh {self._release_path}.sh {flags} -settings=\"{self._settings_path}\"'
 				subprocess.Popen(terminal_command, close_fds=True)
 			else:
 				print('Please manually launch Airsim.')

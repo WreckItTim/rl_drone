@@ -32,7 +32,7 @@ class DQN(Model):
 			seed = None,
 			device = "auto",
 			init_setup_model = False,
-			write_path = None,
+			model_path = None,
 			replay_buffer_path = None,
 		):
 		kwargs = locals()
@@ -41,13 +41,14 @@ class DQN(Model):
 			'__class__',
 			'environment_component',
 			'init_setup_model',
-			'write_path',
+			'model_path',
 			'replay_buffer_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3DQN
 		self.sb3Load = sb3DQN.load
-		super().__init__(write_path=write_path, 
+		self.has_replay_buffer = True
+		super().__init__(model_path=model_path, 
 				   replay_buffer_path=replay_buffer_path, 
 				   _model_arguments=_model_arguments,
 				   )

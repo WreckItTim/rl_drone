@@ -1,99 +1,57 @@
-import os
 import utils
 from configuration import Configuration
 import math
 import numpy as np
-from time import localtime, time
+from time import time
 
 
-# get Operating System
-import platform
-OS = platform.system()
-utils.set_global_parameter('OS', OS)
-print('detected operating system:', OS)
+# GET OS
+utils.set_operating_system()
 
 
-# USER PARAMETERS and SETUP
-# writes all run results, observations, evaluations, models, etc to this path
-runs_path = 'local/runs/'
-# test version is just a name used for logging (optional)
-test_version =  ''
-# select name of reinforcement learning model to use
-model = 'DQN' # DQN A2C DDPG PPO SAC TD3
-# set the controller type to use
-controller_type = 'train' # train evaluate debug
-# create run name (not unique) for logging (optional)
-run_name = test_version + '_' + model + '_' + controller_type
-# create working directory to read/write files to
-working_directory = runs_path + run_name + '/'
-# path to read configuration file from, if desired (optional)
-read_configuration_path = runs_path + test_version + '_' + model + '_train/configuration.json'
-# tell program to make a new configuration, if False will read an old one from read_configuration_path
-make_new_configuration = True
-
-# make folder if not exists
-if not os.path.exists(runs_path):
-	os.makedirs(runs_path)
-# make working directory if not exists
-if not os.path.exists(working_directory):
-	os.makedirs(working_directory)
-# save working directory path to global_parameters to be visible by all 
-utils.set_global_parameter('working_directory', working_directory) # relative to repo
-# absoulte path on local computer to repo
-utils.set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder paths with /
+# CREATE and set read/write DIRECTORIES
+run_name = 'theta_DDPG_continuous_phase1' # unique run name to add to runs path directory
+utils.set_read_write_paths(
+		runs_path = 'local/runs/',
+		run_name = run_name,
+	)
 
 
-# META data to log in configuration file - no required format, anything you want to note here
+# SET META DATA (anything you want here, just write to config file)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
 	'repo_version': 'theta',
 	'run_name': run_name
 	}
-# select rather to overwrite meta data in configuration file (only if reading one)
+# select rather to overwrite meta data in configuration file (if already exists)
 update_meta = False
 
-# learning params
-total_timesteps = 1_000_000
-every_nEpisodes = 400
 
-# create CONTROLLER - controls all components (mode)
-# debug mode will prompt user input for which component(s) to debug
-if controller_type == 'debug':
-	from controllers.debug import Debug
-	controller = Debug(
-		drone_component='Drone',
-		)
-# train will create a new or read in a previously trained model
-# set continue_training=True to pick up where learning loop last saved
-# or set continue_training=False to keep weights but start new learning loop
-elif controller_type == 'train':
-	from controllers.trainrl import TrainRL
-	controller = TrainRL(
-		model_component = 'Model',
-		environment_component = 'TrainEnvironment',
-		evaluator_component = 'Evaluator',
-		total_timesteps = total_timesteps,
-		callback = None,
-		log_interval = -1,
-		tb_log_name = 'phase1',
-		eval_env = None,
-		eval_freq = -1,
-		n_eval_episodes = -1,
-		eval_log_path = None,
-		continue_training = True,
-		)
-# evaluate willl read in a trained model and evaluate on given environment
-elif controller_type == 'evaluate':
-	from controllers.evaluaterl import EvaluateRL
-	controller = EvaluateRL(
-		model_component= 'Model',
-		)
+# CREATE CONTROLLER
+controller_type = 'train' # debug train evaluate none
+controller = utils.get_controller(
+	controller_type = controller_type,
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	continue_training = True, # if True will continue learning loop from last step saved, if False will reset learning loop
+	model_component = 'Model', # if using train, set model
+	environment_component = 'TrainEnvironment', # if using train, set train environment
+	evaluator_component = 'Evaluator', # if using train (optional) or evaluate, set evaluator component
+	tb_log_name = 'run', # logs tensor board to this directory
+	)
+# read old config file?
+read_config = False
+read_configuration_path = utils.get_global_parameter('working_directory') + 'configuration.json'
+# read old RL model?
+read_model = False
+read_model_path = utils.get_global_parameter('working_directory') + 'model.zip'
+# read old replay buffer data?
+read_replay_buffer = False
+read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
 
 # READ OLD CONFIGURATION FILE
-# you do not need to do nothing else if reading a config file as is
-if not make_new_configuration and os.path.exists(read_configuration_path):
+if read_config:
 	# load configuration file and create object to save and connect components
 	configuration = Configuration.load(read_configuration_path)
 	if update_meta:
@@ -103,16 +61,16 @@ if not make_new_configuration and os.path.exists(read_configuration_path):
 
 
 # MAKE NEW CONFIGURATION
-# all packaged componets are listed here and created for debugging purposes
-# the below configuration is set to run the Delta Demonstration in our paper
-# edit as needed, suggested to use as a template
-else:
+elif not read_config:
 	# create new configuration object to save and connect components
 	configuration = Configuration(meta)
 	Configuration.set_active(configuration)
 	configuration.set_controller(controller)
 	
+
 	# **** SET PARAMETERS ****
+	# RL model to use
+	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -142,21 +100,14 @@ else:
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
 	include_z = False
-	# set starting height of drone for each episode
-	start_z = -4 
-	# set drone speed for steps in meters / second
-	move_speed = 2 
-	# set rotate speed for steps in degrees / second
-	yaw_rate = 11.25
-	# set drone duration of each step in seconds
-	step_duration = 2 
-	# control if load voxels in to check valid spawn/objective points and visualize results
+	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set goal (objective point) - can be relative or absolute
 	goal = [8, 0, 0]
+	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
-	max_steps = 16
-	max_distance = math.sqrt(2)*np.linalg.norm(goal)
+	# set action space type
+	action_type = 'discrete' # discrete continuous
 	
 
 	# **** CREATE COMPONENTS ****
@@ -192,6 +143,7 @@ else:
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
+			#console_flags = '-RenderOffscreen', # if ssh into computer (with no display)
 			name = 'Map',
 		)
 	# deploying to a field with no connectivity to the program, dummy object
@@ -202,12 +154,12 @@ else:
 		)
 
 	# VOXELS - 2d representation of map (not required)
+	#	usefull in visualizations and checkin spawn/objective points
 	if use_voxels:
 		from datastructs.voxels import Voxels
 		if drone == 'AirSim':
-			Voxels(absolute_path = (
-				utils.get_global_parameter('absolute_path') 
-				+ utils.get_global_parameter('working_directory')
+			Voxels(relative_path = (
+				utils.get_global_parameter('working_directory')
 				+ 'map_voxels.binvox'
 				),
 					map_component = 'Map',
@@ -404,37 +356,71 @@ else:
 			)
 
 	# ACTION
-	from actions.fixedmove import FixedMove 
-	FixedMove(
-		drone_component = 'Drone', 
-		x_speed = move_speed, 
-		duration = step_duration,
-		name = 'MoveForward',
-	)
-	from actions.fixedrotate import FixedRotate 
-	FixedRotate(
-		drone_component = 'Drone',  
-		yaw_rate = yaw_rate,
-		duration = step_duration,
-		name = 'RotateRight',
-	)
-	FixedRotate(
-		drone_component = 'Drone',  
-		yaw_rate = -1 * yaw_rate,
-		duration = step_duration,
-		name = 'RotateLeft',
-	)
+	if action_type == 'discrete':
+		move_speed = 2 
+		yaw_rate = 11.25
+		step_duration = 2 
+		from actions.fixedmove import FixedMove 
+		FixedMove(
+			drone_component = 'Drone', 
+			x_speed = move_speed, 
+			duration = step_duration,
+			name = 'MoveForward',
+		)
+		from actions.fixedrotate import FixedRotate 
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = yaw_rate,
+			duration = step_duration,
+			name = 'RotateRight',
+		)
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = -1 * yaw_rate,
+			duration = step_duration,
+			name = 'RotateLeft',
+		)
+	elif action_type == 'continuous':
+		base_move_speed = 4
+		base_yaw_rate = 22.5
+		step_duration = 2 
+		from actions.move import Move 
+		Move(
+			drone_component = 'Drone', 
+			base_x_speed = base_move_speed, 
+			duration = step_duration,
+			zero_threshold = 0.25,
+			name = 'MoveForward',
+		)
+		from actions.rotate import Rotate 
+		Rotate(
+			drone_component = 'Drone',  
+			base_yaw_rate = base_yaw_rate,
+			duration = step_duration,
+			zero_threshold = 0.25,
+			name = 'Rotate',
+		)
 
 	# ACTOR
-	from actors.discreteactor import DiscreteActor
-	DiscreteActor(
-		actions_components=[
-			'MoveForward',
-			'RotateRight',
-			'RotateLeft',
-			],
-		name='Actor',
-	)
+	if action_type == 'discrete':
+		from actors.discreteactor import DiscreteActor
+		DiscreteActor(
+			actions_components=[
+				'MoveForward',
+				'RotateRight',
+				'RotateLeft',
+				],
+			name='Actor',
+		)
+	elif action_type == 'continuous':
+		from actors.continuousactor import ContinuousActor
+		ContinuousActor(
+			actions_components=[
+				'MoveForward',
+				'Rotate',
+				],
+			name='Actor',
+		)
 
 	# REWARD
 	from rewards.avoid import Avoid
@@ -447,7 +433,7 @@ else:
 		drone_component = 'Drone',
 		goal_component = 'Goal',
 		min_distance = goal_tolerance, 
-		max_distance = max_distance,
+		max_distance = math.sqrt(2)*np.linalg.norm(goal),
         goal_tolerance = goal_tolerance,
 		include_z = include_z,
 		name = 'GoalReward',
@@ -478,7 +464,7 @@ else:
 		drone_component = 'Drone',
 		goal_component = 'Goal',
 		min_distance = goal_tolerance, 
-		max_distance = max_distance,
+		max_distance = math.sqrt(2)*np.linalg.norm(goal),
 		include_z = include_z,
 		name = 'GoalTerminator',
 	)
@@ -490,11 +476,12 @@ else:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = max_steps,
+		max_steps = 16,
 		name = 'MaxSteps',
 	)
 
 	# MODEL
+	every_nEpisodes = 400
 	if observation == 'Image': 
 		policy = 'CnnPolicy'
 	if observation == 'Vector': 
@@ -523,15 +510,15 @@ else:
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.1,
 			max_grad_norm = 10,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = policy_kwargs,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	elif model == 'A2C':
@@ -551,15 +538,15 @@ else:
 			use_sde = False,
 			sde_sample_freq = -1,
 			normalize_advantage = False,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	elif model == 'DDPG':
@@ -579,15 +566,15 @@ else:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	elif model == 'PPO':
@@ -610,15 +597,15 @@ else:
 			use_sde = False,
 			sde_sample_freq = -1,
 			target_kl = None,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	elif model == 'SAC':
@@ -644,15 +631,15 @@ else:
 			use_sde = False,
 			sde_sample_freq = -1,
 			use_sde_at_warmup = False,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	elif model == 'TD3':
@@ -675,20 +662,21 @@ else:
 			policy_delay = 2,
 			target_policy_noise = 0.2,
 			target_noise_clip = 0.5,
-			tensorboard_log = working_directory + 'tensorboard/',
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,
 			device = "auto",
 			init_setup_model = True,
-			write_path = None,
-			replay_buffer_path = None,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
 	
 
 	# SPAWNER
+	start_z = -4 
 	from others.spawner import Spawner
 	from datastructs.spawn import Spawn
 	Spawner(
@@ -741,10 +729,9 @@ else:
 		model_component = 'Model',
 		frequency = every_nEpisodes,
 		nEpisodes = 100,
-		stopping_total_success = 4,
-		n_success_buffer = 0,
-		stopping_improved_steps = 4,
-		n_steps_buffer = 4,
+		stopping_patience = 4,
+		stopping_percent_success = 0.98,
+
 		name = 'Evaluator',
 	)
 
@@ -804,21 +791,24 @@ utils.speak('configuration created!')
 
 # CONNECT COMPONENTS
 configuration.connect_all()
-print(configuration.get_component('Model')._sb3model.q_net)
-print(configuration.get_component('Model')._sb3model.q_net_target)
+
 
 # WRITE CONFIGURATION
 configuration.save()
 
+
 # RUN CONTROLLER
-t1 = time()
-configuration.controller.run()
-t2 = time()
-delta_t = (t2 - t1) / 3600
-print('finished in', delta_t, 'hours')
+if controller_type != 'none':
+	t1 = time()
+	configuration.controller.run()
+	t2 = time()
+	delta_t = (t2 - t1) / 3600
+	print('finished in', delta_t, 'hours')
+
 
 # DISCONNECT COMPONENTS
 configuration.disconnect_all()
+
 
 # all done!
 utils.speak('Thatll do pig thatll do')

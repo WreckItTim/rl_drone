@@ -1,5 +1,6 @@
 # abstract class used to handle all components
 from component import Component
+from configuration import Configuration
 
 class Controller(Component):
 
@@ -16,3 +17,7 @@ class Controller(Component):
 
 	def connect(self):
 		super().connect()
+
+	def stop(self):
+		Configuration.get_active().disconnect_all()
+		quit()

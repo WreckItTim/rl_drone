@@ -1,6 +1,7 @@
 import json
 from time import localtime, time
 import math
+import os
 			
 def _round(x, digits=2):
 	if type(x) == list:
@@ -48,7 +49,7 @@ def position_to_yaw(xyz_point):
 def yaw_to_quaternion(yaw):
 	qx = 0
 	qy = 0
-	qz = nmath.sin(yaw/2)
+	qz = math.sin(yaw/2)
 	qw = math.cos(yaw/2)
 	return qx, qy, qz, qw
 
@@ -97,3 +98,70 @@ def alert(msg, key):
 	if user_input == 'stop':
 		set_global_parameter(key, False)
 		write_global_parameters()
+
+def set_operating_system():
+	import platform
+	OS = platform.system()
+	set_global_parameter('OS', OS)
+	print('detected operating system:', OS)
+
+def set_read_write_paths(runs_path, run_name):
+	# create working directory to read/write files to
+	working_directory = runs_path + run_name + '/'
+	# make temp folder if not exists
+	if not os.path.exists('temp/'):
+		os.makedirs('temp/')
+	# make working directory if not exists
+	if not os.path.exists(working_directory):
+		os.makedirs(working_directory)
+	# save working directory path to global_parameters to be visible by all 
+	set_global_parameter('working_directory', working_directory) # relative to repo
+	# absoulte path on local computer to repo
+	set_global_parameter('absolute_path',  os.getcwd() + '/') # end all folder paths with /
+
+def get_controller(controller_type, 
+				   total_timesteps = 1_000_000,
+				   continue_training = True,
+				   model_component = 'Model',
+				   environment_component = 'TrainEnvironment',
+				   evaluator_component = 'Evaluator',
+				   tb_log_name = 'run',
+				   ):
+	# create CONTROLLER - controls all components (mode)
+	controller = None
+	print(controller_type, 'CONTROLLER')
+	# debug mode will prompt user input for which component(s) to debug
+	if controller_type == 'debug':
+		from controllers.debug import Debug
+		controller = Debug(
+			drone_component='Drone',
+			)
+	# train will create a new or read in a previously trained model
+	# set continue_training=True to pick up where learning loop last saved
+	# or set continue_training=False to keep weights but start new learning loop
+	elif controller_type == 'train':
+		from controllers.trainrl import TrainRL
+		controller = TrainRL(
+			model_component = model_component,
+			environment_component = environment_component,
+			evaluator_component = evaluator_component,
+			total_timesteps = total_timesteps,
+			callback = None,
+			log_interval = -1,
+			tb_log_name = tb_log_name,
+			eval_env = None,
+			eval_freq = -1,
+			n_eval_episodes = -1,
+			eval_log_path = None,
+			continue_training = continue_training,
+			)
+	# evaluate will read in a trained model and evaluate on given environment
+	elif controller_type == 'evaluate':
+		from controllers.evaluaterl import EvaluateRL
+		controller = EvaluateRL(
+			evaluator_component = evaluator_component,
+			)
+	else:
+		from controllers.controller import Controller
+		controller = Controller()
+	return controller

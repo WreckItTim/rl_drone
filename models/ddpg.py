@@ -28,18 +28,23 @@ class DDPG(Model):
 			seed = None,
 			device = "auto",
 			init_setup_model = False,
-			write_path = None,
+			model_path = None,
 			replay_buffer_path = None,
 		):
 		kwargs = locals()
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
 			'self', 
-			'__class__', 
-			'environment_component', 
-			'init_setup_model', 
-			'write_path', 
-			'replay_buffer_path']}
+			'__class__',
+			'environment_component',
+			'init_setup_model',
+			'model_path',
+			'replay_buffer_path',
+			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3DDPG
 		self.sb3Load = sb3DDPG.load
-		super().__init__(load_from_path=load_from_path, model_arguments=_model_arguments)
+		self.has_replay_buffer = True
+		super().__init__(model_path=model_path, 
+				   replay_buffer_path=replay_buffer_path, 
+				   _model_arguments=_model_arguments,
+				   )

@@ -1,7 +1,6 @@
 # trains a reinforcment learning algorithm
 from controllers.controller import Controller
 from component import _init_wrapper
-import time
 
 class TrainRL(Controller):
 	# constructor
@@ -39,10 +38,7 @@ class TrainRL(Controller):
 			self._environment.episode_counter = 0
 			self._environment.step_counter = 0
 			if self._evaluator is not None:
-				self._evaluator.best_steps = 999_999
-				self._evaluator.total_success_streak = 0
-				self._evaluator.improved_steps_streak = 0
-				self._evaluator.set_counter = 0
+				self._evaluator.reset_stopping()
 		# learn baby learn
 		self._model.learn(
 			total_timesteps = _total_timesteps,

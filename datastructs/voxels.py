@@ -25,8 +25,8 @@ class Voxels(DataStruct):
 	@_init_wrapper
 	def __init__(self,
 			  # path to read/write voxels (compresed 3d representation of surface objects)
-			  # ABSOLUTE path, must be absolute
-			  absolute_path:str,
+			  # will build absolute path from this
+			  relative_path:str,
 			  map_component,
 			  make_new = False,
 			  # can leave below blank (if reading from file rather than making new)
@@ -47,14 +47,16 @@ class Voxels(DataStruct):
 		super().connect()
 		if self.make_new:
 			self._map.make_voxels(
-				absolute_path = self.absolute_path,
+				absolute_path = utils.get_global_parameter('absolute_path') + self.relative_path,
 				center = self.center,
 				resolution = self.resolution,
 				x_length = self.x_length,
 				y_length = self.y_length,
 				z_length = self.z_length,
 				)
-		self.read_voxels(self.absolute_path)
+		self.read_voxels(
+				utils.get_global_parameter('absolute_path') + self.relative_path
+				)
 
 	def get_x_length(self):
 		return self._voxels.data.shape[1] 
