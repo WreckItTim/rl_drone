@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\sensors"
+    "\\maps"
   ],
-  "SelectedNode": "\\main.py",
+  "SelectedNode": "\\maps\\airsimmap.py",
   "PreviewInSolutionExplorer": false
 }

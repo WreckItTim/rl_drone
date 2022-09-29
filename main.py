@@ -14,8 +14,10 @@ print('detected operating system:', OS)
 
 
 # USER PARAMETERS and SETUP
+# writes all run results, observations, evaluations, models, etc to this path
+runs_path = 'local/runs/'
 # test version is just a name used for logging (optional)
-test_version =  'temp11'
+test_version =  ''
 # select name of reinforcement learning model to use
 model = 'DQN' # DQN A2C DDPG PPO SAC TD3
 # set the controller type to use
@@ -23,15 +25,15 @@ controller_type = 'train' # train evaluate debug
 # create run name (not unique) for logging (optional)
 run_name = test_version + '_' + model + '_' + controller_type
 # create working directory to read/write files to
-working_directory = f'temp/' + run_name + '/'
+working_directory = runs_path + run_name + '/'
 # path to read configuration file from, if desired (optional)
-read_configuration_path = 'temp/' + test_version + '_' + model + '_train/configuration.json'
+read_configuration_path = runs_path + test_version + '_' + model + '_train/configuration.json'
 # tell program to make a new configuration, if False will read an old one from read_configuration_path
 make_new_configuration = True
 
-# make temp folder if not exists - required
-if not os.path.exists('temp/'):
-	os.makedirs('temp/')
+# make folder if not exists
+if not os.path.exists(runs_path):
+	os.makedirs(runs_path)
 # make working directory if not exists
 if not os.path.exists(working_directory):
 	os.makedirs(working_directory)
@@ -188,7 +190,7 @@ else:
 				'tellocamera', 
 				#'bellydistance',
 				],
-			release_directory = 'resources/airsim_maps/',
+			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
 			name = 'Map',
 		)
