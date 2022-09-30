@@ -21,7 +21,7 @@ utils.set_read_write_paths(
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'theta',
+	'repo_version': 'theta2',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
