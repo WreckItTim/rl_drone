@@ -6,6 +6,9 @@ from component import _init_wrapper
 import setup_path # need this in same directory as python code for airsim
 import airsim
 from datastructs.voxels import Voxels
+import time
+import signal
+import psutil
 
 # handles airsim release executables
 class AirSimMap(Map):
@@ -53,6 +56,8 @@ class AirSimMap(Map):
 			utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
 		else:
 			utils.set_global_parameter('LocalHostIp', '127.0.0.1')
+		# pipeline to open for console output
+		self._pid = None
 
 	def make_voxels(self,
 			  # ABSOLUTE path to right to, must be absolute
@@ -81,21 +86,23 @@ class AirSimMap(Map):
 		OS = utils.get_global_parameter('OS')
 		flags = ''
 		if self.console_flags is not None:
-			flags = self.console_flags.join(' ')
+			flags = ' '.join(self.console_flags)
 		if OS == 'Windows':
 			# send command to terminal to launch the relase executable, if can
 			if os.path.exists(self._release_path):
-				print('Launching AirSim at given path')
+				print(f'Launching AirSim at {self._release_path}')
 				terminal_command = f'{self._release_path}.exe {flags} -settings=\"{self._settings_path}\"'
-				subprocess.Popen(terminal_command, close_fds=True)
+				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+				self._pid = process.pid
 			else:
 				print('Please manually launch Airsim.')
 		if OS == 'Linux':
 			# send command to terminal to launch the relase executable, if can
 			if os.path.exists(self._release_path):
-				print('Launching AirSim at given path')
+				print(f'Launching AirSim at {self._release_path}')
 				terminal_command = f'sh {self._release_path}.sh {flags} -settings=\"{self._settings_path}\"'
-				subprocess.Popen(terminal_command, close_fds=True)
+				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+				self._pid = process.pid
 			else:
 				print('Please manually launch Airsim.')
 		if OS == 'Darwin':
@@ -106,9 +113,15 @@ class AirSimMap(Map):
 
 	# close airsim map
 	def disconnect(self):
-		# send command to terminal to kill the relase executable
-		terminal_command = 'taskkill /f /im ' + self.release_name
-		subprocess.call(terminal_command)
+		print('DISCONNECT AIRSIMMAP')
+		# this should keep child in tact to kill same process created (can handle multi in parallel)
+		if self._pid is not None:
+			print('attempting to kill pid', self._pid)
+			x = input()
+			parent = psutil.Process(self._pid)
+			for child in parent.children(recursive=True):
+				child.kill()
+			parent.kill()
 	
 	# read several json files with Airsim settings and merge
 	def read_settings(self, settings_directory, setting_files):

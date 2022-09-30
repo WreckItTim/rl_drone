@@ -29,7 +29,7 @@ update_meta = False
 
 
 # CREATE CONTROLLER
-controller_type = 'train' # debug train evaluate none
+controller_type = 'empty' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
@@ -143,6 +143,7 @@ elif not read_config:
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
+			console_flags = ['-Windowed',],
 			#console_flags = '-RenderOffscreen', # if ssh into computer (with no display)
 			name = 'Map',
 		)
@@ -798,12 +799,11 @@ configuration.save()
 
 
 # RUN CONTROLLER
-if controller_type != 'none':
-	t1 = time()
-	configuration.controller.run()
-	t2 = time()
-	delta_t = (t2 - t1) / 3600
-	print('finished in', delta_t, 'hours')
+t1 = time()
+configuration.controller.run()
+t2 = time()
+delta_t = (t2 - t1) / 3600
+print('ran in', delta_t, 'hours')
 
 
 # DISCONNECT COMPONENTS

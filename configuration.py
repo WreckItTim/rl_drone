@@ -80,7 +80,7 @@ class Configuration():
 			for component in component_dic[0]:
 				component.connect()
 		# negatives last
-		start_negative_index = 0
+		start_negative_index = -1
 		for index, priority in enumerate(reversed(priorities)):
 			if priority < 0:
 				start_negative_index = len(priorities)-index-1
@@ -111,19 +111,22 @@ class Configuration():
 				break
 		for index in range(start_positive_index, len(priorities)):
 			for component in component_dic[priorities[index]]:
+				print('disconnect positives', component._name)
 				component.disconnect()
 		# default zeroes
 		if 0 in component_dic:
 			for component in component_dic[0]:
+				print('disconnect zeros', component._name)
 				component.disconnect()
 		# negatives last
-		start_negative_index = 0
+		start_negative_index = -1
 		for index, priority in enumerate(reversed(priorities)):
 			if priority < 0:
 				start_negative_index = len(priorities)-index-1
 				break
 		for index in range(start_negative_index, -1, -1):
 			for component in component_dic[priorities[index]]:
+				print('disconnect negatives', component._name)
 				component.disconnect()
 		self.controller.disconnect()
 		
