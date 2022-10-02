@@ -113,11 +113,8 @@ class AirSimMap(Map):
 
 	# close airsim map
 	def disconnect(self):
-		print('DISCONNECT AIRSIMMAP')
 		# this should keep child in tact to kill same process created (can handle multi in parallel)
 		if self._pid is not None:
-			print('attempting to kill pid', self._pid)
-			x = input()
 			parent = psutil.Process(self._pid)
 			for child in parent.children(recursive=True):
 				child.kill()
