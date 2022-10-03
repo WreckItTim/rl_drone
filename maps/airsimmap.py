@@ -101,7 +101,7 @@ class AirSimMap(Map):
 			if os.path.exists(self._release_path):
 				print(f'Launching AirSim at {self._release_path}')
 				terminal_command = f'sh {self._release_path}.sh {flags} -settings=\"{self._settings_path}\"'
-				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+				process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
 				self._pid = process.pid
 			else:
 				print('Please manually launch Airsim.')

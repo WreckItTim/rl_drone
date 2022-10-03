@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-run_name = 'theta_DDPG_continuous_phase1' # unique run name to add to runs path directory
+run_name = 'theta_PPO_discrete_phase1' # unique run name to add to runs path directory
 utils.set_read_write_paths(
 		runs_path = 'local/runs/',
 		run_name = run_name,
@@ -29,11 +29,11 @@ update_meta = False
 
 
 # CREATE CONTROLLER
-controller_type = 'empty' # debug train evaluate empty
+controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
-	continue_training = True, # if True will continue learning loop from last step saved, if False will reset learning loop
+	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
 	evaluator_component = 'Evaluator', # if using train (optional) or evaluate, set evaluator component
@@ -70,7 +70,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
+	model = 'PPO' # DQN A2C DDPG PPO SAC TD3 
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -132,7 +132,7 @@ elif not read_config:
 			voxels_component='Voxels' if use_voxels else None,
 			settings = {
 				'LocalHostIp': '127.0.0.1',
-				'ClockSpeed': 1,
+				'ClockSpeed': 4,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -143,7 +143,7 @@ elif not read_config:
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
-			console_flags = ['-Windowed',],
+			console_flags = ['-Windowed','-RenderOffscreen'],
 			#console_flags = '-RenderOffscreen', # if ssh into computer (with no display)
 			name = 'Map',
 		)
