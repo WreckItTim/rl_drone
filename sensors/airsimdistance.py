@@ -25,7 +25,10 @@ class AirSimDistance(Sensor):
 
 	def connect(self):
 		super().connect()
-		self._client = airsim.MultirotorClient(ip=utils.get_global_parameter('LocalHostIp'))
+		self._client = airsim.MultirotorClient(
+			ip=utils.get_global_parameter('LocalHostIp'),
+			port=utils.get_global_parameter('ApiServerPort'),
+										 )
 		self._client.confirmConnection()
 
 	# takes a picture with camera

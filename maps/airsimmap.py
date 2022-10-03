@@ -56,6 +56,10 @@ class AirSimMap(Map):
 			utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
 		else:
 			utils.set_global_parameter('LocalHostIp', '127.0.0.1')
+		if 'ApiServerPort' in self.settings:
+			utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
+		else:
+			utils.set_global_parameter('ApiServerPort', 41451)
 		# pipeline to open for console output
 		self._pid = None
 

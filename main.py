@@ -132,7 +132,8 @@ elif not read_config:
 			voxels_component='Voxels' if use_voxels else None,
 			settings = {
 				'LocalHostIp': '127.0.0.1',
-				'ClockSpeed': 4,
+				'ApiServerPort': 41451,
+				'ClockSpeed': 1,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -790,25 +791,23 @@ elif not read_config:
 utils.speak('configuration created!')
 
 
-# CONNECT COMPONENTS
-configuration.connect_all()
-
-
-# WRITE CONFIGURATION
-configuration.save()
-
-
-# RUN CONTROLLER
 t1 = time()
-configuration.controller.run()
+try:
+	# CONNECT COMPONENTS
+	configuration.connect_all()
+
+	# WRITE CONFIGURATION
+	configuration.save()
+
+	# RUN CONTROLLER
+	configuration.controller.run()
+except BaseException as e:
+	print('Terminating run early...')
+	print('An exception occurred: {}'.format(e))
 t2 = time()
 delta_t = (t2 - t1) / 3600
 print('ran in', delta_t, 'hours')
 
 
-# DISCONNECT COMPONENTS
-configuration.disconnect_all()
-
-
-# all done!
-utils.speak('Thatll do pig thatll do')
+# done
+configuration.controller.stop()

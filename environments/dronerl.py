@@ -28,10 +28,16 @@ class DroneRL(Environment):
 
 	def connect(self):
 		super().connect()
+	
+	def clean_rl_output(self, rl_output):
+		if type(rl_output) == np.ndarray:
+			return list(rl_output.astype(float))
+		return int(rl_output)
 
 	# activate needed components
 	def step(self, rl_output):
 		# initialize state with rl_output
+		rl_output = self.clean_rl_output(rl_output)
 		state = {'rl_output':rl_output}
 		# increment number of steps
 		self._nSteps += 1

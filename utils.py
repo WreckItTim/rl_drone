@@ -165,9 +165,3 @@ def get_controller(controller_type,
 		from controllers.empty import Empty
 		controller = Empty()
 	return controller
-
-def quit():
-	# DISCONNECT COMPONENTS
-	configuration.disconnect_all()
-	# all done!
-	speak('Thatll do pig thatll do')
