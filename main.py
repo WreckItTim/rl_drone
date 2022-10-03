@@ -792,18 +792,14 @@ utils.speak('configuration created!')
 
 
 t1 = time()
-try:
-	# CONNECT COMPONENTS
-	configuration.connect_all()
+# CONNECT COMPONENTS
+configuration.connect_all()
 
-	# WRITE CONFIGURATION
-	configuration.save()
+# WRITE CONFIGURATION
+configuration.save()
 
-	# RUN CONTROLLER
-	configuration.controller.run()
-except BaseException as e:
-	print('Terminating run early...')
-	print('An exception occurred: {}'.format(e))
+# RUN CONTROLLER
+configuration.controller.run()
 t2 = time()
 delta_t = (t2 - t1) / 3600
 print('ran in', delta_t, 'hours')
