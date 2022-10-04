@@ -30,9 +30,11 @@ class DroneRL(Environment):
 		super().connect()
 	
 	def clean_rl_output(self, rl_output):
-		if type(rl_output) == np.ndarray:
-			return list(rl_output.astype(float))
-		return int(rl_output)
+		print(type(rl_output), rl_output.dtype, rl_output)
+		if rl_output.dtype == 'int64':
+			return int(rl_output)
+		if rl_output.dtype == 'float64':
+			return rl_output.astype(float).tolist()
 
 	# activate needed components
 	def step(self, rl_output):
