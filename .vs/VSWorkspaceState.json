@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\rewards"
   ],
-  "SelectedNode": "\\environments",
+  "SelectedNode": "\\rewards\\goal.py",
   "PreviewInSolutionExplorer": false
 }
