@@ -60,7 +60,6 @@ class Evaluator(Other):
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
-		print('EVALUATE')
 		# keep track of stopping stats
 		total_steps = 0
 		nSuccess = 0
@@ -83,6 +82,7 @@ class Evaluator(Other):
 		stop = False
 		# check percent of evaluations that were successful
 		percent_success = nSuccess / self.nEpisodes
+		print('Evaluated with success:', percent_success)
 		if percent_success >= self.stopping_percent_success:
 			self.stopping_success_streak += 1
 		else:
