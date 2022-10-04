@@ -30,7 +30,6 @@ class DroneRL(Environment):
 		super().connect()
 	
 	def clean_rl_output(self, rl_output):
-		print(type(rl_output), rl_output.dtype, rl_output)
 		if rl_output.dtype == 'int64':
 			return int(rl_output)
 		if rl_output.dtype == 'float64':
@@ -48,14 +47,14 @@ class DroneRL(Environment):
 		# take action
 		transcribed_action = self._actor.act(rl_output)
 		state['transcribed_action'] = transcribed_action
-		print('action:', state['transcribed_action'])
+		#print('action:', state['transcribed_action'])
 		# get observation
 		observation_data, observation_name = self._observer.observe(self.write_observations)
 		state['observation_component'] = observation_name
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
-		print('pos:', utils._round(state['drone_position']), 'yaw:', utils._round(state['yaw']))
+		#print('pos:', utils._round(state['drone_position']), 'yaw:', utils._round(state['yaw']))
 		# take step for other components
 		if self._others is not None:
 			for other in self._others:
@@ -68,8 +67,8 @@ class DroneRL(Environment):
 			done = done or terminator.terminate(state)
 		state['done'] = done
 		if done:
-			print('terminated:', state['termination_reason'], state['termination_result'])
-			print('steps:', self.step_counter)
+			#print('terminated:', state['termination_reason'], state['termination_result'])
+			#print('steps:', self.step_counter)
 			self.episode_counter += 1
 		#print(state)
 		#x = input()
@@ -94,8 +93,8 @@ class DroneRL(Environment):
 		self._drone.reset()
 		if self._spawner is not None:
 			self._spawner.reset()
-		print()
-		print('spawn:', utils._round(self._drone.get_position()), utils._round(self._drone.get_yaw(),))
+		#print()
+		#print('spawn:', utils._round(self._drone.get_position()), utils._round(self._drone.get_yaw(),))
 		if self._others is not None:
 			for other in self._others:
 				other.reset()

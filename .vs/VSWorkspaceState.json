@@ -1,13 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\actors",
-    "\\controllers",
-    "\\environments",
-    "\\maps",
-    "\\maps\\airsim_settings",
-    "\\others"
+    ""
   ],
-  "SelectedNode": "\\environments\\dronerl.py",
+  "SelectedNode": "\\environments",
   "PreviewInSolutionExplorer": false
 }

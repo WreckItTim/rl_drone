@@ -52,7 +52,7 @@ class Goal(Reward):
 		goal_yaw = utils.position_to_yaw(distance_vector)
 		drone_yaw = self._drone.get_yaw()
 		yaw_to_goal = math.pi - abs(abs(goal_yaw - drone_yaw) - math.pi)
-		yaw_reward = -0.5 * yaw_to_goal / math.pi
+		yaw_reward = -0.5 * yaw_to_goal / math.pidistance:
 
 		value = 0
 		if distance <= self.goal_tolerance:
@@ -64,7 +64,7 @@ class Goal(Reward):
 
 		state['yaw_reward'] = yaw_reward
 		state['pos_reward'] = distance_reward
-		print('distance:', utils._round(distance), 'angle:', utils._round(yaw_to_goal), 'reward:', value)
+		#print('distance:', utils._round(distance), 'angle:', utils._round(yaw_to_goal), 'reward:', value)
 		return value
 
 		#value = self.normalize_reward(distance)

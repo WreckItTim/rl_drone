@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-run_name = 'theta_PPO_discrete_phase1' # unique run name to add to runs path directory
+run_name = 'theta_DQN_discrete_phase1' # unique run name to add to runs path directory
 utils.set_read_write_paths(
 		runs_path = 'local/runs/',
 		run_name = run_name,
@@ -70,7 +70,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'PPO' # DQN A2C DDPG PPO SAC TD3 
+	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
