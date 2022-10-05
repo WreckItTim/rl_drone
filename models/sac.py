@@ -49,7 +49,7 @@ class SAC(Model):
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3SAC
 		self.sb3Load = sb3SAC.load
-		self.has_replay_buffer = True
+		self._has_replay_buffer = True
 		super().__init__(model_path=model_path, 
 				   replay_buffer_path=replay_buffer_path, 
 				   _model_arguments=_model_arguments,

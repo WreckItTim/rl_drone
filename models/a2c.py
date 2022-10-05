@@ -44,7 +44,7 @@ class A2C(Model):
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3A2C
 		self.sb3Load = sb3A2C.load
-		self.has_replay_buffer = False
+		self._has_replay_buffer = False
 		super().__init__(model_path=model_path, 
 				   replay_buffer_path=replay_buffer_path, 
 				   _model_arguments=_model_arguments,

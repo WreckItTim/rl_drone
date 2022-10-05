@@ -40,13 +40,13 @@ controller = utils.get_controller(
 	tb_log_name = 'run', # logs tensor board to this directory
 	)
 # read old config file?
-read_config = False
+read_config = True
 read_configuration_path = utils.get_global_parameter('working_directory') + 'configuration.json'
 # read old RL model?
-read_model = False
+read_model = True
 read_model_path = utils.get_global_parameter('working_directory') + 'model.zip'
 # read old replay buffer data?
-read_replay_buffer = False
+read_replay_buffer = True
 read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
 
@@ -794,6 +794,7 @@ utils.speak('configuration created!')
 t1 = time()
 # CONNECT COMPONENTS
 configuration.connect_all()
+print(configuration.get_component('Model')._sb3model.q_net)
 
 # WRITE CONFIGURATION
 configuration.save()

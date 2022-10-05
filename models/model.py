@@ -68,7 +68,7 @@ class Model(Component):
         
     # save sb3 replay buffer to path (sb3 auto appends file type at end)
     def save_replay_buffer(self, path):
-        if self.has_replay_buffer:
+        if self._has_replay_buffer:
             self._sb3model.save_replay_buffer(path)
 
     # load sb3 model from path, must set sb3Load from child

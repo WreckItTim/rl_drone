@@ -30,9 +30,9 @@ class DroneRL(Environment):
 		super().connect()
 	
 	def clean_rl_output(self, rl_output):
-		if rl_output.dtype == 'int64':
+		if np.issubdtype(rl_output.dtype, np.integer):
 			return int(rl_output)
-		if rl_output.dtype == 'float64':
+		if np.issubdtype(rl_output.dtype, np.floating):
 			return rl_output.astype(float).tolist()
 
 	# activate needed components
