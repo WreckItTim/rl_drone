@@ -144,8 +144,10 @@ elif not read_config:
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
-			console_flags = ['-Windowed','-RenderOffscreen'],
-			#console_flags = '-RenderOffscreen', # if ssh into computer (with no display)
+			console_flags = [
+				'-Windowed',
+				'-RenderOffscreen',
+			],
 			name = 'Map',
 		)
 	# deploying to a field with no connectivity to the program, dummy object
