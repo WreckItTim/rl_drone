@@ -1,8 +1,11 @@
 {
   "ExpandedNodes": [
     "",
+    "\\controllers",
     "\\environments",
-    "\\models"
+    "\\models",
+    "\\others"
   ],
+  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

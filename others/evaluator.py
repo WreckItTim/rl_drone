@@ -88,6 +88,7 @@ class Evaluator(Other):
 		else:
 			self.stopping_success_streak = 0
 		if self.stopping_success_streak >= self.stopping_patience:
+			print('Early Stopping Triggered!')
 			stop = True
 		return stop
 
