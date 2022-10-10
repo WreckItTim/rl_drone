@@ -49,7 +49,7 @@ class Evaluator(Other):
 			# freeze state
 			frozen_state = state.copy()
 			# save state
-			states[step] = frozen_state
+			states['step_' + str(step)] = frozen_state
 			# check if we are done
 			if done:
 				if frozen_state['termination_result'] == 'success':
@@ -70,9 +70,10 @@ class Evaluator(Other):
 			# step through next episode
 			states, steps, success = self.evaluate_episode()
 			# log results
-			all_states[episode] = states
+			all_states['episode_' + str(episode)] = states
 			total_steps += steps
 			nSuccess += success
+		all_states['timestamp'] = utils.get_timestamp()
 		# write states to file
 		utils.write_json(all_states, self._write_folder + str(self.set_counter) + '.json')
 		# counter++

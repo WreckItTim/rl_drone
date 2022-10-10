@@ -54,13 +54,11 @@ class Goal(Reward):
 		yaw_to_goal = math.pi - abs(abs(goal_yaw - drone_yaw) - math.pi)
 		yaw_reward = -0.5 * yaw_to_goal / math.pi
 
-		value = 0
+		value = yaw_reward + distance_reward
 		if distance <= self.goal_tolerance:
-			value = 10
+			value += 10
 		elif distance >= self.max_distance:
-			value = -10
-		else:
-			value = yaw_reward + distance_reward
+			value -= 10
 
 		state['yaw_reward'] = yaw_reward
 		state['pos_reward'] = distance_reward
