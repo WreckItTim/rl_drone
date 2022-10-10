@@ -4,7 +4,9 @@
     "\\controllers",
     "\\environments",
     "\\models",
-    "\\others"
+    "\\others",
+    "\\rewards"
   ],
+  "SelectedNode": "\\rewards\\goal.py",
   "PreviewInSolutionExplorer": false
 }
