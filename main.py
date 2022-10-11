@@ -757,7 +757,7 @@ elif not read_config:
 		train_environment_component = 'TrainEnvironment',
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
-		frequency = 400,
+		frequency = 100,
 		nEpisodes = 6,
 		stopping_patience = 0,
 		stopping_reward = 10,
@@ -771,7 +771,7 @@ elif not read_config:
 	Saver(
 		model_component='Model', 
 		environment_component='TrainEnvironment',
-		frequency=400, 
+		frequency=100, 
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,
