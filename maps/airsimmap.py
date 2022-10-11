@@ -33,8 +33,6 @@ class AirSimMap(Map):
 				 release_name:str = None,
 				 # optional flags to put in command line when launching
 				 console_flags = None,
-				 # controls if to make a voxels object on connect
-				 make_voxels_on_connect = False,
 				 ):
 		super().__init__()
 		# get path to release executable file to launch

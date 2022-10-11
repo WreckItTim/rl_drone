@@ -12,24 +12,34 @@ class Evaluator(Other):
 			  evaluate_environment_component,
 			  model_component,
 			  frequency = 1000,
-			  nEpisodes = 1,
-			  _write_folder = None, 
-			  set_counter = 0,
+			  nEpisodes = 100,
+			  write_evaluations_folder = None, 
+			  evaluation_counter = 0,
 			  stopping_patience = 4,
-			  stopping_percent_success = 0.9,
-			  stopping_success_streak = 0,
+			  stopping_reward = 9,
+			  stopping_best = 0,
+			  stopping_wait = 0,
+			  stopping_epsilon = 1e-4,
+			  save_best_model = True,
+			  write_best_model_path = None,
 			  ): 
 		# set folder path to write evaluations to
-		if _write_folder is None:
-			self._write_folder = utils.get_global_parameter('working_directory') + 'evaluations/'
+		if write_evaluations_folder is None:
+			self.write_evaluations_folder = utils.get_global_parameter('working_directory') + 'evaluations/'
 		# create write directory if does not exist already
-		if not os.path.exists(self._write_folder):
-			os.makedirs(self._write_folder)
+		if not os.path.exists(self.write_evaluations_folder):
+			os.makedirs(self.write_evaluations_folder)
+		# set where to save model
+		if write_best_model_path is None:
+			self.write_best_model_path = utils.get_global_parameter('working_directory') + 'best_model'
+		# keep track of num evaluations regardless of continuing training or not
+		self._this_counter = 0
 
 	# if reset learning loop
 	def reset_stopping(self):
-		self.stopping_success_streak = 0
-		self.set_counter = 0
+		self.stopping_best = 0
+		self.stopping_wait = 0
+		self.evaluation_counter = 0
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
@@ -39,9 +49,9 @@ class Evaluator(Other):
 		self._evaluate_environment.reset()
 		# get first observation
 		observation_data, observation_name = self._evaluate_environment._observer.observe()
-		# start of episode
-		success = False
-		for step in range(1, 1_000_000):
+		# start episode
+		done = False
+		for step in range(1, 10_000):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
 			# take next step
@@ -52,43 +62,43 @@ class Evaluator(Other):
 			states['step_' + str(step)] = frozen_state
 			# check if we are done
 			if done:
-				if frozen_state['termination_result'] == 'success':
-					success = True
 				break
 		# end of episode
-		return states, self._evaluate_environment._nSteps, success
+		return states, reward
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
 		# keep track of stopping stats
-		total_steps = 0
-		nSuccess = 0
+		total_reward = 0
 		# allocate space to save states for all episodes
 		all_states = {}
 		# loop through all episodes
 		for episode in range(self.nEpisodes):
 			# step through next episode
-			states, steps, success = self.evaluate_episode()
+			states, reward = self.evaluate_episode()
 			# log results
 			all_states['episode_' + str(episode)] = states
-			total_steps += steps
-			nSuccess += success
+			total_reward += reward
 		all_states['timestamp'] = utils.get_timestamp()
 		# write states to file
-		utils.write_json(all_states, self._write_folder + str(self.set_counter) + '.json')
+		utils.write_json(all_states, self.write_evaluations_folder + 'evaluation_' + str(self.evaluation_counter) + '.json')
 		# counter++
-		self.set_counter += 1
+		self.evaluation_counter += 1
+		self._this_counter += 1
 
 		# CHECK STOPPING CRITERIA
 		stop = False
-		# check percent of evaluations that were successful
-		percent_success = nSuccess / self.nEpisodes
-		print('Evaluated with success:', percent_success)
-		if percent_success >= self.stopping_percent_success:
-			self.stopping_success_streak += 1
+		mean_reward = total_reward / self.nEpisodes
+		print('Evaluated with average reward:', mean_reward)
+		if mean_reward - self.stopping_best >= self.stopping_epsilon:
+			# save best model
+			if self.save_best_model:
+				self._model.save(self.write_best_model_path)
+			self.stopping_wait = 0
+			self.stopping_best = mean_reward
 		else:
-			self.stopping_success_streak = 0
-		if self.stopping_success_streak >= self.stopping_patience:
+			self.stopping_wait += 1
+		if self.stopping_best >= self.stopping_reward and self.stopping_wait >= self.stopping_patience:
 			print('Early Stopping Triggered!')
 			stop = True
 		return stop
@@ -97,10 +107,14 @@ class Evaluator(Other):
 	def reset(self):
 		# check when to do next set of evaluations
 		if self._train_environment.episode_counter % self.frequency == 0:
-			# evaluate for a set of episodes
-			stop = self.evaluate_set()
-			if stop:
-				Configuration.get_active().controller.stop()
+			# skip evaluation 0 if continuing training
+			if self._this_counter == 0 and self.evaluation_counter > 0:
+				self._this_counter += 1
+			else:
+				# evaluate for a set of episodes
+				stop = self.evaluate_set()
+				if stop:
+					Configuration.get_active().controller.stop()
 
 	# when using the debug controller
 	def debug(self):

@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-run_name = 'theta_DQN_discrete_phase1' # unique run name to add to runs path directory
+run_name = 'DQN_timpc' # unique run name to add to runs path directory
 utils.set_read_write_paths(
 		runs_path = 'local/runs/',
 		run_name = run_name,
@@ -21,7 +21,7 @@ utils.set_read_write_paths(
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'theta2',
+	'repo_version': 'iota',
 	'run_name': run_name
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
@@ -32,21 +32,21 @@ update_meta = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
-	continue_training = True, # if True will continue learning loop from last step saved, if False will reset learning loop
+	total_timesteps = 100_000, # optional if using train - all other hypers set from model instance
+	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
 	evaluator_component = 'Evaluator', # if using train (optional) or evaluate, set evaluator component
 	tb_log_name = 'run', # logs tensor board to this directory
 	)
 # read old config file?
-read_config = True
+read_config = False
 read_configuration_path = utils.get_global_parameter('working_directory') + 'configuration.json'
 # read old RL model?
-read_model = True
+read_model = False
 read_model_path = utils.get_global_parameter('working_directory') + 'model.zip'
 # read old replay buffer data?
-read_replay_buffer = True
+read_replay_buffer = False
 read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
 
@@ -103,7 +103,7 @@ elif not read_config:
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set goal (objective point) - can be relative or absolute
-	goal = [8, 0, 0]
+	goal = [100, 0, 0]
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
@@ -118,10 +118,11 @@ elif not read_config:
 		drone_component = 'Drone',
 		map_component = 'Map',
 		xyz_point = goal,
-		random_yaw = True,
+		random_yaw_train = True,
+		random_yaw_evaluate = False,
 		random_yaw_min = -1 * math.pi,
 		random_yaw_max = math.pi,
-		reset_on_step=False,
+		reset_on_step = False,
 		name = 'Goal',
 		)
 
@@ -384,6 +385,18 @@ elif not read_config:
 			duration = step_duration,
 			name = 'RotateLeft',
 		)
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = yaw_rate * 2,
+			duration = step_duration,
+			name = 'RotateRight2',
+		)
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = -1 * yaw_rate * 2,
+			duration = step_duration,
+			name = 'RotateLeft2',
+		)
 	elif action_type == 'continuous':
 		base_move_speed = 4
 		base_yaw_rate = 22.5
@@ -413,6 +426,8 @@ elif not read_config:
 				'MoveForward',
 				'RotateRight',
 				'RotateLeft',
+				'RotateRight2',
+				'RotateLeft2',
 				],
 			name='Actor',
 		)
@@ -436,7 +451,7 @@ elif not read_config:
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = goal_tolerance, 
+		min_distance = 0, 
 		max_distance = math.sqrt(2)*np.linalg.norm(goal),
         goal_tolerance = goal_tolerance,
 		include_z = include_z,
@@ -447,11 +462,11 @@ elif not read_config:
 	from rewarders.schema import Schema
 	Schema(
 		rewards_components = [
-			#'AvoidReward',
+			'AvoidReward',
 			'GoalReward',
 			],
 		reward_weights = [
-			#1,
+			1,
 			1,
 			],
 		name = 'Rewarder',
@@ -480,7 +495,7 @@ elif not read_config:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 16,
+		max_steps = 100,
 		name = 'MaxSteps',
 	)
 
@@ -499,8 +514,8 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes * 100,
-			learning_starts = every_nEpisodes * 5,
+			buffer_size = every_nEpisodes * 10,
+			learning_starts = every_nEpisodes,
 			batch_size = 32,
 			tau = 1e-2,
 			gamma = 0.9999,
@@ -512,7 +527,7 @@ elif not read_config:
 			target_update_interval = every_nEpisodes,
 			exploration_fraction = 0.4,
 			exploration_initial_eps = 1.0,
-			exploration_final_eps = 0.1,
+			exploration_final_eps = 0.05,
 			max_grad_norm = 10,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
@@ -559,7 +574,7 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*100,
+			buffer_size = every_nEpisodes * 10,
 			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
@@ -618,7 +633,7 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*100,
+			buffer_size = every_nEpisodes * 10,
 			learning_starts = every_nEpisodes,
 			batch_size = 256,
 			tau = 0.005,
@@ -652,7 +667,7 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes*100,
+			buffer_size = every_nEpisodes * 10,
 			learning_starts = every_nEpisodes,
 			batch_size = 100,
 			tau = 0.005,
@@ -704,6 +719,17 @@ elif not read_config:
 		spawns_components=[
 			Spawn(
 				z=start_z,
+				yaw=math.radians(0),
+				random=False,
+				),
+			Spawn(
+				z=start_z,
+				yaw=math.radians(-45),
+				random=False,
+				),
+			Spawn(
+				z=start_z,
+				yaw=math.radians(45),
 				random=False,
 				),
 			Spawn(
@@ -731,10 +757,11 @@ elif not read_config:
 		train_environment_component = 'TrainEnvironment',
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
-		frequency = every_nEpisodes,
-		nEpisodes = 100,
-		stopping_patience = 4,
-		stopping_percent_success = 0.98,
+		frequency = 400,
+		nEpisodes = 6,
+		stopping_patience = 0,
+		stopping_reward = 10,
+		stopping_epsilon = 1e-1,
 
 		name = 'Evaluator',
 	)
@@ -744,7 +771,7 @@ elif not read_config:
 	Saver(
 		model_component='Model', 
 		environment_component='TrainEnvironment',
-		frequency=every_nEpisodes, 
+		frequency=400, 
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,
@@ -767,10 +794,9 @@ elif not read_config:
 		saver_component='Saver',
 		evaluator_component='Evaluator',
 		spawner_component='TrainSpawner',
-		others_components=[
-			'Goal',
-			],
+		goal_component='Goal',
 		write_observations=False,
+		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
 	DroneRL(
@@ -783,11 +809,10 @@ elif not read_config:
 			'GoalTerminator',
 			'MaxSteps',
 			],
-		spawner_component='TrainSpawner',
-		others_components=[
-			'Goal',
-			],
+		spawner_component='EvaluateSpawner',
+		goal_component='Goal',
 		write_observations=True,
+		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)
 utils.speak('configuration created!')

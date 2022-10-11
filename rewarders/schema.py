@@ -19,4 +19,4 @@ class Schema(Rewarder):
             state['reward_from_' + reward._name] = value
             total_reward += self.reward_weights[idx] * value
         state['total_reward'] = total_reward
-        return state['total_reward']
+        return total_reward

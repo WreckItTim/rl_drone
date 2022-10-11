@@ -13,21 +13,21 @@ class Saver(Other):
 			  save_replay_buffer=True,
 			  save_configuration_file=True,
 			  save_benchmarks=True,
-			  _write_folder=None
+			  write_folder=None
 			  ):
-		if _write_folder is None:
-			self._write_folder = utils.get_global_parameter('working_directory')
+		if write_folder is None:
+			self.write_folder = utils.get_global_parameter('working_directory')
 
 	def save(self):
 		print('SAVE')
 		if self.save_model:
-			self._model.save(self._write_folder + 'model')
+			self._model.save(self.write_folder + 'model')
 		if self.save_replay_buffer:
-			self._model.save_replay_buffer(self._write_folder + 'replay_buffer')
+			self._model.save_replay_buffer(self.write_folder + 'replay_buffer')
 		if self.save_configuration_file:
-			self._configuration.save(self._write_folder + 'configuration.json')
+			self._configuration.save(self.write_folder + 'configuration.json')
 		if self.save_benchmarks:
-			self._configuration.log_benchmarks(self._write_folder + 'benchmarks.json')
+			self._configuration.log_benchmarks(self.write_folder + 'benchmarks.json')
 
 	def reset(self):
 		if self._environment.episode_counter % self.frequency == 0:

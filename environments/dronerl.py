@@ -17,12 +17,14 @@ class DroneRL(Environment):
 				 rewarder_component, 
 				 terminators_components,
 				 spawner_component=None,
+				 goal_component=None,
 				 evaluator_component=None,
 				 saver_component=None,
 				 others_components=None,
 				 write_observations=False,
 				 episode_counter=0, 
 				 step_counter=0, 
+				 is_evaluation_environment=False,
 				 ):
 		super().__init__()
 
@@ -98,6 +100,8 @@ class DroneRL(Environment):
 		if self._others is not None:
 			for other in self._others:
 				other.reset()
+		if self._goal is not None:
+			self._goal.reset(self.is_evaluation_environment)
 		self._actor.reset()
 		self._observer.reset()
 		self._rewarder.reset()

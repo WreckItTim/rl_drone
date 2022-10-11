@@ -15,10 +15,11 @@ class RelativeGoal(DataStruct):
 				 drone_component, 
 				 map_component,
 				 xyz_point,
-				 random_yaw = False,
+				 random_yaw_train = False,
+				 random_yaw_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
 				 random_yaw_max = math.pi,
-				 reset_on_step=False,
+				 reset_on_step = False,
 			 ):
 		self.xyz_point = np.array(xyz_point, dtype=float)
 		self._x = self.xyz_point[0]
@@ -40,9 +41,11 @@ class RelativeGoal(DataStruct):
 		return x, y, z, in_object
 
 	# need to recalculate relative point at each reset
-	def reset(self):
+	def reset(self, is_evaluation=False):
 		drone_position = self._drone.get_position()
-		if self.random_yaw:
+		if not is_evaluation and self.random_yaw_train:
+			relative_yaw = random.uniform(self.random_yaw_min, self.random_yaw_max)
+		elif is_evaluation and self.random_yaw_evaluate:
 			relative_yaw = random.uniform(self.random_yaw_min, self.random_yaw_max)
 		else:
 			relative_yaw = self._drone.get_yaw()  # yaw counterclockwise rotation about z-axis
