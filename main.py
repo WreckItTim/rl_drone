@@ -10,10 +10,10 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-run_name = 'DQN_timpc' # unique run name to add to runs path directory
+test_name = 'alpha' # subcategory of test type
+run_name = 'timpc' # run name to add to runs path directory
 utils.set_read_write_paths(
-		runs_path = 'local/runs/',
-		run_name = run_name,
+		runs_path = 'local/runs/' + test_name '/' + run_name '/',
 	)
 
 
@@ -21,8 +21,9 @@ utils.set_read_write_paths(
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'iota',
-	'run_name': run_name
+	'repo_version': 'iota',,
+	'test_name': test_name,
+	'run_name': run_name,
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
 update_meta = False

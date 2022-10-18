@@ -105,9 +105,7 @@ def set_operating_system():
 	set_global_parameter('OS', OS)
 	print('detected operating system:', OS)
 
-def set_read_write_paths(runs_path, run_name):
-	# create working directory to read/write files to
-	working_directory = runs_path + run_name + '/'
+def set_read_write_paths(working_directory):
 	# make temp folder if not exists
 	if not os.path.exists('temp/'):
 		os.makedirs('temp/')

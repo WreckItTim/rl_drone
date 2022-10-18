@@ -56,6 +56,7 @@ class DroneRL(Environment):
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
+		state['goal_position'] = self._goal.get_position()
 		#print('pos:', utils._round(state['drone_position']), 'yaw:', utils._round(state['yaw']))
 		# take step for other components
 		if self._others is not None:
