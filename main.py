@@ -21,7 +21,7 @@ utils.set_read_write_paths(
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'iota',,
+	'repo_version': 'iota2',
 	'test_name': test_name,
 	'run_name': run_name,
 	}
