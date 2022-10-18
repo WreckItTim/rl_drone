@@ -29,24 +29,25 @@ update_meta = False
 
 
 # CREATE CONTROLLER
+continue_training = True
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 100_000, # optional if using train - all other hypers set from model instance
-	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
 	evaluator_component = 'Evaluator', # if using train (optional) or evaluate, set evaluator component
 	tb_log_name = 'run', # logs tensor board to this directory
 	)
 # read old config file?
-read_config = False
+read_config = continue_training
 read_configuration_path = utils.get_global_parameter('working_directory') + 'configuration.json'
 # read old RL model?
-read_model = False
+read_model = continue_training
 read_model_path = utils.get_global_parameter('working_directory') + 'model.zip'
 # read old replay buffer data?
-read_replay_buffer = False
+read_replay_buffer = continue_training
 read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
 
