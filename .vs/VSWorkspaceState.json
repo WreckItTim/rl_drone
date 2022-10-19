@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\datastructs"
+    "\\drones"
   ],
+  "SelectedNode": "\\drones\\airsimdrone.py",
   "PreviewInSolutionExplorer": false
 }

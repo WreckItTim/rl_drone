@@ -27,6 +27,7 @@ class DroneRL(Environment):
 				 is_evaluation_environment=False,
 				 ):
 		super().__init__()
+		self._last_observation_name = 'None'
 
 	def connect(self):
 		super().connect()
@@ -49,15 +50,14 @@ class DroneRL(Environment):
 		# take action
 		transcribed_action = self._actor.act(rl_output)
 		state['transcribed_action'] = transcribed_action
-		#print('action:', state['transcribed_action'])
 		# get observation
+		state['observation_component'] = self._last_observation_name
 		observation_data, observation_name = self._observer.observe(self.write_observations)
-		state['observation_component'] = observation_name
+		self._last_observation_name = observation_name
 		# set state kinematics variables
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
 		state['goal_position'] = self._goal.get_position()
-		#print('pos:', utils._round(state['drone_position']), 'yaw:', utils._round(state['yaw']))
 		# take step for other components
 		if self._others is not None:
 			for other in self._others:
@@ -69,11 +69,10 @@ class DroneRL(Environment):
 		for terminator in self._terminators:
 			done = done or terminator.terminate(state)
 		state['done'] = done
+		#prefix = 'evaluate' if self.is_evaluation_environment else 'train'
+		#utils.write_json(state, 'temp/states/' + prefix + '_episode' + str(self.episode_counter) + '_step' + str(self._nSteps) + '.json')
 		if done:
-			#print('terminated:', state['termination_reason'], state['termination_result'])
-			#print('steps:', self.step_counter)
 			self.episode_counter += 1
-		#print(state)
 		#x = input()
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, state
@@ -81,6 +80,7 @@ class DroneRL(Environment):
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
+		#print(self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
 		#if self.write_observations:
 		#	print('evaluation episode', self.episode_counter)
 		#else:
@@ -110,4 +110,14 @@ class DroneRL(Environment):
 			terminator.reset()
 		self._nSteps = 0
 		observation_data, observation_name = self._observer.observe()
+		self._last_observation_name = observation_name
+		
+		state = {'nSteps':0}
+		state['drone_position'] = self._drone.get_position()
+		state['yaw'] = self._drone.get_yaw() 
+		state['goal_position'] = self._goal.get_position()
+		prefix = 'evaluate' if self.is_evaluation_environment else 'train'
+		print('reset', prefix, self.episode_counter)
+		#utils.write_json(state, 'temp/states/' + prefix + '_episode' + str(self.episode_counter) + '_step0.json')
+		#print(self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
 		return observation_data

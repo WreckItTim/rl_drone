@@ -32,7 +32,12 @@ class Goal(Reward):
 	# get reward based on distance to point 
 	def reward(self, state):
 		distance = self.get_distance()
-		d = self._last_distance / distance
+		d = distance / self._last_distance
+
+		# uncomment this to normalize d by distance at previous time step
+		# otherwise d is normalized by starting distance at t=0
+		#self._last_distance = distance
+
 		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
 
 		value = distance_reward

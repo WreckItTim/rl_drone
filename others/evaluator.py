@@ -45,10 +45,8 @@ class Evaluator(Other):
 	def evaluate_episode(self):
 		# make states object to fill step by step
 		states = {}
-		# reset environment
-		self._evaluate_environment.reset()
-		# get first observation
-		observation_data, observation_name = self._evaluate_environment._observer.observe()
+		# reset environment, returning first observation
+		observation_data = self._evaluate_environment.reset()
 		# start episode
 		done = False
 		for step in range(1, 10_000):

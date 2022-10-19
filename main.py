@@ -10,18 +10,17 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha' # subcategory of test type
-run_name = 'timpc' # run name to add to runs path directory
-utils.set_read_write_paths(
-		runs_path = 'local/runs/' + test_name '/' + run_name '/',
-	)
+test_name = 'alpha2' # subcategory of test type
+run_name = 'timsurface' # run name to add to runs path directory
+working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
+utils.set_read_write_paths(working_directory = working_directory)
 
 
 # SET META DATA (anything you want here, just write to config file)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'iota2',
+	'repo_version': 'iota3',
 	'test_name': test_name,
 	'run_name': run_name,
 	}
@@ -30,7 +29,7 @@ update_meta = False
 
 
 # CREATE CONTROLLER
-continue_training = True
+continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
@@ -149,7 +148,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -219,7 +218,7 @@ elif not read_config:
 	)
 	from transformers.resizeimage import ResizeImage
 	ResizeImage(
-		image_shape = (image_height, image_width, image_bands),
+		image_shape = (image_height, image_width),
 		name = 'ResizeImage',
 	)
 
@@ -497,7 +496,7 @@ elif not read_config:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 100,
+		max_steps = 10,
 		name = 'MaxSteps',
 	)
 

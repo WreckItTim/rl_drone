@@ -23,7 +23,6 @@ class Spawner(Other):
 	def spawn(self):
 		next_spawn = self.get_next_spawn()
 		position, yaw = next_spawn.get_spawn()
-		self._drone.take_off()
 		self._drone.teleport(position[0], position[1], position[2], yaw)
 
 	def reset(self):

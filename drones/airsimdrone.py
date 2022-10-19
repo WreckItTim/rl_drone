@@ -5,6 +5,7 @@ import utils
 from drones.drone import Drone
 import math
 from component import _init_wrapper
+from time import sleep
 
 class AirSimDrone(Drone):
 	@_init_wrapper
@@ -18,16 +19,6 @@ class AirSimDrone(Drone):
 		has_collided = collision_info.has_collided
 		return has_collided 
 
-	# resets on episode
-	def reset(self):
-		self._client.reset()
-		self._client.enableApiControl(True)
-		self._client.armDisarm(True)
-
-	# if something goes wrong
-	def stop(self):
-		self.hover()
-
 	def connect(self):
 		super().connect()
 		self._client = airsim.MultirotorClient(
@@ -38,16 +29,31 @@ class AirSimDrone(Drone):
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)
 		self.reset() # this seems repetitive but needed to reset state info
+
+	# resets on episode
+	def reset(self):
+		self._client.reset()
+		self._client.enableApiControl(True)
+		self._client.armDisarm(True)
+		#sleep(1)
+		self.take_off()
+		self.check_collision()
+
+	def take_off(self):
+		# take-off has some issues in airsim (sometimes the move after takeoff will fall to ground)
+		self._client.takeoffAsync().join()
+		self._client.moveByVelocityAsync(0, 0, -1, 2).join()
+
+	# returns state from client
+	def get_state(self):
+		return self._client.getMultirotorState()
+
+	# if something goes wrong
+	def stop(self):
+		self.hover()
 	
 	def disconnect(self):
 		pass
-
-	def take_off(self):
-		# this is just smoother and more reliable than using take_off
-		self._client.moveByVelocityAsync(0, 0, -1, 2)
-		self.check_collision()
-		#while self._client.getMultirotorState().landed_state == 0:
-		#	self._client.takeoffAsync().join()
 
 	# TODO: having problems with it landing sometimes - if done right after a move() command
 	def land(self):

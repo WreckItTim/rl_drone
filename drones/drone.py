@@ -7,7 +7,7 @@ class Drone(Component):
 
 	# when using the debug controller
 	def debug(self):
-		self.take_off()
+		self.reset()
 
 	# updates number of collisions and returns same 
 	def check_collision(self):
@@ -21,6 +21,10 @@ class Drone(Component):
 	def disconnect(self):
 		raise NotImplementedError
 	
+	# gets dictionary with state variables of drone 
+	def get_state(self):
+		raise NotImplementedError
+
 	# take off!
 	def take_off(self):
 		raise NotImplementedError
