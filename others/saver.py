@@ -19,7 +19,6 @@ class Saver(Other):
 			self.write_folder = utils.get_global_parameter('working_directory')
 
 	def save(self):
-		print('SAVE')
 		if self.save_model:
 			self._model.save(self.write_folder + 'model')
 		if self.save_replay_buffer:
@@ -28,6 +27,7 @@ class Saver(Other):
 			self._configuration.save(self.write_folder + 'configuration.json')
 		if self.save_benchmarks:
 			self._configuration.log_benchmarks(self.write_folder + 'benchmarks.json')
+		print('saved intermediates')
 
 	def reset(self):
 		if self._environment.episode_counter % self.frequency == 0:

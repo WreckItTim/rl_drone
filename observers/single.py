@@ -85,7 +85,7 @@ class Single(Observer):
 		if len(self._old_names) > self.nTimesteps:
 			self._old_names.pop(-1)
 		name = '_'.join(sum(self._old_names, []))
-		np.save('temp/observations/' + name + '.npy', self._history)
+		#np.save('temp/observations/' + name + '.npy', self._history)
 		#print('wrote', name)
 		#x = input()
 		return self._history, name

@@ -80,11 +80,11 @@ class DroneRL(Environment):
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
-		#print(self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
-		#if self.write_observations:
-		#	print('evaluation episode', self.episode_counter)
-		#else:
-		#	print('train episode', self.episode_counter)
+		#print('reset', self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
+		if self.write_observations:
+			print('evaluation episode', self.episode_counter)
+		else:
+			print('train episode', self.episode_counter)
 		# reset all components, several reset() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
 		if self._saver is not None:
