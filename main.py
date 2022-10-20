@@ -11,7 +11,7 @@ utils.set_operating_system()
 
 # CREATE and set read/write DIRECTORIES
 test_name = 'alpha2' # subcategory of test type
-run_name = 'timsurface' # run name to add to runs path directory
+run_name = '' # run name to add to runs path directory
 working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -147,7 +147,7 @@ elif not read_config:
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
 			console_flags = [
-				'-Windowed',
+				#'-Windowed',
 				#'-RenderOffscreen',
 			],
 			name = 'Map',
