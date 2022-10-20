@@ -117,7 +117,6 @@ class DroneRL(Environment):
 		state['yaw'] = self._drone.get_yaw() 
 		state['goal_position'] = self._goal.get_position()
 		prefix = 'evaluate' if self.is_evaluation_environment else 'train'
-		print('reset', prefix, self.episode_counter)
 		#utils.write_json(state, 'temp/states/' + prefix + '_episode' + str(self.episode_counter) + '_step0.json')
 		#print(self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
 		return observation_data

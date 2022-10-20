@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\drones"
+    "\\environments"
   ],
-  "SelectedNode": "\\drones\\airsimdrone.py",
+  "SelectedNode": "\\environments\\dronerl.py",
   "PreviewInSolutionExplorer": false
 }
