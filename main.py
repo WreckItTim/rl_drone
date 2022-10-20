@@ -11,7 +11,7 @@ utils.set_operating_system()
 
 # CREATE and set read/write DIRECTORIES
 test_name = 'alpha2' # subcategory of test type
-run_name = '' # run name to add to runs path directory
+run_name = 'timpc' # run name to add to runs path directory
 working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -147,8 +147,8 @@ elif not read_config:
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
 			console_flags = [
-				#'-Windowed',
-				#'-RenderOffscreen',
+				'-Windowed',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -496,12 +496,12 @@ elif not read_config:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 10,
+		max_steps = 100,
 		name = 'MaxSteps',
 	)
 
 	# MODEL
-	every_nEpisodes = 400
+	every_nEpisodes = 100
 	if observation == 'Image': 
 		policy = 'CnnPolicy'
 	if observation == 'Vector': 
