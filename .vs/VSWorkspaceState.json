@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\environments"
+    "\\environments",
+    "\\sensors"
   ],
-  "SelectedNode": "\\environments\\dronerl.py",
+  "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false
 }

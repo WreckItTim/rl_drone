@@ -67,12 +67,14 @@ class AirSimCamera(Sensor):
 				np_flat = np.fromstring(response.image_data_uint8, dtype=np.uint8)
 			if self.is_gray:
 				img_array = np.reshape(np_flat, (response.height, response.width))
-				# make channel-first
-				img_array = np.expand_dims(img_array, axis=0)
+				if len(img_array) > 0:
+					# make channel-first
+					img_array = np.expand_dims(img_array, axis=0)
 			else:
 				img_array = np.reshape(np_flat, (response.height, response.width, 3))
-				# make channel-first
-				img_array = np.moveaxis(img_array, 2, 0)
+				if len(img_array) > 0:
+					# make channel-first
+					img_array = np.moveaxis(img_array, 2, 0)
 		observation = Image(
 			_data=img_array, 
 			is_gray=self.is_gray,
