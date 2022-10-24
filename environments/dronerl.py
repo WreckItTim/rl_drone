@@ -2,6 +2,7 @@ from environments.environment import Environment
 from component import _init_wrapper
 import numpy as np
 import utils
+import os
 
 # environment that is heart of drone_rl - for training rl algos
 class DroneRL(Environment):
@@ -22,12 +23,18 @@ class DroneRL(Environment):
 				 saver_component=None,
 				 others_components=None,
 				 write_observations=False,
+				 write_states=False,
 				 episode_counter=0, 
 				 step_counter=0, 
 				 is_evaluation_environment=False,
+				 directory_path = None,
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
+		if directory_path is None:
+			self.directory_path = utils.get_global_parameter('working_directory') + '/states/'
+		if not os.path.exists(self.directory_path):
+			os.mkdir(self.directory_path)
 
 	def connect(self):
 		super().connect()
@@ -42,45 +49,43 @@ class DroneRL(Environment):
 	def step(self, rl_output):
 		# initialize state with rl_output
 		rl_output = self.clean_rl_output(rl_output)
-		state = {'rl_output':rl_output}
+		self._state = {'rl_output':rl_output}
 		# increment number of steps
 		self._nSteps += 1
 		self.step_counter += 1
-		state['nSteps'] = self._nSteps 
+		self._state['nSteps'] = self._nSteps 
 		# take action
 		transcribed_action = self._actor.act(rl_output)
-		state['transcribed_action'] = transcribed_action
+		self._state['transcribed_action'] = transcribed_action
 		# get observation
-		state['observation_component'] = self._last_observation_name
+		self._state['observation_component'] = self._last_observation_name
 		observation_data, observation_name = self._observer.observe(self.write_observations)
 		self._last_observation_name = observation_name
 		# set state kinematics variables
-		state['drone_position'] = self._drone.get_position()
-		state['yaw'] = self._drone.get_yaw() 
-		state['goal_position'] = self._goal.get_position()
+		self._state['drone_position'] = self._drone.get_position()
+		self._state['yaw'] = self._drone.get_yaw() 
+		self._state['goal_position'] = self._goal.get_position()
 		# take step for other components
 		if self._others is not None:
 			for other in self._others:
-				other.step(state)
+				other.step(self._state)
 		# assign rewards (stores total rewards and individual rewards in state)
-		total_reward = self._rewarder.reward(state)
+		total_reward = self._rewarder.reward(self._state)
 		# check for termination
 		done = False
 		for terminator in self._terminators:
-			done = done or terminator.terminate(state)
-		state['done'] = done
-		#prefix = 'evaluate' if self.is_evaluation_environment else 'train'
-		#utils.write_json(state, 'temp/states/' + prefix + '_episode' + str(self.episode_counter) + '_step' + str(self._nSteps) + '.json')
+			done = done or terminator.terminate(self._state)
+		self._state['done'] = done
+		if self.write_states:
+			utils.write_json(self._state, self.directory_path + 'episode_' + str(self.episode_counter) + '.json')
 		if done:
 			self.episode_counter += 1
-		#x = input()
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done, state
+		return observation_data, total_reward, done, self._state
 
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
-		#print('reset', self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
 		if self.write_observations:
 			print('evaluation episode', self.episode_counter)
 		else:
@@ -96,8 +101,6 @@ class DroneRL(Environment):
 		self._drone.reset()
 		if self._spawner is not None:
 			self._spawner.reset()
-		#print()
-		#print('spawn:', utils._round(self._drone.get_position()), utils._round(self._drone.get_yaw(),))
 		if self._others is not None:
 			for other in self._others:
 				other.reset()
@@ -112,11 +115,9 @@ class DroneRL(Environment):
 		observation_data, observation_name = self._observer.observe()
 		self._last_observation_name = observation_name
 		
-		state = {'nSteps':0}
-		state['drone_position'] = self._drone.get_position()
-		state['yaw'] = self._drone.get_yaw() 
-		state['goal_position'] = self._goal.get_position()
-		prefix = 'evaluate' if self.is_evaluation_environment else 'train'
-		#utils.write_json(state, 'temp/states/' + prefix + '_episode' + str(self.episode_counter) + '_step0.json')
-		#print(self.is_evaluation_environment, self.episode_counter, self._drone.get_state())
+		self._state = {'nSteps':self._nSteps}
+		self._state['drone_position'] = self._drone.get_position()
+		self._state['yaw'] = self._drone.get_yaw() 
+		self._state['goal_position'] = self._goal.get_position()
+
 		return observation_data

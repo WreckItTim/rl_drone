@@ -161,7 +161,7 @@ def _init_wrapper(init_method):
 			self.disconnect_priority = 0
 
 		# ADD TIMER TO EACH PUBLIC CLASS METHOD
-		if self._add_timers:
+		if configuration is not None and configuration.add_timers and self._add_timers:
 			for method in dir(self):
 				if callable(getattr(self, method)) and method[0] != '_':
 					setattr(self, method, _timer_wrapper(configuration, getattr(self, method)))

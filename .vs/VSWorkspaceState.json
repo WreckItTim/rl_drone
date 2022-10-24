@@ -2,7 +2,7 @@
   "ExpandedNodes": [
     "",
     "\\environments",
-    "\\sensors"
+    "\\rewards"
   ],
   "SelectedNode": "\\main.py",
   "PreviewInSolutionExplorer": false

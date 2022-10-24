@@ -11,10 +11,12 @@ class Goal(Reward):
 	def __init__(self,
 				 drone_component, 
 				 goal_component, 
-				 min_distance, 
-				 max_distance, 
-				 goal_tolerance=0,
+				 min_distance=0, # goal tolerance 
+				 max_distance=120, # how far can deviate from goal
 				 include_z=True,
+				 to_start=True,
+				 # if to_start=True will calculate rewards relative to start position
+				 # if to_start=False will calculate rewards relative to last position
 				 ):
 		super().__init__()
 		#self.init_normalization()
@@ -34,15 +36,16 @@ class Goal(Reward):
 		distance = self.get_distance()
 		d = distance / self._last_distance
 
-		# uncomment this to normalize d by distance at previous time step
-		# otherwise d is normalized by starting distance at t=0
-		#self._last_distance = distance
+		if not self.to_start:
+			self._last_distance = distance
 
 		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
 
 		value = distance_reward
-		if distance <= self.goal_tolerance:
+		if distance <= self.min_distance:
 			value += 10
+		if distance >= self.max_distance:
+			value -= 10
 
 		return value
 

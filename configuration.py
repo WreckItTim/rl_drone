@@ -5,8 +5,9 @@ from sys import getsizeof
 class Configuration():
 	active = None
 
-	def __init__(self, meta):
+	def __init__(self, meta, add_timers=False):
 		self.meta = meta
+		self.add_timers = add_timers
 		self.components = {}
 		self.benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
 

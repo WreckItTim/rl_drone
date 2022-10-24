@@ -10,8 +10,8 @@ class Goal(Terminator):
     def __init__(self, 
                  drone_component, 
                  goal_component,
-                 min_distance=5, 
-                 max_distance=99999, 
+                 min_distance=0, 
+                 max_distance=120, 
                  include_z=True,
                  ):
         super().__init__()

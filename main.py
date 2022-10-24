@@ -10,8 +10,8 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha2' # subcategory of test type
-run_name = 'timsurface' # run name to add to runs path directory
+test_name = 'alpha3' # subcategory of test type
+run_name = 'testbed1' # run name to add to runs path directory
 working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -20,7 +20,7 @@ utils.set_read_write_paths(working_directory = working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'iota3',
+	'repo_version': 'kappa',
 	'test_name': test_name,
 	'run_name': run_name,
 	}
@@ -103,10 +103,12 @@ elif not read_config:
 	include_z = False
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
-	# set goal (objective point) - can be relative or absolute
-	goal = [100, 0, 0]
+	# set max steps
+	max_steps = 100
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
+	# max distance drone can get from goal	
+	max_distance = 120
 	# set action space type
 	action_type = 'discrete' # discrete continuous
 	
@@ -118,9 +120,17 @@ elif not read_config:
 	RelativeGoal(
 		drone_component = 'Drone',
 		map_component = 'Map',
-		xyz_point = goal,
-		random_yaw_train = True,
-		random_yaw_evaluate = False,
+		xyz_point = [100, 0, 0],
+		random_point_on_train = False,
+		random_point_on_evaluate = False,
+		amp_up = .04,
+		random_dim_min = 4,
+		random_dim_max = 8,
+		x_bound = [-100, 100],
+		y_bound = [-100, 100],
+		z_bound = [-4, -4],
+		random_yaw_on_train = True,
+		random_yaw_on_evaluate = False,
 		random_yaw_min = -1 * math.pi,
 		random_yaw_max = math.pi,
 		reset_on_step = False,
@@ -148,7 +158,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -452,11 +462,16 @@ elif not read_config:
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = 0, 
-		max_distance = math.sqrt(2)*np.linalg.norm(goal),
-        goal_tolerance = goal_tolerance,
+		min_distance = goal_tolerance, 
+		max_distance = 2*max_distance, 
 		include_z = include_z,
+		to_start=True,
 		name = 'GoalReward',
+	)
+	from rewards.steps import Steps
+	Steps(
+		max_steps = 2*max_steps,
+		name = 'StepsReward',
 	)
 
 	# REWARDER
@@ -465,8 +480,10 @@ elif not read_config:
 		rewards_components = [
 			'AvoidReward',
 			'GoalReward',
+			'StepsReward',
 			],
 		reward_weights = [
+			1,
 			1,
 			1,
 			],
@@ -484,7 +501,7 @@ elif not read_config:
 		drone_component = 'Drone',
 		goal_component = 'Goal',
 		min_distance = goal_tolerance, 
-		max_distance = math.sqrt(2)*np.linalg.norm(goal),
+		max_distance = max_distance, 
 		include_z = include_z,
 		name = 'GoalTerminator',
 	)
@@ -496,7 +513,7 @@ elif not read_config:
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
-		max_steps = 100,
+		max_steps = max_steps,
 		name = 'MaxSteps',
 	)
 
@@ -703,10 +720,10 @@ elif not read_config:
 		spawns_components=[
 			Spawn(
 				map_component = 'Map',
-				x_min=-8,
-				x_max=8,
-				y_min=-8,
-				y_max=8,
+				x_min=-100,
+				x_max=100,
+				y_min=-100,
+				y_max=100,
 				z_min=start_z,
 				z_max=start_z,
 				yaw_min = -1 * math.pi,
@@ -776,7 +793,7 @@ elif not read_config:
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,
-		save_benchmarks=True,
+		save_benchmarks=False,
 		name='Saver',
 	)
 
@@ -797,6 +814,7 @@ elif not read_config:
 		spawner_component='TrainSpawner',
 		goal_component='Goal',
 		write_observations=False,
+		write_states=True,
 		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
@@ -813,6 +831,7 @@ elif not read_config:
 		spawner_component='EvaluateSpawner',
 		goal_component='Goal',
 		write_observations=True,
+		write_states=False,
 		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)
