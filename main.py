@@ -11,7 +11,7 @@ utils.set_operating_system()
 
 # CREATE and set read/write DIRECTORIES
 test_name = 'alpha3' # subcategory of test type
-run_name = 'testbed1' # run name to add to runs path directory
+run_name = 'mlserver2019' # run name to add to runs path directory
 working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -158,7 +158,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				#'-RenderOffscreen',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -463,14 +463,14 @@ elif not read_config:
 		drone_component = 'Drone',
 		goal_component = 'Goal',
 		min_distance = goal_tolerance, 
-		max_distance = 2*max_distance, 
+		max_distance = max_distance, 
 		include_z = include_z,
 		to_start=True,
 		name = 'GoalReward',
 	)
 	from rewards.steps import Steps
 	Steps(
-		max_steps = 2*max_steps,
+		max_steps = max_steps,
 		name = 'StepsReward',
 	)
 
