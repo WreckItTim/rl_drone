@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha3' # subcategory of test type
+test_name = 'alpha4' # subcategory of test type
 run_name = 'mlserver2019' # run name to add to runs path directory
 working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
@@ -20,7 +20,7 @@ utils.set_read_write_paths(working_directory = working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'kappa',
+	'repo_version': 'kappa2',
 	'test_name': test_name,
 	'run_name': run_name,
 	}
@@ -123,7 +123,8 @@ elif not read_config:
 		xyz_point = [100, 0, 0],
 		random_point_on_train = False,
 		random_point_on_evaluate = False,
-		amp_up = .04,
+		min_amp_up = .02,
+		max_amp_up = .04,
 		random_dim_min = 4,
 		random_dim_max = 8,
 		x_bound = [-100, 100],

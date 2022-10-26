@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\environments",
-    "\\rewards"
+    "\\datastructs"
   ],
+  "SelectedNode": "\\datastructs\\relativegoal.py",
   "PreviewInSolutionExplorer": false
 }

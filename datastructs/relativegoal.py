@@ -17,7 +17,8 @@ class RelativeGoal(DataStruct):
 				 xyz_point = [10, 0, 0],
 				 random_point_on_train = False,
 				 random_point_on_evaluate = False,
-				 amp_up = 0, # increases max every reset by this much
+				 min_amp_up = 0, # increases min every reset by this much
+				 max_amp_up = 0, # increases max every reset by this much
 				 random_dim_min = 4, # magnitude of dim min
 				 random_dim_max = 8, # magnitude of dim max
 				 x_bound = [-100, 100],
@@ -70,7 +71,8 @@ class RelativeGoal(DataStruct):
 			relative_position[2] = min(self.z_bound[1], max(self.z_bound[0], z))
 		# amp up max if training reset
 		if not is_evaluation:
-			self.random_dim_max += self.amp_up
+			self.random_dim_min += self.min_amp_up
+			self.random_dim_max += self.max_amp_up
 		# random yaw? # yaw counterclockwise rotation about z-axis
 		if not is_evaluation and self.random_yaw_on_train:
 			relative_yaw = random.uniform(self.random_yaw_min, self.random_yaw_max)
