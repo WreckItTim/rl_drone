@@ -76,9 +76,10 @@ class DroneRL(Environment):
 		for terminator in self._terminators:
 			done = done or terminator.terminate(self._state)
 		self._state['done'] = done
-		if self.write_states:
-			utils.write_json(self._state, self.directory_path + 'episode_' + str(self.episode_counter) + '.json')
+		self._state_space['step_' + str(self._nSteps)] = self._state.copy()
 		if done:
+			if self.write_states:
+				utils.write_json(self._state_space, self.directory_path + 'episode_' + str(self.episode_counter) + '.json')
 			self.episode_counter += 1
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, self._state
@@ -86,18 +87,12 @@ class DroneRL(Environment):
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
-		if self.write_observations:
-			print('evaluation episode', self.episode_counter)
-		else:
-			print('train episode', self.episode_counter)
 		# reset all components, several reset() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
 		if self._saver is not None:
 			self._saver.reset()
 		if self._evaluator is not None:
-			stop = self._evaluator.reset()
-			if stop:
-				raise Exception('EARLY STOPPING TRIGGERED, learning complete')
+			self._evaluator.reset()
 		self._drone.reset()
 		if self._spawner is not None:
 			self._spawner.reset()
@@ -119,5 +114,6 @@ class DroneRL(Environment):
 		self._state['drone_position'] = self._drone.get_position()
 		self._state['yaw'] = self._drone.get_yaw() 
 		self._state['goal_position'] = self._goal.get_position()
+		self._state_space = {'step_0':self._state.copy()}
 
 		return observation_data

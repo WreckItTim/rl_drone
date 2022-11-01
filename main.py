@@ -10,9 +10,8 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha4' # subcategory of test type
-run_name = 'mlserver2019' # run name to add to runs path directory
-working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
+test_name = 'alpha7' # subcategory of test type
+working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
 
@@ -20,9 +19,8 @@ utils.set_read_write_paths(working_directory = working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'kappa2',
+	'repo_version': 'kappa3',
 	'test_name': test_name,
-	'run_name': run_name,
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
 update_meta = False
@@ -33,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 50_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -104,7 +102,7 @@ elif not read_config:
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
-	max_steps = 100
+	max_steps = 8
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# max distance drone can get from goal	
@@ -120,17 +118,17 @@ elif not read_config:
 	RelativeGoal(
 		drone_component = 'Drone',
 		map_component = 'Map',
-		xyz_point = [100, 0, 0],
-		random_point_on_train = False,
+		xyz_point = [4, 0, 0],
+		random_point_on_train = True,
 		random_point_on_evaluate = False,
-		min_amp_up = .02,
-		max_amp_up = .04,
+		min_amp_up = 0,
+		max_amp_up = 0,
 		random_dim_min = 4,
 		random_dim_max = 8,
 		x_bound = [-100, 100],
 		y_bound = [-100, 100],
 		z_bound = [-4, -4],
-		random_yaw_on_train = True,
+		random_yaw_on_train = False,
 		random_yaw_on_evaluate = False,
 		random_yaw_min = -1 * math.pi,
 		random_yaw_max = math.pi,
@@ -146,7 +144,7 @@ elif not read_config:
 			settings = {
 				'LocalHostIp': '127.0.0.1',
 				'ApiServerPort': 41451,
-				'ClockSpeed': 4,
+				'ClockSpeed': 2,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -159,7 +157,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -205,6 +203,22 @@ elif not read_config:
 		)
 
 	# TRANSFORMER
+	from transformers.gaussiannoise import GaussianNoise
+	GaussianNoise(
+		mean = 0,
+		deviation = 0.5,
+		name = 'PositionNoise',
+	)
+	GaussianNoise(
+		mean = 0,
+		deviation = math.radians(5),
+		name = 'OrientationNoise',
+	)
+	from transformers.gaussianblur import GaussianBlur
+	GaussianBlur(
+		sigma = 0.5/400,
+		name = 'DepthNoise',
+	)
 	from transformers.normalize import Normalize
 	Normalize(
 		min_input = -200, # min distance
@@ -223,7 +237,7 @@ elif not read_config:
 	Normalize(
 		min_input = 0, # min depth
 		max_input = 100, # max depth
-		min_output = 0, # SB3 uses 0-255 pixel values
+		min_output = 1, # SB3 uses 0-255 pixel values, 0 reserved for bad data
 		max_output = 255, # SB3 uses 0-255 pixel values
 		name = 'NormalizeDepth',
 	)
@@ -244,6 +258,7 @@ elif not read_config:
 			is_gray = True,
 			transformers_components = [
 				'ResizeImage',
+				'DepthNoise',
 				'NormalizeDepth',
 				],
 			name = 'Camera',
@@ -252,6 +267,7 @@ elif not read_config:
 		from sensors.airsimdistance import AirSimDistance
 		AirSimDistance(
 			transformers_components = [
+				'PositionNoise',
 				'NormalizeDistance',
 				],
 			name = 'Distance',
@@ -263,6 +279,7 @@ elif not read_config:
 			is_gray = False,
 			transformers_components = [
 				'ResizeImage',
+				'DepthNoise',
 				'NormalizeDepth',
 				],
 			name = 'Camera',
@@ -273,6 +290,7 @@ elif not read_config:
 			misc_component = 'Drone',
 			prefix = 'drone',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				],
 			name = 'DronePosition',
@@ -283,6 +301,7 @@ elif not read_config:
 			misc_component = 'Drone',
 			prefix = 'drone',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'DroneOrientation',
@@ -293,6 +312,7 @@ elif not read_config:
 			misc_component = 'Goal',
 			prefix = 'goal',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				],
 			name = 'GoalPosition',
@@ -303,6 +323,7 @@ elif not read_config:
 			misc_component = 'Goal',
 			prefix = 'goal',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'GoalOrientation',
@@ -314,6 +335,7 @@ elif not read_config:
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				], 
 			name = 'DroneToGoalPosition',
@@ -325,6 +347,7 @@ elif not read_config:
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'DroneToGoalOrientation',
@@ -533,21 +556,21 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
-			batch_size = 32,
-			tau = 1e-2,
-			gamma = 0.9999,
+			buffer_size = 4,#1_000_000,
+			learning_starts = 4,#50_000,
+			batch_size = 4,#32,
+			tau = 1.0,
+			gamma = 0.99,
 			train_freq = 4,
 			gradient_steps = 1,
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = every_nEpisodes,
-			exploration_fraction = 0.4,
+			target_update_interval = 4,#10_000,
+			exploration_fraction = 1/50,
 			exploration_initial_eps = 1.0,
-			exploration_final_eps = 0.05,
-			max_grad_norm = 10,
+			exploration_final_eps = 0.1,
+			max_grad_norm = 1,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = policy_kwargs,
@@ -776,11 +799,13 @@ elif not read_config:
 		train_environment_component = 'TrainEnvironment',
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
-		frequency = 100,
+		frequency = 8,
 		nEpisodes = 6,
 		stopping_patience = 0,
 		stopping_reward = 10,
 		stopping_epsilon = 1e-1,
+		curriculum = True,
+		goal_component = 'Goal',
 
 		name = 'Evaluator',
 	)
@@ -790,7 +815,7 @@ elif not read_config:
 	Saver(
 		model_component='Model', 
 		environment_component='TrainEnvironment',
-		frequency=100, 
+		frequency=8, 
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,

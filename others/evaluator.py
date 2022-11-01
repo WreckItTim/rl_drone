@@ -22,6 +22,9 @@ class Evaluator(Other):
 			  stopping_epsilon = 1e-4,
 			  save_best_model = True,
 			  write_best_model_path = None,
+			  curriculum = True,
+			  goal_component=None,
+
 			  ): 
 		# set folder path to write evaluations to
 		if write_evaluations_folder is None:
@@ -97,7 +100,7 @@ class Evaluator(Other):
 		else:
 			self.stopping_wait += 1
 		if self.stopping_best >= self.stopping_reward and self.stopping_wait >= self.stopping_patience:
-			print('Early Stopping Triggered!')
+			print('Stopping criteria met!')
 			stop = True
 		return stop
 
@@ -112,7 +115,13 @@ class Evaluator(Other):
 				# evaluate for a set of episodes
 				stop = self.evaluate_set()
 				if stop:
-					Configuration.get_active().controller.stop()
+					if self.curriculum:
+						self.goal.xyz_point += np.array([4, 0, 0], dtype=float)
+						self.goal.random_dim_min += 4
+						self.goal.random_dim_max += 4
+						print('Amping up distance to goal to', self.goal.random_dim_min)
+					else:
+						Configuration.get_active().controller.stop()
 
 	# when using the debug controller
 	def debug(self):
