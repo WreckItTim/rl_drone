@@ -5,8 +5,9 @@
     "\\environments",
     "\\observations",
     "\\observers",
+    "\\others",
     "\\transformers"
   ],
-  "SelectedNode": "\\observers\\single.py",
+  "SelectedNode": "\\others\\evaluator.py",
   "PreviewInSolutionExplorer": false
 }

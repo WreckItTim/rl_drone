@@ -24,6 +24,7 @@ class Evaluator(Other):
 			  write_best_model_path = None,
 			  curriculum = True,
 			  goal_component=None,
+			  steps_components=None,
 
 			  ): 
 		# set folder path to write evaluations to
@@ -119,6 +120,9 @@ class Evaluator(Other):
 						self.goal.xyz_point += np.array([4, 0, 0], dtype=float)
 						self.goal.random_dim_min += 4
 						self.goal.random_dim_max += 4
+						if self.steps is not None:
+							for step in self.steps:
+								step.max_steps = self.goal.random_dim_max
 						print('Amping up distance to goal to', self.goal.random_dim_min)
 					else:
 						Configuration.get_active().controller.stop()

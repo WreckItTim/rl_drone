@@ -102,7 +102,7 @@ elif not read_config:
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
-	max_steps = 8
+	max_steps = 4
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# max distance drone can get from goal	
@@ -157,7 +157,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				#'-RenderOffscreen',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -556,9 +556,9 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = 4,#1_000_000,
-			learning_starts = 4,#50_000,
-			batch_size = 4,#32,
+			buffer_size = 1_000_000,
+			learning_starts = 50_000,
+			batch_size = 32,
 			tau = 1.0,
 			gamma = 0.99,
 			train_freq = 4,
@@ -566,7 +566,7 @@ elif not read_config:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = 4,#10_000,
+			target_update_interval = 10_000,
 			exploration_fraction = 1/50,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.1,
@@ -799,13 +799,17 @@ elif not read_config:
 		train_environment_component = 'TrainEnvironment',
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
-		frequency = 8,
+		frequency = 100,
 		nEpisodes = 6,
 		stopping_patience = 0,
 		stopping_reward = 10,
 		stopping_epsilon = 1e-1,
 		curriculum = True,
 		goal_component = 'Goal',
+		step_components = [
+			'StepsReward',
+			'MaxSteps',
+		],
 
 		name = 'Evaluator',
 	)
@@ -815,7 +819,7 @@ elif not read_config:
 	Saver(
 		model_component='Model', 
 		environment_component='TrainEnvironment',
-		frequency=8, 
+		frequency=100, 
 		save_model=True,
 		save_replay_buffer=True,
 		save_configuration_file=True,
