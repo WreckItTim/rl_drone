@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta1' # subcategory of test type
+test_name = 'alpha7' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 5_000_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -97,7 +97,7 @@ elif not read_config:
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality being used
-	observation = 'Vector' # Image Vector Multi
+	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
@@ -623,7 +623,7 @@ elif not read_config:
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
 			target_update_interval = evaluate_frequency * 10,
-			exploration_fraction = 1/50,
+			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.1,
 			max_grad_norm = 1,

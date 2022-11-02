@@ -1,14 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\datastructs",
-    "\\drones",
-    "\\environments",
-    "\\observations",
-    "\\observers",
     "\\others",
     "\\transformers"
   ],
-  "SelectedNode": "\\others\\saver.py",
+  "SelectedNode": "\\others\\evaluator.py",
   "PreviewInSolutionExplorer": false
 }
