@@ -39,11 +39,11 @@ class Observation:
 	# converts observation into an nd numpy array 
 	# some observation types are already numpy arrays
 	def to_numpy(self):
-		return self._data
+		return self._data.copy()
 
 	# sets numpy array data
 	def set_data(self, data):
-		self._data = data
+		self._data = data.copy()
 
 	# saves transformation info (after transformation is done)
 	def save_transformation(self, transformer, data):

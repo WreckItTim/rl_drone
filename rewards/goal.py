@@ -11,8 +11,7 @@ class Goal(Reward):
 	def __init__(self,
 				 drone_component, 
 				 goal_component, 
-				 min_distance=0, # goal tolerance 
-				 max_distance=120, # how far can deviate from goal
+				 tolerance=0, # min distance from goal for success 
 				 include_z=True,
 				 to_start=True,
 				 # if to_start=True will calculate rewards relative to start position
@@ -42,35 +41,10 @@ class Goal(Reward):
 		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
 
 		value = distance_reward
-		if distance <= self.min_distance:
+		if distance <= self.tolerance:
 			value += 10
-		if distance >= self.max_distance:
-			value -= 10
 
 		return value
 
 	def reset(self):
 		self._last_distance = self.get_distance()
-
-	'''
-	# calculate constants for normalization
-	def init_normalization(self):
-		# normalize to min and max distances
-		self._diff = self.max_distance - self.min_distance
-
-	# normalize reward value between 0 and 1
-	def normalize_reward(self, distance):
-		# clip distance
-		clipped_distance = max(self.min_distance, min(self.max_distance, distance))
-		# normalize distance to fit desired behavior of reward function
-		normalized_distance = (clipped_distance - self.min_distance) / self._diff
-		# get value from reward function
-		value = self._reward_function(normalized_distance)
-		return value
-
-	def get_yaw_diff(self):
-		goal_yaw = utils.position_to_yaw(distance_vector)
-		drone_yaw = self._drone.get_yaw()
-		yaw_diff = math.pi - abs(abs(goal_yaw - drone_yaw) - math.pi)
-		return yaw_diff
-	'''

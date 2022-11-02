@@ -21,9 +21,9 @@ class RelativeGoal(DataStruct):
 				 max_amp_up = 0, # increases max every reset by this much
 				 random_dim_min = 4, # magnitude of dim min
 				 random_dim_max = 8, # magnitude of dim max
-				 x_bound = [-100, 100],
-				 y_bound = [-100, 100],
-				 z_bound = [-100, -100],
+				 x_bounds = [-100, 100],
+				 y_bounds = [-100, 100],
+				 z_bounds = [-100, 100],
 				 random_yaw_on_train = False,
 				 random_yaw_on_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
@@ -53,7 +53,7 @@ class RelativeGoal(DataStruct):
 	def reset(self, is_evaluation=False):
 		drone_position = self._drone.get_position()
 		# random point?
-		relative_position = self.xyz_point
+		relative_position = self.xyz_point.copy()
 		random_point = False
 		if is_evaluation and self.random_point_on_evaluate:
 			random_point = True
@@ -62,13 +62,13 @@ class RelativeGoal(DataStruct):
 		if random_point:
 			neg_pos = random.choice([-1, 1])
 			x = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[0] = min(self.x_bound[1], max(self.x_bound[0], x))
+			relative_position[0] = min(self.x_bounds[1], max(self.x_bounds[0], x))
 			neg_pos = random.choice([-1, 1])
 			y = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[1] = min(self.y_bound[1], max(self.y_bound[0], y))
+			relative_position[1] = min(self.y_bounds[1], max(self.y_bounds[0], y))
 			neg_pos = random.choice([-1, 1])
 			z = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[2] = min(self.z_bound[1], max(self.z_bound[0], z))
+			relative_position[2] = min(self.z_bounds[1], max(self.z_bounds[0], z))
 		# amp up max if training reset
 		if not is_evaluation:
 			self.random_dim_min += self.min_amp_up
@@ -85,7 +85,6 @@ class RelativeGoal(DataStruct):
 		in_object = True
 		while in_object:
 			if alpha < 0.1:
-				print('invalid relative goal', drone_position, relative_position, relative_yaw)
 				self.reset(is_evaluation)
 				break
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_position, relative_yaw, alpha)

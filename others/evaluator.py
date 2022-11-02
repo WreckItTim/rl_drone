@@ -13,7 +13,6 @@ class Evaluator(Other):
 			  model_component,
 			  frequency = 1000,
 			  nEpisodes = 100,
-			  write_evaluations_folder = None, 
 			  evaluation_counter = 0,
 			  stopping_patience = 4,
 			  stopping_reward = 9,
@@ -27,12 +26,6 @@ class Evaluator(Other):
 			  steps_components=None,
 
 			  ): 
-		# set folder path to write evaluations to
-		if write_evaluations_folder is None:
-			self.write_evaluations_folder = utils.get_global_parameter('working_directory') + 'evaluations/'
-		# create write directory if does not exist already
-		if not os.path.exists(self.write_evaluations_folder):
-			os.makedirs(self.write_evaluations_folder)
 		# set where to save model
 		if write_best_model_path is None:
 			self.write_best_model_path = utils.get_global_parameter('working_directory') + 'best_model'
@@ -47,43 +40,31 @@ class Evaluator(Other):
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
-		# make states object to fill step by step
-		states = {}
 		# reset environment, returning first observation
 		observation_data = self._evaluate_environment.reset()
 		# start episode
 		done = False
-		for step in range(1, 10_000):
+		while(True):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
 			# take next step
 			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
-			# freeze state
-			frozen_state = state.copy()
-			# save state
-			states['step_' + str(step)] = frozen_state
 			# check if we are done
 			if done:
 				break
 		# end of episode
-		return states, reward
+		return reward
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
 		# keep track of stopping stats
 		total_reward = 0
-		# allocate space to save states for all episodes
-		all_states = {}
 		# loop through all episodes
 		for episode in range(self.nEpisodes):
 			# step through next episode
-			states, reward = self.evaluate_episode()
+			reward = self.evaluate_episode()
 			# log results
-			all_states['episode_' + str(episode)] = states
 			total_reward += reward
-		all_states['timestamp'] = utils.get_timestamp()
-		# write states to file
-		utils.write_json(all_states, self.write_evaluations_folder + 'evaluation_' + str(self.evaluation_counter) + '.json')
 		# counter++
 		self.evaluation_counter += 1
 		self._this_counter += 1
@@ -116,14 +97,13 @@ class Evaluator(Other):
 				# evaluate for a set of episodes
 				stop = self.evaluate_set()
 				if stop:
-					if self.curriculum:
-						self.goal.xyz_point += np.array([4, 0, 0], dtype=float)
-						self.goal.random_dim_min += 4
-						self.goal.random_dim_max += 4
-						if self.steps is not None:
-							for step in self.steps:
-								step.max_steps = self.goal.random_dim_max
-						print('Amping up distance to goal to', self.goal.random_dim_min)
+					if self.curriculum and self._goal.random_dim_max <= 100:
+						self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
+						self._goal.random_dim_min += 4
+						self._goal.random_dim_max += 4
+						for step in self._steps:
+							step.max_steps = 8 + self._goal.random_dim_max
+						print('Amping up distance to goal to', self._goal.random_dim_min)
 					else:
 						Configuration.get_active().controller.stop()
 
