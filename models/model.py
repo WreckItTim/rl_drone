@@ -15,6 +15,7 @@ class Model(Component):
 	def connect(self):
 		super().connect()
 		self._model_arguments['env'] = self._environment
+		print('observation_space', self._environment.observation_space)
 		# create model object if needs be
 		_model_path = self.model_path
 		if _model_path is not None and exists(_model_path):

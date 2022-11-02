@@ -166,7 +166,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -599,12 +599,14 @@ elif not read_config:
 	)
 
 	# MODEL
+	print('observation', observation)
 	if observation == 'Image': 
 		policy = 'CnnPolicy'
-	if observation == 'Vector': 
+	elif observation == 'Vector': 
 		policy = 'MlpPolicy'
-	if observation == 'Multi': 
+	elif observation == 'Multi': 
 		policy = 'MultiInputPolicy'
+	print('policy', policy)
 	policy_kwargs = None
 	if model == 'DQN':
 		from models.dqn import DQN
