@@ -20,7 +20,7 @@ class Rotate(Action):
 		# get speed magnitude from rl_output
 		magnitude = rl_output
 		if rl_output > -1*self.zero_threshold and rl_output < self.zero_threshold:
-			magnitude = 0
+			return
 		self._drone.rotate(magnitude*self.base_yaw_rate, self.duration)
 		
 	# when using the debug controller
