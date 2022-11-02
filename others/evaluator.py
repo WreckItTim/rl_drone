@@ -3,6 +3,7 @@ from component import _init_wrapper
 import utils
 import os
 from configuration import Configuration
+import numpy np
 
 # objective is set x-meters in front of drone and told to go forward to it
 class Evaluator(Other):
