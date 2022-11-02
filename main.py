@@ -640,6 +640,35 @@ elif not read_config:
 			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
+		
+	elif model == 'DDPG':
+		from models.ddpg import DDPG
+		DDPG(
+			environment_component = 'TrainEnvironment',
+			policy = policy,
+			learning_rate = 1e-3,
+			buffer_size = evaluate_frequency * 1000,
+			learning_starts = evaluate_frequency,
+			batch_size = 100,
+			tau = 0.005,
+			gamma = 0.99,
+			train_freq = (1, "episode"),
+			gradient_steps = -1,
+			action_noise = None,
+			replay_buffer_class = None,
+			replay_buffer_kwargs = None,
+			optimize_memory_usage = False,
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+			create_eval_env = False,
+			policy_kwargs = None,
+			verbose = 0,
+			seed = None,
+			device = "auto",
+			init_setup_model = True,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
+			name='Model',
+		)
 	'''
 	elif model == 'A2C':
 		from models.a2c import A2C
@@ -658,34 +687,6 @@ elif not read_config:
 			use_sde = False,
 			sde_sample_freq = -1,
 			normalize_advantage = False,
-			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-			create_eval_env = False,
-			policy_kwargs = None,
-			verbose = 0,
-			seed = None,
-			device = "auto",
-			init_setup_model = True,
-			model_path = read_model_path if read_model else None,
-			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-			name='Model',
-		)
-	elif model == 'DDPG':
-		from models.ddpg import DDPG
-		DDPG(
-			environment_component = 'TrainEnvironment',
-			policy = policy,
-			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
-			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
-			action_noise = None,
-			replay_buffer_class = None,
-			replay_buffer_kwargs = None,
-			optimize_memory_usage = False,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
@@ -954,7 +955,10 @@ utils.speak('configuration created!')
 t1 = time()
 # CONNECT COMPONENTS
 configuration.connect_all()
-print(configuration.get_component('Model')._sb3model.q_net)
+if model == 'DQN:
+	print(configuration.get_component('Model')._sb3model.q_net)
+if model == 'DDPG:
+	print(configuration.get_component('Model')._sb3model.critic)
 
 # WRITE CONFIGURATION
 configuration.save()
