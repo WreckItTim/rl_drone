@@ -100,9 +100,6 @@ class Single(Observer):
 
 	# returns box space with proper dimensions
 	def get_space(self):
-		print()
-		print('get_space', spaces.Box(low=0, high=255, shape=self._output_shape, dtype=np.uint8))
-		print()
 		if self.is_image:
 			return spaces.Box(low=0, high=255, shape=self._output_shape, dtype=np.uint8)
 		return spaces.Box(0, 1, shape=self._output_shape, dtype=np.float64)
