@@ -15,12 +15,8 @@ class Evaluator(Other):
 			  frequency = 1000,
 			  nEpisodes = 100,
 			  evaluation_counter = 0,
-			  stopping_patience = 4,
 			  stopping_reward = 9,
-			  stopping_best = 0,
-			  stopping_wait = 0,
-			  stopping_epsilon = 1e-4,
-			  save_best_model = True,
+			  best = 0,
 			  write_best_model_path = None,
 			  curriculum = True,
 			  goal_component=None,
@@ -70,19 +66,16 @@ class Evaluator(Other):
 		self.evaluation_counter += 1
 		self._this_counter += 1
 
-		# CHECK STOPPING CRITERIA
+		# CHECK STOPPING CRITERIA and best model
 		stop = False
 		mean_reward = total_reward / self.nEpisodes
 		print('Evaluated with average reward:', mean_reward)
-		if mean_reward - self.stopping_best >= self.stopping_epsilon:
-			# save best model
-			if self.save_best_model:
-				self._model.save(self.write_best_model_path)
-			self.stopping_wait = 0
-			self.stopping_best = mean_reward
-		else:
-			self.stopping_wait += 1
-		if self.stopping_best >= self.stopping_reward and self.stopping_wait >= self.stopping_patience:
+		# check for best model
+		if mean_reward > self.best:
+			self._model.save(self.write_best_model_path)
+			self.best = mean_reward
+		# check stopping criteria
+		if mean_reward > self.stopping_reward:
 			print('Stopping criteria met!')
 			stop = True
 		return stop
