@@ -955,9 +955,9 @@ utils.speak('configuration created!')
 t1 = time()
 # CONNECT COMPONENTS
 configuration.connect_all()
-if model == 'DQN:
+if model == 'DQN':
 	print(configuration.get_component('Model')._sb3model.q_net)
-if model == 'DDPG:
+if model == 'DDPG':
 	print(configuration.get_component('Model')._sb3model.critic)
 
 # WRITE CONFIGURATION
