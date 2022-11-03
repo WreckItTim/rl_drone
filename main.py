@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'delta2' # subcategory of test type
+test_name = 'gamma2' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -97,7 +97,7 @@ elif not read_config:
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality being used
-	observation = 'Vector' # Image Vector Multi
+	observation = 'Multi' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
