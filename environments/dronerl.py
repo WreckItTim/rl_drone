@@ -65,13 +65,19 @@ class DroneRL(Environment):
 		# take action
 		transcribed_action = self._actor.act(rl_output)
 		state['transcribed_action'] = transcribed_action
+		# set state kinematics variables
+		state['drone_position'] = self._drone.get_position()
+		state['yaw'] = self._drone.get_yaw() 
+		# altitude check
+		if state['drone_position'][2] < -6:
+			self._client.moveByVelocityAsync(0, 0, 1, 2).join()
+			# reset state kinematics variables
+			state['drone_position'] = self._drone.get_position()
+			state['yaw'] = self._drone.get_yaw() 
 		# get observation
 		state['observation_component'] = self._last_observation_name
 		observation_data, observation_name = self._observer.observe()
 		self._last_observation_name = observation_name
-		# set state kinematics variables
-		state['drone_position'] = self._drone.get_position()
-		state['yaw'] = self._drone.get_yaw() 
 		# take step for other components
 		if self._others is not None:
 			for other in self._others:
