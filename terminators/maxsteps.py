@@ -8,16 +8,12 @@ class MaxSteps(Terminator):
     @_init_wrapper
     def __init__(self, max_steps=100):
         super().__init__()
-        self._nSteps = 0
 
     # checks if within distance of point
     def terminate(self, state):
-        self._nSteps += 1
-        if self._nSteps >= self.max_steps:
+        nSteps = state['nSteps']
+        if nSteps >= self.max_steps:
             state['termination_reason'] = 'max_steps'
             state['termination_result'] = 'failure'
             return True
         return False
-
-    def reset(self):
-        self._nSteps = 0

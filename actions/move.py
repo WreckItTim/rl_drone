@@ -22,8 +22,8 @@ class Move(Action):
 	def act(self, rl_output):
 		# get speed magnitude from rl_output
 		magnitude = rl_output
-		if rl_output < self.zero_threshold:
-			magnitude = 0
+		if magnitude < self.zero_threshold:
+			return
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotationa bout z-axis
 		adjusted_x_speed = float(magnitude * self.base_x_speed * math.cos(yaw) + magnitude * self.base_y_speed * math.sin(yaw))

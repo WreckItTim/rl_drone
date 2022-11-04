@@ -6,9 +6,7 @@ from sensors.sensor import Sensor
 from transformers.transformer import Transformer
 from gym import spaces
 import numpy as np
-import pickle
 import utils
-import os
 
 class Single(Observer):
 	
@@ -24,25 +22,20 @@ class Single(Observer):
 		image_height = None, 
 		image_width = None,
 		image_bands = None,
-		directory_path = None,
 		nTimesteps = 1
 	):
 		super().__init__(
 		)
 		if is_image:
 			self._output_shape = (image_bands * nTimesteps, image_height, image_width)
-			self._history = np.full(self._output_shape, -1, dtype=np.int16)
+			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
 		else:
 			self._output_shape = (vector_length * nTimesteps,)
-			self._history = np.full(self._output_shape, -1, dtype=np.float64)
+			self._history = np.full(self._output_shape, 0, dtype=np.float64)
 		self._old_names = []
-		if directory_path is None:
-			self.directory_path = utils.get_global_parameter('working_directory') + '/observations/'
-		if not os.path.exists(self.directory_path):
-			os.mkdir(self.directory_path)
-		
+
 	# gets observations
-	def observe(self, write=False):
+	def observe(self):
 		# make observations and stack into global image/vector
 		next_array = []
 		new_names = []
@@ -50,10 +43,10 @@ class Single(Observer):
 			# get obeservation
 			if sensor.offline:
 				if self.is_image:
-					empty_array = np.full((self.image_bands, self.image_height, self.image_width), -1, dtype=np.int16)
+					empty_array = np.full((self.image_bands, self.image_height, self.image_width), 0, dtype=np.uint8)
 					empty_name = 'I0'
 				else:
-					empty_array = np.full((self.vector_length,), -1, dtype=np.float64)
+					empty_array = np.full((self.vector_length,), 0, dtype=np.float64)
 					empty_name = 'V0'
 				next_array.append(empty_array)
 				new_names.append(empty_name)
@@ -67,8 +60,6 @@ class Single(Observer):
 		array = np.concatenate(next_array, axis)
 		if self.nTimesteps == 1:
 			name = '_'.join(new_names)
-			if write: 
-				np.save(self.directory_path + name + '.npy', array)
 			return array, name
 		# rotate saved timesteps in history
 		if self.is_image:
@@ -93,9 +84,6 @@ class Single(Observer):
 		if len(self._old_names) > self.nTimesteps:
 			self._old_names.pop(-1)
 		name = '_'.join(sum(self._old_names, []))
-		if write: 
-			d_path = utils.get_global_parameter('working_directory') + '/observations/'
-			np.save(d_path + name + '.npy', self._history)
 		#print('wrote', name)
 		#x = input()
 		return self._history, name
@@ -105,13 +93,13 @@ class Single(Observer):
 		for sensor in self._sensors:
 			sensor.reset()
 		if self.is_image:
-			self._history = np.full(self._output_shape, -1, dtype=np.int16)
+			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
 		else:
-			self._history = np.full(self._output_shape, -1, dtype=np.float64)
+			self._history = np.full(self._output_shape, 0, dtype=np.float64)
 		self._old_names = []
 
 	# returns box space with proper dimensions
 	def get_space(self):
 		if self.is_image:
-			return spaces.Box(-1, 255, shape=self._output_shape, dtype=np.int16)
-		return spaces.Box(-1, 1, shape=self._output_shape, dtype=np.float64)
+			return spaces.Box(low=0, high=255, shape=self._output_shape, dtype=np.uint8)
+		return spaces.Box(0, 1, shape=self._output_shape, dtype=np.float64)

@@ -10,9 +10,8 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha3' # subcategory of test type
-run_name = 'mlserver2019' # run name to add to runs path directory
-working_directory = 'local/runs/' + test_name + '/' + run_name + '/'
+test_name = 'delta2' # subcategory of test type
+working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
 
@@ -20,9 +19,8 @@ utils.set_read_write_paths(working_directory = working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'kappa',
+	'repo_version': 'lambda',
 	'test_name': test_name,
-	'run_name': run_name,
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
 update_meta = False
@@ -71,32 +69,35 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
+	model = 'DDPG' # DQN A2C DDPG PPO SAC TD3 
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
 	image_sensors = [
 		'Camera', 
 		]
-	# image shape is hard coded
+	# image shape is set here
 	image_bands = 1
 	image_height = 84 
 	image_width = 84 
 	vector_sensors = [
-		#'Distance',
-		'DronePosition',
-		'DroneOrientation',
-		'GoalPosition',
-		'GoalOrientation',
-		'DroneToGoalPosition',
-		'DroneToGoalOrientation',
+		#'Distance', # [1]
+		#'DronePosition', # [3]
+		#'DroneOrientation', # [1]
+		#'GoalPosition', # [3]
+		#'GoalOrientation', # [1]
+		#'DroneToGoalPosition', # [3]
+		'DroneToGoalDistance', # [1]
+		'DroneToGoalOrientation', # [1]
+		'FlattenedCamera', # [x]
 		]
+	flattened_camera_length = 5
 	# vector shape is hard coded
-	vector_length = 13
+	vector_length = 7
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality being used
-	observation = 'Multi' # Image Vector Multi
+	observation = 'Vector' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
@@ -104,13 +105,19 @@ elif not read_config:
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
-	max_steps = 100
+	max_steps = 14
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
-	# max distance drone can get from goal	
-	max_distance = 120
 	# set action space type
-	action_type = 'discrete' # discrete continuous
+	action_type = 'continuous' # discrete continuous
+	# how many episodes in each evaluation set?
+	num_eval_episodes = 6
+	# how many training episode before we evaluate/update?
+	evaluate_frequency = 100
+	# bounds on map (where the drone can go)
+	x_bounds = [-100, 100]
+	y_bounds = [-100, 100]
+	z_bounds = [-100, 100]
 	
 
 	# **** CREATE COMPONENTS ****
@@ -120,16 +127,17 @@ elif not read_config:
 	RelativeGoal(
 		drone_component = 'Drone',
 		map_component = 'Map',
-		xyz_point = [100, 0, 0],
-		random_point_on_train = False,
+		xyz_point = [6, 0, 0],
+		random_point_on_train = True,
 		random_point_on_evaluate = False,
-		amp_up = .04,
-		random_dim_min = 4,
-		random_dim_max = 8,
-		x_bound = [-100, 100],
-		y_bound = [-100, 100],
-		z_bound = [-4, -4],
-		random_yaw_on_train = True,
+		min_amp_up = 0,
+		max_amp_up = 0,
+		random_dim_min = 6,
+		random_dim_max = 10,
+		x_bounds = x_bounds,
+		y_bounds = y_bounds,
+		z_bounds = [0, 0],
+		random_yaw_on_train = False,
 		random_yaw_on_evaluate = False,
 		random_yaw_min = -1 * math.pi,
 		random_yaw_max = math.pi,
@@ -145,7 +153,7 @@ elif not read_config:
 			settings = {
 				'LocalHostIp': '127.0.0.1',
 				'ApiServerPort': 41451,
-				'ClockSpeed': 4,
+				'ClockSpeed': 16,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -158,7 +166,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -203,26 +211,42 @@ elif not read_config:
 			name='Drone',
 		)
 
-	# TRANSFORMER
+	# TRANSFORMER, 0 reserved for bad data
+	from transformers.gaussiannoise import GaussianNoise
+	GaussianNoise(
+		mean = 0,
+		deviation = 0.5,
+		name = 'PositionNoise',
+	)
+	GaussianNoise(
+		mean = 0,
+		deviation = math.radians(5),
+		name = 'OrientationNoise',
+	)
+	from transformers.gaussianblur import GaussianBlur
+	GaussianBlur(
+		sigma = 4,
+		name = 'DepthNoise',
+	)
 	from transformers.normalize import Normalize
 	Normalize(
-		min_input = -200, # min distance
-		max_input = 200, # max distance
-		min_output = 0, # SB3 uses 0-1 floating point values
+		min_input = -100, # min distance
+		max_input = 100, # max distance
+		min_output = 0.1, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
 		name = 'NormalizePosition',
 	)
 	Normalize(
 		min_input = -1 * math.pi, # min angle
 		max_input = math.pi, # max angle
-		min_output = 0, # SB3 uses 0-1 floating point values
+		min_output = 0.1, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
 		name = 'NormalizeOrientation',
 	)
 	Normalize(
 		min_input = 0, # min depth
 		max_input = 100, # max depth
-		min_output = 0, # SB3 uses 0-255 pixel values
+		min_output = 1, # SB3 uses 0-255 pixel values
 		max_output = 255, # SB3 uses 0-255 pixel values
 		name = 'NormalizeDepth',
 	)
@@ -230,6 +254,12 @@ elif not read_config:
 	ResizeImage(
 		image_shape = (image_height, image_width),
 		name = 'ResizeImage',
+	)
+	from transformers.resizeflat import ResizeFlat
+	ResizeFlat(
+		length = flattened_camera_length,
+		max_row = 42,
+		name = 'ResizeFlat',
 	)
 
 	# SENSOR
@@ -243,6 +273,7 @@ elif not read_config:
 			is_gray = True,
 			transformers_components = [
 				'ResizeImage',
+				'DepthNoise',
 				'NormalizeDepth',
 				],
 			name = 'Camera',
@@ -251,6 +282,7 @@ elif not read_config:
 		from sensors.airsimdistance import AirSimDistance
 		AirSimDistance(
 			transformers_components = [
+				'PositionNoise',
 				'NormalizeDistance',
 				],
 			name = 'Distance',
@@ -262,6 +294,7 @@ elif not read_config:
 			is_gray = False,
 			transformers_components = [
 				'ResizeImage',
+				'DepthNoise',
 				'NormalizeDepth',
 				],
 			name = 'Camera',
@@ -272,6 +305,7 @@ elif not read_config:
 			misc_component = 'Drone',
 			prefix = 'drone',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				],
 			name = 'DronePosition',
@@ -282,6 +316,7 @@ elif not read_config:
 			misc_component = 'Drone',
 			prefix = 'drone',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'DroneOrientation',
@@ -292,6 +327,7 @@ elif not read_config:
 			misc_component = 'Goal',
 			prefix = 'goal',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				],
 			name = 'GoalPosition',
@@ -302,6 +338,7 @@ elif not read_config:
 			misc_component = 'Goal',
 			prefix = 'goal',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'GoalOrientation',
@@ -313,9 +350,22 @@ elif not read_config:
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
+				'PositionNoise',
 				'NormalizePosition',
 				], 
 			name = 'DroneToGoalPosition',
+		)
+	if 'DroneToGoalDistance' in vector_sensors:
+		from sensors.distance import Distance
+		Distance(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			prefix = 'drone_to_goal',
+			transformers_components = [
+				'PositionNoise',
+				'NormalizePosition',
+				], 
+			name = 'DroneToGoalDistance',
 		)
 	if 'DroneToGoalOrientation' in vector_sensors:
 		from sensors.orientation import Orientation
@@ -324,10 +374,26 @@ elif not read_config:
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'DroneToGoalOrientation',
 		)
+	if 'FlattenedCamera' in vector_sensors:
+		from sensors.airsimcamera import AirSimCamera
+		AirSimCamera(
+			camera_view = '0',
+			image_type = 2,
+			as_float = True,
+			compress = False,
+			is_gray = True,
+			transformers_components = [
+				'ResizeFlat',
+				'PositionNoise',
+				'NormalizePosition',
+				],
+			name = 'FlattenedCamera',
+			)
 	
 	# OBSERVER
 	if observer == 'Single':
@@ -462,8 +528,7 @@ elif not read_config:
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = goal_tolerance, 
-		max_distance = max_distance, 
+		tolerance = goal_tolerance, 
 		include_z = include_z,
 		to_start=True,
 		name = 'GoalReward',
@@ -473,7 +538,14 @@ elif not read_config:
 		max_steps = max_steps,
 		name = 'StepsReward',
 	)
-
+	from rewards.bounds import Bounds
+	Bounds(
+		drone_component = 'Drone',
+		x_bounds = x_bounds,
+		y_bounds = y_bounds,
+		z_bounds = z_bounds,
+		name = 'BoundsReward',
+	)
 	# REWARDER
 	from rewarders.schema import Schema
 	Schema(
@@ -481,12 +553,14 @@ elif not read_config:
 			'AvoidReward',
 			'GoalReward',
 			'StepsReward',
-			],
+			'BoundsReward',
+		],
 		reward_weights = [
 			1,
 			1,
 			1,
-			],
+			1,
+		],
 		name = 'Rewarder',
 	)
 
@@ -494,14 +568,13 @@ elif not read_config:
 	from terminators.collision import Collision
 	Collision(
 		drone_component = 'Drone',
-		name = 'Collision',
+		name = 'CollisionTerminator',
 	)
 	from terminators.goal import Goal
 	Goal(
 		drone_component = 'Drone',
 		goal_component = 'Goal',
-		min_distance = goal_tolerance, 
-		max_distance = max_distance, 
+		tolerance = goal_tolerance, 
 		include_z = include_z,
 		name = 'GoalTerminator',
 	)
@@ -509,22 +582,31 @@ elif not read_config:
 	RewardThresh(
 		rewarder_component='Rewarder',
 		min_reward = 0,
-		name = 'RewardThresh',
+		name = 'RewardTerminator',
 	)
 	from terminators.maxsteps import MaxSteps
 	MaxSteps(
 		max_steps = max_steps,
-		name = 'MaxSteps',
+		name = 'StepsTerminator',
+	)
+	from terminators.bounds import Bounds
+	Bounds(
+		drone_component = 'Drone',
+		x_bounds = x_bounds,
+		y_bounds = y_bounds,
+		z_bounds = z_bounds,
+		name = 'BoundsTerminator',
 	)
 
 	# MODEL
-	every_nEpisodes = 100
+	print('observation', observation)
 	if observation == 'Image': 
 		policy = 'CnnPolicy'
-	if observation == 'Vector': 
+	elif observation == 'Vector': 
 		policy = 'MlpPolicy'
-	if observation == 'Multi': 
+	elif observation == 'Multi': 
 		policy = 'MultiInputPolicy'
+	print('policy', policy)
 	policy_kwargs = None
 	if model == 'DQN':
 		from models.dqn import DQN
@@ -532,21 +614,21 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
+			buffer_size = evaluate_frequency * 1000,
+			learning_starts = evaluate_frequency,
 			batch_size = 32,
-			tau = 1e-2,
-			gamma = 0.9999,
+			tau = 1.0,
+			gamma = 0.99,
 			train_freq = 4,
 			gradient_steps = 1,
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = every_nEpisodes,
-			exploration_fraction = 0.4,
+			target_update_interval = evaluate_frequency * 10,
+			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
-			exploration_final_eps = 0.05,
-			max_grad_norm = 10,
+			exploration_final_eps = 0.1,
+			max_grad_norm = 1,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = policy_kwargs,
@@ -558,6 +640,36 @@ elif not read_config:
 			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
+		
+	elif model == 'DDPG':
+		from models.ddpg import DDPG
+		DDPG(
+			environment_component = 'TrainEnvironment',
+			policy = policy,
+			learning_rate = 1e-3,
+			buffer_size = evaluate_frequency * 1000,
+			learning_starts = evaluate_frequency,
+			batch_size = 100,
+			tau = 0.005,
+			gamma = 0.99,
+			train_freq = (1, "episode"),
+			gradient_steps = -1,
+			action_noise = None,
+			replay_buffer_class = None,
+			replay_buffer_kwargs = None,
+			optimize_memory_usage = False,
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+			create_eval_env = False,
+			policy_kwargs = None,
+			verbose = 0,
+			seed = None,
+			device = "auto",
+			init_setup_model = True,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
+			name='Model',
+		)
+	'''
 	elif model == 'A2C':
 		from models.a2c import A2C
 		A2C(
@@ -575,34 +687,6 @@ elif not read_config:
 			use_sde = False,
 			sde_sample_freq = -1,
 			normalize_advantage = False,
-			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-			create_eval_env = False,
-			policy_kwargs = None,
-			verbose = 0,
-			seed = None,
-			device = "auto",
-			init_setup_model = True,
-			model_path = read_model_path if read_model else None,
-			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-			name='Model',
-		)
-	elif model == 'DDPG':
-		from models.ddpg import DDPG
-		DDPG(
-			environment_component = 'TrainEnvironment',
-			policy = policy,
-			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
-			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
-			action_noise = None,
-			replay_buffer_class = None,
-			replay_buffer_kwargs = None,
-			optimize_memory_usage = False,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
 			policy_kwargs = None,
@@ -710,6 +794,7 @@ elif not read_config:
 			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
+	'''
 	
 
 	# SPAWNER
@@ -742,11 +827,6 @@ elif not read_config:
 				),
 			Spawn(
 				z=start_z,
-				yaw=math.radians(-45),
-				random=False,
-				),
-			Spawn(
-				z=start_z,
 				yaw=math.radians(45),
 				random=False,
 				),
@@ -765,21 +845,30 @@ elif not read_config:
 				yaw=math.radians(-130),
 				random=False,
 				),
-			],
+			Spawn(
+				z=start_z,
+				yaw=math.radians(-45),
+				random=False,
+				),
+		],
 		name='EvaluateSpawner',
 	)
-
+	
 	# EVALUATOR
 	from others.evaluator import Evaluator
 	Evaluator(
 		train_environment_component = 'TrainEnvironment',
 		evaluate_environment_component = 'EvaluateEnvironment',
 		model_component = 'Model',
-		frequency = 100,
-		nEpisodes = 6,
-		stopping_patience = 0,
+		frequency = evaluate_frequency,
+		nEpisodes = num_eval_episodes,
 		stopping_reward = 10,
-		stopping_epsilon = 1e-1,
+		curriculum = True,
+		goal_component = 'Goal',
+		steps_components = [
+			'StepsReward',
+			'StepsTerminator',
+		],
 
 		name = 'Evaluator',
 	)
@@ -787,14 +876,37 @@ elif not read_config:
 	# SAVER
 	from others.saver import Saver
 	Saver(
-		model_component='Model', 
-		environment_component='TrainEnvironment',
-		frequency=100, 
-		save_model=True,
-		save_replay_buffer=True,
+		environment_component = 'TrainEnvironment',
+		save_components = [
+			'TrainEnvironment',
+		],
+		save_variables = {
+			'TrainEnvironment':[
+				'states',
+				'observations',
+			],
+		},
+		frequency=evaluate_frequency, 
 		save_configuration_file=True,
 		save_benchmarks=False,
-		name='Saver',
+		name='TrainSaver',
+	)
+	from others.saver import Saver
+	Saver(
+		environment_component = 'EvaluateEnvironment',
+		save_components = [
+			'EvaluateEnvironment',
+		],
+		save_variables = {
+			'EvaluateEnvironment':[
+				'states',
+				'observations',
+			],
+		},
+		frequency=num_eval_episodes, 
+		save_configuration_file=False,
+		save_benchmarks=False,
+		name='EvaluateSaver',
 	)
 
 	# ENVIRONMENT
@@ -805,16 +917,15 @@ elif not read_config:
 		observer_component='Observer', 
 		rewarder_component='Rewarder', 
 		terminators_components=[
-			'Collision',
+			'CollisionTerminator',
 			'GoalTerminator',
-			'MaxSteps',
+			'StepsTerminator',
+			'BoundsTerminator',
 			],
-		saver_component='Saver',
-		evaluator_component='Evaluator',
 		spawner_component='TrainSpawner',
 		goal_component='Goal',
-		write_observations=False,
-		write_states=True,
+		evaluator_component='Evaluator',
+		saver_component='TrainSaver',
 		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
@@ -824,14 +935,15 @@ elif not read_config:
 		observer_component='Observer', 
 		rewarder_component='Rewarder', 
 		terminators_components=[
-			'Collision',
+			'CollisionTerminator',
 			'GoalTerminator',
-			'MaxSteps',
+			'StepsTerminator',
+			'BoundsTerminator',
 			],
 		spawner_component='EvaluateSpawner',
 		goal_component='Goal',
-		write_observations=True,
-		write_states=False,
+		evaluator_component=None,
+		saver_component='EvaluateSaver',
 		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)
@@ -841,7 +953,10 @@ utils.speak('configuration created!')
 t1 = time()
 # CONNECT COMPONENTS
 configuration.connect_all()
-print(configuration.get_component('Model')._sb3model.q_net)
+if model == 'DQN':
+	print(configuration.get_component('Model')._sb3model.q_net)
+if model == 'DDPG':
+	print(configuration.get_component('Model')._sb3model.critic)
 
 # WRITE CONFIGURATION
 configuration.save()

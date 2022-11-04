@@ -41,7 +41,9 @@ class AirSimDrone(Drone):
 
 	def take_off(self):
 		# take-off has some issues in airsim (sometimes the move after takeoff will fall to ground)
-		self._client.takeoffAsync().join()
+		# also prints outs lookahead values to console some times 
+		# just seems more stable to send command to fly up rather than using takeoff
+		#self._client.takeoffAsync().join()
 		self._client.moveByVelocityAsync(0, 0, -1, 2).join()
 
 	# returns state from client

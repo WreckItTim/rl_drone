@@ -16,7 +16,7 @@ class Observer(Component):
 		super().connect()
 
 	# returns observation transcribed for input into RL model
-	def observe(self, write=False):
+	def observe(self):
 		raise NotImplementedError
 
 	def reset(self):

@@ -92,6 +92,8 @@ def _init_wrapper(init_method):
 		del kwargs['connect_priority']
 		disconnect_priority = kwargs['disconnect_priority']
 		del kwargs['disconnect_priority']
+		part = kwargs['part']
+		del kwargs['part']
 
 		# GET CONFIGURATION OBJECT
 		if configuration is None:
@@ -149,6 +151,8 @@ def _init_wrapper(init_method):
 				setattr(self, key, all_args[key])
 
 		# CALL BASE INIT
+		self._dumps = [] # list of variables to keep temporal track of for later memory dumps
+		self._part = part
 		self._add_timers = True # change in base init method to false to not add
 		self._set_name = True # change in base init method to false to not add
 		self._add_to_configuration = True # change in base init method to false to not add
@@ -190,6 +194,7 @@ def _init_wrapper(init_method):
 					  name = None, 
 					  connect_priority = None, 
 					  disconnect_priority = None,
+					  part = 0,
 					  )
 
 # the component class itself
@@ -253,6 +258,11 @@ class Component():
 	def stop(self):
 		self.disconnect()
 
+	# dumps memory to file (not all components use this)
+	# primary example is for observations 
+		# (this will dump most recent observations file)
+	def dump(self, write_folder, params={}):
+		pass
 
 	# HELPER METHODS
 

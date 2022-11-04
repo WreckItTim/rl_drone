@@ -2,7 +2,7 @@
 from component import Component
 
 class Sensor(Component):
-	# constructor, offline is a boolean that handles if sensor goes off line
+	# constructor, offline is a boolean that handles if sensor goes offline
 	def __init__(self,
 			  offline,
 			  ):
@@ -15,7 +15,9 @@ class Sensor(Component):
 	def transform(self, observation):
 		if self._transformers is not None:
 			for transformer in self._transformers:
-				transformer.transform(observation)
+				observation_conversion = transformer.transform(observation)
+				if observation_conversion is not None:
+					observation = observation_conversion
 		return observation
 
 	# when using the debug controller

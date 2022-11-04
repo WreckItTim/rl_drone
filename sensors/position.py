@@ -33,15 +33,12 @@ class Position(Sensor):
 			position1 = np.array(self._misc.get_position())
 			position2 = np.array(self._misc2.get_position())
 			distance_vector = position2 - position1
-			distance = np.linalg.norm(distance_vector)
 			data.append(distance_vector[0])
 			names.append(self.prefix+'_x')
 			data.append(distance_vector[1])
 			names.append(self.prefix+'_y')
 			data.append(distance_vector[2])
 			names.append(self.prefix+'_z')
-			data.append(distance)
-			names.append(self.prefix+'_distance')
 
 		observation = Vector(
 			_data = data,

@@ -1,33 +1,48 @@
 from others.other import Other
 from component import _init_wrapper
 import utils
+import os
 
 # objective is set x-meters in front of drone and told to go forward to it
 class Saver(Other):
 	@_init_wrapper
-	def __init__(self, 
-			  model_component=None, 
-			  environment_component=None,
-			  frequency=10, 
-			  save_model=True,
-			  save_replay_buffer=True,
-			  save_configuration_file=True,
-			  save_benchmarks=True,
-			  write_folder=None
-			  ):
+	def __init__(self,
+			environment_component,
+			save_components=None,
+			save_variables = {},
+			frequency=10,
+			save_model=True,
+			save_replay_buffer=True,
+			save_configuration_file=True,
+			save_benchmarks=True,
+			write_folder=None
+	):
+		self.connect_priority = -999 # connects after everything else
 		if write_folder is None:
 			self.write_folder = utils.get_global_parameter('working_directory')
+		if not os.path.exists(self.write_folder):
+			os.makedirs(self.write_folder)
+
+	def connect(self):
+		super().connect()
+		self._paths = []
+		for component in self._save:
+			component_name = component._name
+			sub_folder = self.write_folder + component_name + '/'
+			if not os.path.exists(sub_folder):
+				os.makedirs(sub_folder)
+			self._paths.append(sub_folder)
+			for variable in self.save_variables[component_name]:
+				component._dumps.append(variable)
+
 
 	def save(self):
-		if self.save_model:
-			self._model.save(self.write_folder + 'model')
-		if self.save_replay_buffer:
-			self._model.save_replay_buffer(self.write_folder + 'replay_buffer')
+		for idx, component in enumerate(self._save):
+			component.dump(self._paths[idx])
 		if self.save_configuration_file:
 			self._configuration.save(self.write_folder + 'configuration.json')
 		if self.save_benchmarks:
 			self._configuration.log_benchmarks(self.write_folder + 'benchmarks.json')
-		print('saved intermediates')
 
 	def reset(self):
 		if self._environment.episode_counter % self.frequency == 0:
