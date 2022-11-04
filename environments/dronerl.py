@@ -141,5 +141,4 @@ class DroneRL(Environment):
 			self._states = {}
 			self._states['step_' + str(self._nSteps)] = state.copy()
 
-		print('start')
 		return observation_data
