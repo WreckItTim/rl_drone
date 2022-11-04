@@ -110,7 +110,6 @@ class Voxels(DataStruct):
 		for i in range(y_len):
 			for j in range(x_len):
 				for k in range(z_len):
-					# dont include floor
 					if map_3d[i, j, k] and k > _floor_z:
 						# pad nearby cells
 						for h in range(-1, 2, 1):
@@ -118,6 +117,7 @@ class Voxels(DataStruct):
 								if j+h > 0 and j+h < x_len:
 									if i+v > 0 and i+v < y_len:
 										self._map_2d[j+h, i+v] = True
+						#self._map_2d[j, i] = True
 						break
 		return self._map_2d
 

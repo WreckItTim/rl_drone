@@ -18,8 +18,7 @@ class Rotate(Action):
 
 	def act(self, rl_output):
 		# get speed magnitude from rl_output
-		magnitude = abs(rl_output)
-		if magnitude < self.zero_threshold:
+		if abs(rl_output) < self.zero_threshold:
 			return
 		self._drone.rotate(rl_output*self.base_yaw_rate, self.duration)
 		

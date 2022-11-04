@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'delta2' # subcategory of test type
+test_name = 'beta2' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DDPG' # DQN A2C DDPG PPO SAC TD3 
+	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -109,9 +109,9 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'continuous' # discrete continuous
+	action_type = 'discrete' # discrete continuous
 	# how many episodes in each evaluation set?
-	num_eval_episodes = 6
+	num_eval_episodes = 1
 	# how many training episode before we evaluate/update?
 	evaluate_frequency = 100
 	# bounds on map (where the drone can go)
@@ -136,7 +136,7 @@ elif not read_config:
 		random_dim_max = 10,
 		x_bounds = x_bounds,
 		y_bounds = y_bounds,
-		z_bounds = [0, 0],
+		z_bounds = [-4, -4],
 		random_yaw_on_train = False,
 		random_yaw_on_evaluate = False,
 		random_yaw_min = -1 * math.pi,
@@ -153,7 +153,7 @@ elif not read_config:
 			settings = {
 				'LocalHostIp': '127.0.0.1',
 				'ApiServerPort': 41451,
-				'ClockSpeed': 16,
+				'ClockSpeed': 2,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -853,7 +853,7 @@ elif not read_config:
 		],
 		name='EvaluateSpawner',
 	)
-	
+
 	# EVALUATOR
 	from others.evaluator import Evaluator
 	Evaluator(

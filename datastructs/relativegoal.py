@@ -23,7 +23,7 @@ class RelativeGoal(DataStruct):
 				 random_dim_max = 8, # magnitude of dim max
 				 x_bounds = [-100, 100],
 				 y_bounds = [-100, 100],
-				 z_bounds = [0, 0],
+				 z_bounds = [-100, 100],
 				 random_yaw_on_train = False,
 				 random_yaw_on_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
@@ -46,6 +46,10 @@ class RelativeGoal(DataStruct):
 		x = drone_position[0] + alpha * relative_position[0] * math.cos(yaw) + alpha * relative_position[1] * math.sin(yaw)
 		y = drone_position[1] + alpha * relative_position[1] * math.cos(yaw) + alpha * relative_position[0] * math.sin(yaw)
 		z = drone_position[2] + relative_position[2]
+		# for in bounds
+		x = min(self.x_bounds[1], max(self.x_bounds[0], x))
+		y = min(self.y_bounds[1], max(self.y_bounds[0], y))
+		z = min(self.z_bounds[1], max(self.z_bounds[0], z))
 		in_object = self._map.at_object_2d(x, y)
 		return x, y, z, in_object
 
@@ -61,14 +65,11 @@ class RelativeGoal(DataStruct):
 			random_point = True
 		if random_point:
 			neg_pos = random.choice([-1, 1])
-			x = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[0] = min(self.x_bounds[1], max(self.x_bounds[0], x))
+			relative_position[0] = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
 			neg_pos = random.choice([-1, 1])
-			y = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[1] = min(self.y_bounds[1], max(self.y_bounds[0], y))
+			relative_position[1] = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
 			neg_pos = random.choice([-1, 1])
-			z = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-			relative_position[2] = min(self.z_bounds[1], max(self.z_bounds[0], z))
+			relative_position[2] = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
 		# amp up max if training reset
 		if not is_evaluation:
 			self.random_dim_min += self.min_amp_up

@@ -31,8 +31,7 @@ class Evaluator(Other):
 
 	# if reset learning loop
 	def reset_stopping(self):
-		self.stopping_best = 0
-		self.stopping_wait = 0
+		self.best = 0
 		self.evaluation_counter = 0
 
 	# steps through one evaluation episode
