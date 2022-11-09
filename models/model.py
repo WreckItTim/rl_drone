@@ -16,7 +16,7 @@ class Model(Component):
 	def connect(self):
 		super().connect()
 		if self._is_hyper:
-			pass
+			return
 		self._model_arguments['env'] = self._environment
 		# create model object if needs be
 		_model_path = self.model_path

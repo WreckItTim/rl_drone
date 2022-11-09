@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'epsilon1' # subcategory of test type
+test_name = 'omega1' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -166,7 +166,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -619,8 +619,8 @@ elif not read_config:
 			},
 			model_type = 'TD3',
 			default_params={
-				policy: policy,
-				policy_kwargs: policy_kwargs,
+				'policy': policy,
+				'policy_kwargs': policy_kwargs,
 				'verbose': 0,
 			},
 			resets_components = [

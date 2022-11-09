@@ -6,7 +6,7 @@ from hyperopt import fmin, tpe, hp
 from stable_baselines3 import TD3 as sb3TD3
 import utils
 
-class Hper(Model):
+class Hyper(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
@@ -37,10 +37,11 @@ class Hper(Model):
 			component.reset_learning()
 		self._best_goal = 0
 		self._iter_count += 1
-		model_arguments = self.default_prams.copy()
+		print('HYPER iter' + str(self._iter_count))
+		model_arguments = self.default_params.copy()
 		model_arguments.update(params)
 		model_arguments['learning_rate'] = 10**int(-1*params['learning_rate'])
-		model_arguments['gamma'] = 9*10**int(-1*params['gamma'])
+		model_arguments['gamma'] = float('.' + ''.join(['9' for _ in range(int(params['gamma']))]))
 		utils.write_json(model_arguments, utils.get_global_parameter('working_directory') + 'model_arguments_' + str(self._iter_count) + '.json')
 		model_arguments['env'] = self._environment
 
@@ -63,7 +64,9 @@ class Hper(Model):
 			reset_num_timesteps = self._reset_num_timesteps,
 		)
 
-		return -1 * self._best_goal
+		return_val = -1.0 * self._best_goal
+		print('RETURN ' + str(return_val) + '   ' + type(return_val))
+		return return_val
 
 
 	# hyperopt
@@ -81,15 +84,15 @@ class Hper(Model):
 		utils.speak('LEARN')
 		
 		# set params
-		self._total_timesteps = total_timesteps,
-		self._callback = callback,
-		self._log_interval = log_interval,
-		self._tb_log_name = tb_log_name,
-		self._eval_env = eval_env,
-		self._eval_freq = eval_freq,
-		self._n_eval_episodes = n_eval_episodes,
-		self._eval_log_path = eval_log_path,
-		self._reset_num_timesteps = reset_num_timesteps,
+		self._total_timesteps = total_timesteps
+		self._callback = callback
+		self._log_interval = log_interval
+		self._tb_log_name = tb_log_name
+		self._eval_env = eval_env
+		self._eval_freq = eval_freq
+		self._n_eval_episodes = n_eval_episodes
+		self._eval_log_path = eval_log_path
+		self._reset_num_timesteps = reset_num_timesteps
 	
 		# run Hyperopt - minimizing the objective function, with the given grid space, using TPE method, and 16 max iterations
 		best = fmin(self.objective, self._space, algo=tpe.suggest, max_evals=self.max_evals)
