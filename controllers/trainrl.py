@@ -38,7 +38,7 @@ class TrainRL(Controller):
 			self._environment.episode_counter = 0
 			self._environment.step_counter = 0
 			if self._evaluator is not None:
-				self._evaluator.reset_stopping()
+				self._evaluator.reset_learning()
 		# learn baby learn
 		self._model.learn(
 			total_timesteps = _total_timesteps,

@@ -8,12 +8,15 @@ class Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
 	# NOTE: env=None as training and evaluation enivornments are handeled by controller
 	def __init__(self, model_path=None, replay_buffer_path=None, _model_arguments=None):
+		self._is_hyper = False
 		self._model_arguments = _model_arguments
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
 
 	def connect(self):
 		super().connect()
+		if self._is_hyper:
+			pass
 		self._model_arguments['env'] = self._environment
 		# create model object if needs be
 		_model_path = self.model_path
@@ -29,6 +32,8 @@ class Model(Component):
 			print('loaded replay buffer from file')
 		# set up model path to write to
 		self.model_path = utils.get_global_parameter('working_directory') + 'model.zip'
+		# set up model path to write to
+		self.best_model_path = utils.get_global_parameter('working_directory') + 'best_model.zip'
 		# set up replay buffer path to write to
 		self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
 
@@ -58,11 +63,11 @@ class Model(Component):
 		)
 		utils.speak('DONE LEARN')
 
-	def dump(self, write_folder, params={}):
-		if 'model' not in params or params['model']:
-			self.save(write_folder + 'model')
-		if 'replay_buffer' not in params or params['replay_buffer']:
-			self.save_replay_buffer(write_folder + 'replay_buffer')
+	def dump(self, write_folder):
+		if 'model' in self._dumps:
+			self.save(self.model_path)
+		if 'replay_buffer' in self._dumps:
+			self.save_replay_buffer(self.replay_buffer_path)
 
 	def predict(self, rl_output):
 		rl_output, next_state = self._sb3model.predict(rl_output, deterministic=True)
@@ -71,6 +76,9 @@ class Model(Component):
 	# save sb3 model to path (sb3 auto appends file type at end)
 	def save(self, path):
 		self._sb3model.save(path)
+
+	def save_best(self):
+		self._sb3model.save(self.best_model_path)
 		
 	# save sb3 replay buffer to path (sb3 auto appends file type at end)
 	def save_replay_buffer(self, path):

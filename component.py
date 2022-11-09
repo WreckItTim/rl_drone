@@ -264,6 +264,10 @@ class Component():
 	def dump(self, write_folder, params={}):
 		pass
 
+	# use to reset learning loop attributes
+	def reset_learning(self):
+		pass
+
 	# HELPER METHODS
 
 	# throws error if not correct child type

@@ -3,14 +3,14 @@ from configuration import Configuration
 import math
 import numpy as np
 from time import time
-
+from hyperopt import hp
 
 # GET OS
 utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta' # subcategory of test type
+test_name = 'epsilon1' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 10_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 
+	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -109,7 +109,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'discrete' # discrete continuous
+	action_type = 'continuous' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -166,7 +166,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				#'-RenderOffscreen',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -608,7 +608,32 @@ elif not read_config:
 		policy = 'MultiInputPolicy'
 	print('policy', policy)
 	policy_kwargs = None
-	if model == 'DQN':
+	if model == 'Hyper':
+		from models.hyper import Hyper
+		Hyper(
+			environment_component = 'TrainEnvironment',
+			_space = {
+				'learning_rate':hp.quniform('learning_rate', 1, 6, 1),
+				'tau':hp.uniform('tau', 0, 1.0),
+				'gamma':hp.quniform('gamma', 1, 6, 1),
+			},
+			model_type = 'TD3',
+			default_params={
+				policy: policy,
+				policy_kwargs: policy_kwargs,
+				'verbose': 0,
+			},
+			resets_components = [
+				'TrainEnvironment',
+				'EvaluateEnvironment',
+				'Evaluator',
+				'StepsReward',
+				'StepsTerminator',
+			],
+			max_evals = 16,
+			name='Model',
+		)
+	elif model == 'DQN':
 		from models.dqn import DQN
 		DQN(
 			environment_component = 'TrainEnvironment',
@@ -640,7 +665,34 @@ elif not read_config:
 			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
-		
+	elif model == 'TD3':
+		from models.td3 import TD3
+		TD3(
+			environment_component = 'TrainEnvironment',
+			policy = policy,
+			learning_rate = 1e-3,
+			buffer_size = evaluate_frequency * 1000,
+			learning_starts = evaluate_frequency,
+			batch_size = 100,
+			tau = 0.005,
+			gamma = 0.99,
+			train_freq = (1, "episode"),
+			gradient_steps = -1,
+			action_noise = None,
+			replay_buffer_class = None,
+			replay_buffer_kwargs = None,
+			optimize_memory_usage = False,
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+			create_eval_env = False,
+			policy_kwargs = None,
+			verbose = 0,
+			seed = None,
+			device = "auto",
+			init_setup_model = True,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
+			name='Model',
+		)
 	elif model == 'DDPG':
 		from models.ddpg import DDPG
 		DDPG(
@@ -763,37 +815,6 @@ elif not read_config:
 			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 			name='Model',
 		)
-	elif model == 'TD3':
-		from models.td3 import TD3
-		TD3(
-			environment_component = 'TrainEnvironment',
-			policy = policy,
-			learning_rate = 1e-3,
-			buffer_size = every_nEpisodes * 10,
-			learning_starts = every_nEpisodes,
-			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
-			action_noise = None,
-			replay_buffer_class = None,
-			replay_buffer_kwargs = None,
-			optimize_memory_usage = False,
-			policy_delay = 2,
-			target_policy_noise = 0.2,
-			target_noise_clip = 0.5,
-			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-			create_eval_env = False,
-			policy_kwargs = None,
-			verbose = 0,
-			seed = None,
-			device = "auto",
-			init_setup_model = True,
-			model_path = read_model_path if read_model else None,
-			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-			name='Model',
-		)
 	'''
 	
 
@@ -879,11 +900,16 @@ elif not read_config:
 		environment_component = 'TrainEnvironment',
 		save_components = [
 			'TrainEnvironment',
+			'Model',
 		],
 		save_variables = {
 			'TrainEnvironment':[
 				'states',
 				'observations',
+			],
+			'Model':[
+				'model',
+				'replay_buffer',
 			],
 		},
 		frequency=evaluate_frequency, 
@@ -955,7 +981,7 @@ t1 = time()
 configuration.connect_all()
 if model == 'DQN':
 	print(configuration.get_component('Model')._sb3model.q_net)
-if model == 'DDPG':
+if model == 'DDPG' or model == 'TD3':
 	print(configuration.get_component('Model')._sb3model.critic)
 
 # WRITE CONFIGURATION

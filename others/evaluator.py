@@ -17,20 +17,16 @@ class Evaluator(Other):
 			  evaluation_counter = 0,
 			  stopping_reward = 9,
 			  best = 0,
-			  write_best_model_path = None,
 			  curriculum = True,
 			  goal_component=None,
 			  steps_components=None,
 
 			  ): 
-		# set where to save model
-		if write_best_model_path is None:
-			self.write_best_model_path = utils.get_global_parameter('working_directory') + 'best_model'
 		# keep track of num evaluations regardless of continuing training or not
 		self._this_counter = 0
 
 	# if reset learning loop
-	def reset_stopping(self):
+	def reset_learning(self):
 		self.best = 0
 		self.evaluation_counter = 0
 
@@ -71,7 +67,7 @@ class Evaluator(Other):
 		print('Evaluated with average reward:', mean_reward)
 		# check for best model
 		if mean_reward > self.best:
-			self._model.save(self.write_best_model_path)
+			self._model.save_best()
 			self.best = mean_reward
 		# check stopping criteria
 		if mean_reward > self.stopping_reward:
@@ -91,6 +87,7 @@ class Evaluator(Other):
 				stop = self.evaluate_set()
 				if stop:
 					if self.curriculum and self._goal.random_dim_max <= 100:
+						self._model._best_goal = self._goal.random_dim_min
 						self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
 						self._goal.random_dim_min += 4
 						self._goal.random_dim_max += 4

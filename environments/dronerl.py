@@ -34,6 +34,11 @@ class DroneRL(Environment):
 
 	def connect(self):
 		super().connect()
+
+	# if reset learning loop
+	def reset_learning(self):
+		self.step_counter = 0
+		self.episode_counter = 0
 	
 	def clean_rl_output(self, rl_output):
 		if np.issubdtype(rl_output.dtype, np.integer):
