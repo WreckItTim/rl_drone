@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -82,18 +82,18 @@ elif not read_config:
 	image_width = 84 
 	vector_sensors = [
 		#'Distance', # [1]
-		#'DronePosition', # [3]
-		#'DroneOrientation', # [1]
-		#'GoalPosition', # [3]
-		#'GoalOrientation', # [1]
+		'DronePosition', # [3]
+		'DroneOrientation', # [1]
+		'GoalPosition', # [3]
+		'GoalOrientation', # [1]
 		#'DroneToGoalPosition', # [3]
-		'DroneToGoalDistance', # [1]
-		'DroneToGoalOrientation', # [1]
+		#'DroneToGoalDistance', # [1]
+		#'DroneToGoalOrientation', # [1]
 		'FlattenedCamera', # [x]
 		]
 	flattened_camera_length = 5
 	# vector shape is hard coded
-	vector_length = 7
+	vector_length = flattened_camera_length + 8
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality Multi used
@@ -622,6 +622,7 @@ elif not read_config:
 				'policy': policy,
 				'policy_kwargs': policy_kwargs,
 				'verbose': 0,
+				'buffer_size': evaluate_frequency * 1000,
 			},
 			resets_components = [
 				'TrainEnvironment',
@@ -978,11 +979,15 @@ utils.speak('configuration created!')
 
 t1 = time()
 # CONNECT COMPONENTS
+print('connecting with model', model)
 configuration.connect_all()
+print('connected with model', model)
 if model == 'DQN':
 	print(configuration.get_component('Model')._sb3model.q_net)
 if model == 'DDPG' or model == 'TD3':
 	print(configuration.get_component('Model')._sb3model.critic)
+print('all components connected. Send any key to continue...')
+x = input()
 
 # WRITE CONFIGURATION
 configuration.save()
