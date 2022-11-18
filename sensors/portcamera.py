@@ -14,9 +14,17 @@ class PortCamera(Sensor):
 			  is_gray=False,
 			  transformers_components=None,
 			  offline = False,
+			  raw_code=None,
 			  ):
-		super().__init__(offline)
+		super().__init__(offline, raw_code)
 		self._camera = None
+		
+	def create_obj(self, data):
+		observation = Image(
+			_data = data, 
+			is_gray=self.is_gray,
+		)
+		return observation
 
 	def connect(self):
 		super().connect()
@@ -27,12 +35,9 @@ class PortCamera(Sensor):
 			self._camera.release()
 
 	# takes a picture with camera
-	def sense(self):
+	def sense2(self):
 		ret = False
 		while not ret:
 			ret, img_array = self._camera.read()
-		observation = Image(
-			_data=img_array, 
-			is_gray=self.is_gray,
-		)
-		return self.transform(observation)
+		observation = self.create_obj(img_array)
+		return observation

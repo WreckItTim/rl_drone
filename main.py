@@ -201,6 +201,7 @@ elif not read_config:
 	if drone == 'AirSim':
 		from drones.airsimdrone import AirSimDrone
 		AirSimDrone(
+			airsim_component = 'Map',
 			name='Drone',
 		)
 	elif drone == 'Tello':
@@ -266,6 +267,8 @@ elif not read_config:
 	if drone == 'AirSim' and 'Camera' in image_sensors:
 		from sensors.airsimcamera import AirSimCamera
 		AirSimCamera(
+			airsim_component = 'Map',
+			raw_code = 'AirSimDepthCamera',
 			camera_view = '0',
 			image_type = 2,
 			as_float = True,
@@ -281,6 +284,7 @@ elif not read_config:
 	if drone == 'AirSim' and 'Distance' in vector_sensors:
 		from sensors.airsimdistance import AirSimDistance
 		AirSimDistance(
+			airsim_component = 'Map',
 			transformers_components = [
 				'PositionNoise',
 				'NormalizeDistance',
@@ -382,6 +386,8 @@ elif not read_config:
 	if 'FlattenedCamera' in vector_sensors:
 		from sensors.airsimcamera import AirSimCamera
 		AirSimCamera(
+			airsim_component = 'Map',
+			raw_code = 'AirSimDepthCamera',
 			camera_view = '0',
 			image_type = 2,
 			as_float = True,

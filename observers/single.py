@@ -35,7 +35,7 @@ class Single(Observer):
 		self._old_names = []
 
 	# gets observations
-	def observe(self):
+	def observe(self, cleanup=True):
 		# make observations and stack into global image/vector
 		next_array = []
 		new_names = []
@@ -60,6 +60,8 @@ class Single(Observer):
 		array = np.concatenate(next_array, axis)
 		if self.nTimesteps == 1:
 			name = '_'.join(new_names)
+			if cleanup:
+				super().cleanup()
 			return array, name
 		# rotate saved timesteps in history
 		if self.is_image:
@@ -86,6 +88,8 @@ class Single(Observer):
 		name = '_'.join(sum(self._old_names, []))
 		#print('wrote', name)
 		#x = input()
+		if cleanup:
+			super().cleanup()
 		return self._history, name
 
 	def reset(self):

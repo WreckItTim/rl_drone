@@ -21,4 +21,6 @@ class ContinuousActor(Actor):
 	def act(self, rl_output):
 		for idx in range(len(rl_output)):
 			self._actions[idx].act(rl_output[idx])
+			# for string output
+			rl_output[idx] = round(rl_output[idx], 2)
 		return str(rl_output)

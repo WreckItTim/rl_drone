@@ -29,6 +29,7 @@ class AirSimCamera(Sensor):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
+			  airsim_component,
 			  camera_view='0', 
 			  image_type=2, 
 			  as_float=True, 
@@ -36,31 +37,25 @@ class AirSimCamera(Sensor):
 			  is_gray=False,
 			  transformers_components=None,
 			  offline = False,
+			  raw_code=None,
 			  ):
-		super().__init__(offline)
+		super().__init__(offline, raw_code)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
-		self._client = None
 		if image_type in [1, 2, 3, 4]:
 			self.is_gray = True
 
-	# resets on episode
-	def reset(self):
-		self._client.enableApiControl(True)
-		self._client.armDisarm(True)
-
-	def connect(self):
-		super().connect()
-		self._client = airsim.MultirotorClient(
-			ip=utils.get_global_parameter('LocalHostIp'),
-			port=utils.get_global_parameter('ApiServerPort'),
-										 )
-		self._client.confirmConnection()
+	def create_obj(self, data):
+		observation = Image(
+			_data=data, 
+			is_gray=self.is_gray,
+		)
+		return observation
 
 	# takes a picture with camera
-	def sense(self):
+	def sense2(self):
 		img_array = []
 		while len(img_array) <= 0: # loop for dead images (happens some times)
-			response = self._client.simGetImages([self._image_request])[0]
+			response = self._airsim._client.simGetImages([self._image_request])[0]
 			if self.as_float:
 				np_flat = np.array(response.image_data_float, dtype=np.float)
 			else:
@@ -75,8 +70,5 @@ class AirSimCamera(Sensor):
 				if len(img_array) > 0:
 					# make channel-first
 					img_array = np.moveaxis(img_array, 2, 0)
-		observation = Image(
-			_data=img_array, 
-			is_gray=self.is_gray,
-		)
-		return self.transform(observation)
+		observation = self.create_obj(img_array)
+		return observation

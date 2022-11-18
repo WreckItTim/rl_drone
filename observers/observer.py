@@ -15,8 +15,12 @@ class Observer(Component):
 	def connect(self):
 		super().connect()
 
+	def cleanup(self):
+		for sensor in self._sensors:
+			sensor.cleanup()
+
 	# returns observation transcribed for input into RL model
-	def observe(self):
+	def observe(self, cleanup=True):
 		raise NotImplementedError
 
 	def reset(self):

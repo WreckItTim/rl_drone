@@ -60,6 +60,7 @@ class AirSimMap(Map):
 			utils.set_global_parameter('ApiServerPort', 41451)
 		# pipeline to open for console output
 		self._pid = None
+		self._client = None
 
 	def make_voxels(self,
 			  # ABSOLUTE path to right to, must be absolute
@@ -112,6 +113,15 @@ class AirSimMap(Map):
 		# prompt user to confirm when launch is successful (can launch manually if needs be)
 		print(f'Send any key when AirSim is fully launched, this make take several minutes....')
 		x = input()
+		# establish communication link with airsim client
+		self._client = airsim.MultirotorClient(
+			ip=utils.get_global_parameter('LocalHostIp'),
+			port=utils.get_global_parameter('ApiServerPort'),
+										 )
+		self._client.confirmConnection()
+		self._client.enableApiControl(True)
+		self._client.armDisarm(True)
+		self.reset() # this seems repetitive but needed to reset state info
 
 	# close airsim map
 	def disconnect(self):

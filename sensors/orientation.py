@@ -17,17 +17,22 @@ class Orientation(Sensor):
 				 prefix = '',
 				 transformers_components = None,
 				 offline = False,
+			  raw_code=None,
 			  ):
-		super().__init__(offline)
+		super().__init__(offline, raw_code)
+
+	def create_obj(self, data):
+		observation = Vector(
+			_data = data,
+		)
+		return observation
 
 	# get state information from drone
-	def sense(self):
+	def sense2(self):
 		data = []
-		names = []
 		if self._misc2 is None:
 			yaw = self._misc.get_yaw()
 			data.append(yaw)
-			names.append(self.prefix+'_yaw')
 		else:
 			position1 = np.array(self._misc.get_position())
 			position2 = np.array(self._misc2.get_position())
@@ -37,9 +42,5 @@ class Orientation(Sensor):
 			yaw_diff = yaw_1_2 - yaw1
 			yaw_diff = (yaw_diff + math.pi) % (2*math.pi) - math.pi
 			data.append(yaw_diff)
-			names.append(self.prefix+'_yaw_diff')
-		observation = Vector(
-			_data = data,
-			names = names,
-		)
-		return self.transform(observation)
+		observation = self.create_obj(data)
+		return observation

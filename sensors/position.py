@@ -14,34 +14,31 @@ class Position(Sensor):
 				 prefix = '',
 				 transformers_components = None,
 				 offline = False,
+				 raw_code=None,
 			  ):
-		super().__init__(offline)
+		super().__init__(offline, raw_code)
+		
+	def create_obj(self, data):
+		observation = Vector(
+			_data = data,
+		)
+		return observation
 		
 	# get information reltaive between current and objective point
-	def sense(self):
+	def sense2(self):
 		data = []
-		names = []
 		if self._misc2 is None:
 			position = self._misc.get_position()
 			data.append(position[0])
-			names.append(self.prefix+'_x')
 			data.append(position[1])
-			names.append(self.prefix+'_y')
 			data.append(position[2])
-			names.append(self.prefix+'_z')
 		else:
 			position1 = np.array(self._misc.get_position())
 			position2 = np.array(self._misc2.get_position())
 			distance_vector = position2 - position1
 			data.append(distance_vector[0])
-			names.append(self.prefix+'_x')
 			data.append(distance_vector[1])
-			names.append(self.prefix+'_y')
 			data.append(distance_vector[2])
-			names.append(self.prefix+'_z')
 
-		observation = Vector(
-			_data = data,
-			names = names,
-		)
-		return self.transform(observation)
+		observation = self.create_obj(data)
+		return observation

@@ -21,6 +21,4 @@ class GaussianNoise(Transformer):
 		noisy_arr = arr + noise
 		if type(observation) == Vector:
 			noisy_arr = np.reshape(noisy_arr, (len(noisy_arr),))
-			for idx, name in enumerate(observation.names):
-				observation.names[idx] = observation.names[idx] + '_noisy'
 		observation.save_transformation(self, noisy_arr)

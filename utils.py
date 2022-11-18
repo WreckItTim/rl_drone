@@ -67,12 +67,16 @@ def read_global_parameters(path = 'global_parameters.json'):
 def write_global_parameters(path = 'global_parameters.json'):
 	write_json(global_parameters, path)
 
+def del_global_parameter(key):
+	if key in global_parameters:
+		del global_parameters[key]
+
 def set_global_parameter(key, value):
 	global_parameters[key] = value
 
 def get_global_parameter(key):
 	if key not in global_parameters:
-		error(f'key {key} not in global parameters')
+		return None
 	else:
 		return global_parameters[key]
 

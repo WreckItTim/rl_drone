@@ -24,6 +24,4 @@ class Normalize(Transformer):
 						 )
 		if type(observation) == Vector:
 			normalized = np.reshape(normalized, (len(normalized),))
-			for idx, name in enumerate(observation.names):
-				observation.names[idx] = observation.names[idx] + '_normalized'
 		observation.save_transformation(self, normalized)

@@ -12,29 +12,21 @@ class AirSimDistance(Sensor):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
+			  airsim_component,
 			  transformers_components=None,
 			  offline = False,
+			  raw_code=None,
 			  ):
-		super().__init__(offline)
-		self._client = None
+		super().__init__(offline, raw_code)
 
-	# resets on episode
-	def reset(self):
-		self._client.enableApiControl(True)
-		self._client.armDisarm(True)
-
-	def connect(self):
-		super().connect()
-		self._client = airsim.MultirotorClient(
-			ip=utils.get_global_parameter('LocalHostIp'),
-			port=utils.get_global_parameter('ApiServerPort'),
-										 )
-		self._client.confirmConnection()
+	def create_obj(self, data):
+		observation = Vector(
+			_data=data, 
+		)
+		return observation
 
 	# takes a picture with camera
-	def sense(self):
-		distance = np.array(self._client.getDistanceSensorData().distance)
-		observation = Vector(
-			_data=[distance], 
-		)
-		return self.transform(observation)
+	def sense2(self):
+		distance = np.array(self._airsim._client.getDistanceSensorData().distance)
+		observation = self.create_obj([distance])
+		return observation

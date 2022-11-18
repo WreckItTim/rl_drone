@@ -90,7 +90,7 @@ class DroneRL(Environment):
 		state['done'] = done
 		# save observation?
 		if 'observations' in self._dumps:
-			self._observations[observation_name] = observation_data
+			self._observations[observation_name] = observation_data.copy()
 		# save state?
 		if 'states' in self._dumps:
 			self._states['step_' + str(self._nSteps)] = state.copy()
@@ -133,8 +133,11 @@ class DroneRL(Environment):
 		state['drone_position'] = self._drone.get_position()
 		state['yaw'] = self._drone.get_yaw() 
 		state['goal_position'] = self._goal.get_position()
-
-		# track long term vars
+		
+		# save observation?
+		if 'observations' in self._dumps:
+			self._observations[observation_name] = observation_data.copy()
+		# save state?
 		if 'states' in self._dumps:
 			self._states = {}
 			self._states['step_' + str(self._nSteps)] = state.copy()

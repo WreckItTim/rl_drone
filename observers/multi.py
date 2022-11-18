@@ -19,10 +19,11 @@ class Multi(Observer):
 		super().__init__()
 		
 	# gets observations
-	def observe(self):
+	def observe(self, cleanup=True):
 		# get observations
-		vector_data, vector_name = self._vector_observer.observe()
-		image_data, image_name = self._image_observer.observe()
+		vector_data, vector_name = self._vector_observer.observe(cleanup=False)
+		# cleanup after getting last data fetches
+		image_data, image_name = self._image_observer.observe(cleanup=True)
 		data_dict = {
 			"vec": vector_data,
 			"img": image_data,
