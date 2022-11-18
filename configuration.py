@@ -130,8 +130,13 @@ class Configuration():
 		
 	# serializes into a configuration json file
 	def serialize(self):
+		from observations.observation import Observation
+		misc = {
+			'nObservations':Observation.nObservations,
+			}
 		configuration_file = {
 			'meta':self.meta,
+			'misc':misc,
 			'components':{}
 		}
 		for component_name in self.components:
@@ -143,6 +148,9 @@ class Configuration():
 	@staticmethod
 	def deserialize(configuration_file):
 		meta = configuration_file['meta']
+		misc = configuration_file['misc']
+		from observations.observation import Observation
+		Observation.nObservations = misc['nObservations']
 		configuration = Configuration(meta)
 		Configuration.set_active(configuration)
 		for component_name in configuration_file['components']:

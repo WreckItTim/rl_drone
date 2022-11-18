@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'test' # subcategory of test type
+test_name = 'alpha0' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -81,7 +81,7 @@ elif not read_config:
 	image_height = 84 
 	image_width = 84 
 	vector_sensors = [
-		#'Distance', # [1]
+		'Distance', # [1]
 		'DronePosition', # [3]
 		'DroneOrientation', # [1]
 		'GoalPosition', # [3]
@@ -91,17 +91,17 @@ elif not read_config:
 		#'DroneToGoalOrientation', # [1]
 		'FlattenedCamera', # [x]
 		]
-	flattened_camera_length = 5
+	flattened_camera_length = 5*4
 	# vector shape is hard coded
-	vector_length = flattened_camera_length + 8
+	vector_length = flattened_camera_length + 9
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality Multi used
-	observation = 'Multi' # Image Vector Multi
+	observation = 'Vector' # Image Vector Multi
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
-	include_z = False
+	include_z = True
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
@@ -153,20 +153,20 @@ elif not read_config:
 			settings = {
 				'LocalHostIp': '127.0.0.1',
 				'ApiServerPort': 41451,
-				'ClockSpeed': 8,
+				'ClockSpeed': 16,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
 				'tellocamera', 
-				#'bellydistance',
+				'bellydistance',
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				#'-RenderOffscreen',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -251,6 +251,13 @@ elif not read_config:
 		max_output = 255, # SB3 uses 0-255 pixel values
 		name = 'NormalizeDepth',
 	)
+	Normalize(
+		min_input = 0, # min depth
+		max_input = 100, # max depth
+		min_output = 0, # SB3 uses 0-1 floating point values
+		max_output = 1, # SB3 uses 0-1 floating point values
+		name = 'NormalizeDistance',
+	)
 	from transformers.resizeimage import ResizeImage
 	ResizeImage(
 		image_shape = (image_height, image_width),
@@ -258,8 +265,8 @@ elif not read_config:
 	)
 	from transformers.resizeflat import ResizeFlat
 	ResizeFlat(
-		length = flattened_camera_length,
-		max_row = 42,
+		length = 5,
+		max_rows = [21, 42, 63, 84],
 		name = 'ResizeFlat',
 	)
 
@@ -445,7 +452,7 @@ elif not read_config:
 
 	# ACTION
 	if action_type == 'discrete':
-		move_speed = 2 
+		move_speed = 1 
 		yaw_rate = 11.25
 		step_duration = 2 
 		from actions.fixedmove import FixedMove 
@@ -455,13 +462,37 @@ elif not read_config:
 			duration = step_duration,
 			name = 'MoveForward',
 		)
-		from actions.fixedrotate import FixedRotate 
-		FixedRotate(
-			drone_component = 'Drone',  
-			yaw_rate = yaw_rate,
+		FixedMove(
+			drone_component = 'Drone', 
+			x_speed = move_speed * 2, 
 			duration = step_duration,
-			name = 'RotateRight',
+			name = 'MoveForward2',
 		)
+		FixedMove(
+			drone_component = 'Drone', 
+			z_speed = -1 * move_speed, 
+			duration = step_duration,
+			name = 'MoveUp',
+		)
+		FixedMove(
+			drone_component = 'Drone', 
+			z_speed = -1 * move_speed * 2, 
+			duration = step_duration,
+			name = 'MoveUp2',
+		)
+		FixedMove(
+			drone_component = 'Drone', 
+			z_speed = move_speed, 
+			duration = step_duration,
+			name = 'MoveDown',
+		)
+		FixedMove(
+			drone_component = 'Drone', 
+			z_speed = move_speed * 2, 
+			duration = step_duration,
+			name = 'MoveDown2',
+		)
+		from actions.fixedrotate import FixedRotate 
 		FixedRotate(
 			drone_component = 'Drone',  
 			yaw_rate = -1 * yaw_rate,
@@ -470,34 +501,50 @@ elif not read_config:
 		)
 		FixedRotate(
 			drone_component = 'Drone',  
-			yaw_rate = yaw_rate * 2,
-			duration = step_duration,
-			name = 'RotateRight2',
-		)
-		FixedRotate(
-			drone_component = 'Drone',  
 			yaw_rate = -1 * yaw_rate * 2,
 			duration = step_duration,
 			name = 'RotateLeft2',
 		)
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = yaw_rate,
+			duration = step_duration,
+			name = 'RotateRight',
+		)
+		FixedRotate(
+			drone_component = 'Drone',  
+			yaw_rate = yaw_rate * 2,
+			duration = step_duration,
+			name = 'RotateRight2',
+		)
 	elif action_type == 'continuous':
 		base_move_speed = 4
-		base_yaw_rate = 22.5
+		base_yaw_rate = 45
 		step_duration = 2 
 		from actions.move import Move 
 		Move(
 			drone_component = 'Drone', 
 			base_x_speed = base_move_speed, 
 			duration = step_duration,
-			zero_threshold = 0.25,
+			zero_min_threshold=-10,
+			zero_max_threshold=0.1,
 			name = 'MoveForward',
+		)
+		Move(
+			drone_component = 'Drone', 
+			base_z_speed = base_move_speed, 
+			duration = step_duration,
+			zero_min_threshold=-0.1,
+			zero_max_threshold=0.1,
+			name = 'MoveUpward',
 		)
 		from actions.rotate import Rotate 
 		Rotate(
 			drone_component = 'Drone',  
 			base_yaw_rate = base_yaw_rate,
 			duration = step_duration,
-			zero_threshold = 0.25,
+			zero_min_threshold=-0.1,
+			zero_max_threshold=0.1,
 			name = 'Rotate',
 		)
 
@@ -636,8 +683,9 @@ elif not read_config:
 				'Evaluator',
 				'StepsReward',
 				'StepsTerminator',
+				'Goal',
 			],
-			max_evals = 16,
+			max_evals = 32,
 			name='Model',
 		)
 	elif model == 'DQN':
@@ -958,7 +1006,7 @@ elif not read_config:
 		spawner_component='TrainSpawner',
 		goal_component='Goal',
 		evaluator_component='Evaluator',
-		saver_component='TrainSaver',
+		#saver_component='TrainSaver',
 		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
@@ -976,7 +1024,7 @@ elif not read_config:
 		spawner_component='EvaluateSpawner',
 		goal_component='Goal',
 		evaluator_component=None,
-		saver_component='EvaluateSaver',
+		#saver_component='EvaluateSaver',
 		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)
@@ -985,12 +1033,13 @@ utils.speak('configuration created!')
 
 t1 = time()
 # CONNECT COMPONENTS
+model = str(configuration.get_component('Model')._child())
 print('connecting with model', model)
 configuration.connect_all()
 print('connected with model', model)
-if model == 'DQN':
+if 'dqn' in model:
 	print(configuration.get_component('Model')._sb3model.q_net)
-if model == 'DDPG' or model == 'TD3':
+if 'ddpg' in model or 'td3'  in model:
 	print(configuration.get_component('Model')._sb3model.critic)
 print('all components connected. Send any key to continue...')
 x = input()

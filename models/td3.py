@@ -32,6 +32,7 @@ class TD3(Model):
 			device = "auto",
 			init_setup_model = False,
 			model_path = None,
+			best_model_path=None,
 			replay_buffer_path = None,
 		):
 		kwargs = locals()
@@ -41,6 +42,7 @@ class TD3(Model):
 			'environment_component',
 			'init_setup_model',
 			'model_path',
+			'best_model_path',
 			'replay_buffer_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
@@ -48,6 +50,7 @@ class TD3(Model):
 		self.sb3Load = sb3TD3.load
 		self._has_replay_buffer = True
 		super().__init__(model_path=model_path, 
+				   best_model_path=best_model_path, 
 				   replay_buffer_path=replay_buffer_path, 
 				   _model_arguments=_model_arguments,
 				   )

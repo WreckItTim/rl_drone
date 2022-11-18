@@ -11,14 +11,17 @@ class Rotate(Action):
 	def __init__(self, 
 			  drone_component, 
 			  base_yaw_rate, 
-			  zero_threshold=0.25,
+			  zero_min_threshold=-0.1,
+			  zero_max_threshold=0.1,
 			  duration=2
 			  ):
 		super().__init__()
+		self._min_val = -1
+		self._max_val = 1
 
 	def act(self, rl_output):
 		# get speed magnitude from rl_output
-		if abs(rl_output) < self.zero_threshold:
+		if rl_output > self.zero_min_threshold and rl_output < self.zero_max_threshold:
 			return
 		self._drone.rotate(rl_output*self.base_yaw_rate, self.duration)
 		

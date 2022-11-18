@@ -14,13 +14,16 @@ class Move(Action):
 			  base_x_speed=0, 
 			  base_y_speed=0, 
 			  base_z_speed=0, 
-			  zero_threshold=0.25,
+			  zero_min_threshold=-0.1,
+			  zero_max_threshold=0.1,
 			  duration=2
 			  ):
 		super().__init__()
+		self._min_val = 0
+		self._max_val = 1
 
 	def act(self, rl_output):
-		if rl_output < self.zero_threshold:
+		if rl_output > self.zero_min_threshold and rl_output < self.zero_max_threshold:
 			return
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotationa bout z-axis

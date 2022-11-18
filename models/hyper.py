@@ -5,6 +5,7 @@ from component import _init_wrapper
 from hyperopt import fmin, tpe, hp
 from stable_baselines3 import TD3 as sb3TD3
 import utils
+import pandas as pd
 
 class Hyper(Model):
 	# constructor
@@ -22,6 +23,9 @@ class Hyper(Model):
 		self._space = _space
 		self._iter_count = 0
 		self._best_goal = 0
+		self._results_table = {
+			'best_goal':[],
+			}
 		if self.model_type == 'TD3':
 			self.sb3Type = sb3TD3
 			self.sb3Load = sb3TD3.load
@@ -42,6 +46,10 @@ class Hyper(Model):
 		model_arguments.update(params)
 		model_arguments['learning_rate'] = 10**int(-1*params['learning_rate'])
 		model_arguments['gamma'] = float('.' + ''.join(['9' for _ in range(int(params['gamma']))]))
+		for param in model_arguments:
+			if param not in self._results_table:
+				self._results_table[param] = []
+			self._results_table[param].append(model_arguments[param])
 		utils.write_json(model_arguments, utils.get_global_parameter('working_directory') + 'model_arguments_' + str(self._iter_count) + '.json')
 		model_arguments['env'] = self._environment
 
@@ -63,6 +71,12 @@ class Hyper(Model):
 			eval_log_path = self._eval_log_path,
 			reset_num_timesteps = self._reset_num_timesteps,
 		)
+
+		# update table
+		self._results_table['best_goal'].append(self._best_goal)
+		scores_path = utils.get_global_parameter('working_directory') + 'scores.csv'
+		pdf = pd.DataFrame(self._results_table)
+		pdf.to_csv(scores_path)
 
 		return_val = -1.0 * self._best_goal
 		print('RETURN ' + str(return_val) + '   ' + type(return_val))

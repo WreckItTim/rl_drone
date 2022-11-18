@@ -30,7 +30,7 @@ class DroneRL(Environment):
 		self._last_observation_name = 'None'
 		self._all_states = {}
 		self._observations = {}
-		self._last_episode = 1
+		self._last_episode = self.episode_counter
 
 	def connect(self):
 		super().connect()
@@ -39,6 +39,7 @@ class DroneRL(Environment):
 	def reset_learning(self):
 		self.step_counter = 0
 		self.episode_counter = 0
+		self._last_episode = self.episode_counter
 	
 	def clean_rl_output(self, rl_output):
 		if np.issubdtype(rl_output.dtype, np.integer):
@@ -56,7 +57,7 @@ class DroneRL(Environment):
 			path = write_folder + 'observations__' + part_name + '.npz'
 			np.savez(path, **self._observations)
 			self._observations = {}
-		self._last_episode = self.episode_counter + 1
+		self._last_episode = self.episode_counter
 
 	# activate needed components
 	def step(self, rl_output):

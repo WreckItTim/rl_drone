@@ -20,15 +20,30 @@ class Evaluator(Other):
 			  curriculum = True,
 			  goal_component=None,
 			  steps_components=None,
-
 			  ): 
-		# keep track of num evaluations regardless of continuing training or not
-		self._this_counter = 0
+		self.connect_priority = -1 # needs other components to connect first
+
+	# get initial learning loop values for curriculum
+	def connect(self):
+		super().connect()
+		if self.curriculum:
+			self._goal_xyz_point = self._goal.xyz_point.copy()
+			self._goal_random_dim_min = self._goal.random_dim_min
+			self._goal_random_dim_max = self._goal.random_dim_max
+			self._step_max_steps = [0] * len(self._steps)
+			for idx, step in enumerate(self._steps):
+				self._step_max_steps[idx] = step.max_steps
 
 	# if reset learning loop
 	def reset_learning(self):
 		self.best = 0
 		self.evaluation_counter = 0
+		if self.curriculum:
+			self._goal.xyz_point = self._goal_xyz_point.copy()
+			self._goal.random_dim_min = self._goal_random_dim_min
+			self._goal.random_dim_max = self._goal_random_dim_max
+			for idx, step in enumerate(self._steps):
+				step.max_steps = self._step_max_steps[idx]
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
@@ -59,7 +74,6 @@ class Evaluator(Other):
 			total_reward += reward
 		# counter++
 		self.evaluation_counter += 1
-		self._this_counter += 1
 
 		# CHECK STOPPING CRITERIA and best model
 		stop = False
@@ -79,23 +93,19 @@ class Evaluator(Other):
 	def reset(self):
 		# check when to do next set of evaluations
 		if self._train_environment.episode_counter % self.frequency == 0:
-			# skip evaluation 0 if continuing training
-			if self._this_counter == 0 and self.evaluation_counter > 0:
-				self._this_counter += 1
-			else:
-				# evaluate for a set of episodes
-				stop = self.evaluate_set()
-				if stop:
-					if self.curriculum and self._goal.random_dim_max <= 100:
-						self._model._best_goal = self._goal.random_dim_min
-						self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
-						self._goal.random_dim_min += 4
-						self._goal.random_dim_max += 4
-						for step in self._steps:
-							step.max_steps = 8 + self._goal.random_dim_max
-						print('Amping up distance to goal to', self._goal.random_dim_min)
-					else:
-						Configuration.get_active().controller.stop()
+			# evaluate for a set of episodes
+			stop = self.evaluate_set()
+			if stop:
+				if self.curriculum and self._goal.random_dim_max <= 100:
+					self._model._best_goal = self._goal.random_dim_min
+					self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
+					self._goal.random_dim_min += 4
+					self._goal.random_dim_max += 4
+					for step in self._steps:
+						step.max_steps = 8 + self._goal.random_dim_max
+					print('Amping up distance to goal to', self._goal.random_dim_min)
+				else:
+					Configuration.get_active().controller.stop()
 
 	# when using the debug controller
 	def debug(self):

@@ -13,8 +13,11 @@ class ContinuousActor(Actor):
 	# returns dioscrete action space
 	def get_space(self):
 		nActions = len(self._actions)
-		min_vals = np.array([-1]*nActions)
-		max_vals = np.array([1]*nActions)
+		min_vals = np.zeros(nActions)
+		max_vals = np.zeros(nActions)
+		for idx in range(nActions):
+			min_vals[idx] = self._actions[idx]._min_val
+			max_vals[idx] = self._actions[idx]._max_val
 		return spaces.Box(min_vals, max_vals)
 		
 	# interpret action from RL

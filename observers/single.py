@@ -62,7 +62,7 @@ class Single(Observer):
 			name = '_'.join(new_names)
 			if cleanup:
 				super().cleanup()
-			return array, name
+			return array.copy(), name
 		# rotate saved timesteps in history
 		if self.is_image:
 			for i in range(self.nTimesteps-1, 0, -1):
@@ -90,7 +90,7 @@ class Single(Observer):
 		#x = input()
 		if cleanup:
 			super().cleanup()
-		return self._history, name
+		return self._history.copy(), name
 
 	def reset(self):
 		super().reset()

@@ -7,7 +7,12 @@ from component import _init_wrapper
 class Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
 	# NOTE: env=None as training and evaluation enivornments are handeled by controller
-	def __init__(self, model_path=None, replay_buffer_path=None, _model_arguments=None):
+	def __init__(self, 
+			  model_path=None, 
+			  best_model_path=None,
+			  replay_buffer_path=None, 
+			  _model_arguments=None
+			  ):
 		self._is_hyper = False
 		self._model_arguments = _model_arguments
 		self._sb3model = None

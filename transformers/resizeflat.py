@@ -10,9 +10,10 @@ class ResizeFlat(Transformer):
 	@_init_wrapper
 	def __init__(self,
 				length=5, # splits into this many columned sections
-				max_row=-1, # use only values above given row (gets rid of floor)
+				max_rows=[42], # use only values above given row (gets rid of floor)
 	):
 		super().__init__()
+		self._dims = length * len(max_rows)
 
 	# if observation type is valid, applies transformation
 	def transform(self, observation):
@@ -22,13 +23,17 @@ class ResizeFlat(Transformer):
 		nCols = img_data.shape[2]
 		delta = int(nCols / self.length)
 
-		new_array = np.zeros(self.length, dtype=float)
-		for i in range(self.length):
-			if i == self.length - 1:
-				new_array[i] = np.min(img_data[:,:self.max_row,i*delta:])
-			else:
-				new_array[i] = np.min(img_data[:,:self.max_row,i*delta:i*delta + delta])
-		new_array = np.reshape(new_array, (self.length,))
+		new_array = np.zeros(self._dims, dtype=float)
+		min_row = 0 
+		for j, max_row in enumerate(self.max_rows):
+			for i in range(self.length):
+				idx = j * self.length + i
+				if i == self.length - 1:
+					new_array[idx] = np.min(img_data[:,min_row:max_row,i*delta:])
+				else:
+					new_array[idx] = np.min(img_data[:,min_row:max_row,i*delta:i*delta + delta])
+			min_row += max_row
+		new_array = np.reshape(new_array, (self._dims,))
 		
 		observation_conversion = Vector(new_array)
 
