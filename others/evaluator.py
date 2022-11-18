@@ -83,8 +83,8 @@ class Evaluator(Other):
 		if mean_reward > self.best:
 			self._model.save_best()
 			self.best = mean_reward
-		# check stopping criteria
-		if mean_reward > self.stopping_reward:
+		# check stopping criteria (don't stop on first evaluation)
+		if mean_reward > self.stopping_reward and self.evaluation_counter > 1:
 			print('Stopping criteria met!')
 			stop = True
 		return stop
