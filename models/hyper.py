@@ -30,6 +30,10 @@ class Hyper(Model):
 			self.sb3Type = sb3TD3
 			self.sb3Load = sb3TD3.load
 			self._has_replay_buffer = True
+		if self.model_type == 'DQN':
+			self.sb3Type = sb3DQN
+			self.sb3Load = sb3DQN.load
+			self._has_replay_buffer = True
 
 	def connect(self):
 		super().connect()
