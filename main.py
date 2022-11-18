@@ -554,10 +554,15 @@ elif not read_config:
 		DiscreteActor(
 			actions_components=[
 				'MoveForward',
-				'RotateRight',
+				'MoveForward2',
+				'MoveUp',
+				'MoveUp2',
+				'MoveDown',
+				'MoveDown2',
 				'RotateLeft',
-				'RotateRight2',
 				'RotateLeft2',
+				'RotateRight',
+				'RotateRight2',
 				],
 			name='Actor',
 		)
@@ -566,6 +571,7 @@ elif not read_config:
 		ContinuousActor(
 			actions_components=[
 				'MoveForward',
+				'MoveUpward',
 				'Rotate',
 				],
 			name='Actor',
