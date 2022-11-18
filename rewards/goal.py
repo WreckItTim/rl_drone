@@ -21,8 +21,8 @@ class Goal(Reward):
 		#self.init_normalization()
 
 	def get_distance(self):
-		_drone_position = self._drone.get_position()
-		_goal_position = self._goal.get_position()
+		_drone_position = np.array(self._drone.get_position(), dtype=float)
+		_goal_position = np.array(self._goal.get_position(), dtype=float)
 		if not self.include_z:
 			_drone_position = np.array([_drone_position[0], _drone_position[1]], dtype=float)
 			_goal_position = np.array([_goal_position[0], _goal_position[1]], dtype=float)

@@ -32,7 +32,7 @@ class ResizeFlat(Transformer):
 					new_array[idx] = np.min(img_data[:,min_row:max_row,i*delta:])
 				else:
 					new_array[idx] = np.min(img_data[:,min_row:max_row,i*delta:i*delta + delta])
-			min_row += max_row
+			min_row = max_row
 		new_array = np.reshape(new_array, (self._dims,))
 		
 		observation_conversion = Vector(new_array)
