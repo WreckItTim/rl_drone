@@ -19,7 +19,7 @@ class Move(Action):
 			  duration=2
 			  ):
 		super().__init__()
-		self._min_val = 0
+		self._min_val = -1
 		self._max_val = 1
 
 	def act(self, rl_output):

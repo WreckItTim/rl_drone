@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta0' # subcategory of test type
+test_name = 'alphaTest' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 10_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -109,7 +109,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'discrete' # discrete continuous
+	action_type = 'continuous' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -153,7 +153,7 @@ elif not read_config:
 			settings = {
 				'LocalHostIp': '127.0.0.1',
 				'ApiServerPort': 41451,
-				'ClockSpeed': 16,
+				'ClockSpeed': 8,
 				#"ViewMode": "NoDisplay",
 				},
 			settings_directory = 'maps/airsim_settings/',
@@ -166,7 +166,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -1012,7 +1012,7 @@ elif not read_config:
 		spawner_component='TrainSpawner',
 		goal_component='Goal',
 		evaluator_component='Evaluator',
-		#saver_component='TrainSaver',
+		saver_component='TrainSaver',
 		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
@@ -1030,7 +1030,7 @@ elif not read_config:
 		spawner_component='EvaluateSpawner',
 		goal_component='Goal',
 		evaluator_component=None,
-		#saver_component='EvaluateSaver',
+		saver_component='EvaluateSaver',
 		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)

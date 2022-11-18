@@ -83,7 +83,6 @@ class Hyper(Model):
 		pdf.to_csv(scores_path)
 
 		return_val = -1.0 * self._best_goal
-		print('RETURN ' + str(return_val) + '   ' + type(return_val))
 		return return_val
 
 
