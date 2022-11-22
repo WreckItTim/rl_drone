@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alpha_zeta2' # subcategory of test type
+test_name = 'beta_alpha0' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 10_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -543,7 +543,7 @@ elif not read_config:
 		)
 	elif action_type == 'continuous':
 		base_move_speed = 4
-		base_yaw_rate = 45
+		base_yaw_rate = 90
 		step_duration = 2 
 		from actions.move import Move 
 		Move(
@@ -727,6 +727,7 @@ elif not read_config:
 				'policy_kwargs': policy_kwargs,
 				'verbose': 0,
 				'buffer_size': evaluate_frequency * 10,
+				'learning_starts' = evaluate_frequency
 			},
 			resets_components = [
 				'TrainEnvironment',

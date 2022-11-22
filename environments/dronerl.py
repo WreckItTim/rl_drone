@@ -77,7 +77,7 @@ class DroneRL(Environment):
 		state['yaw'] = self._drone.get_yaw() 
 		# altitude check
 		if self.altitude_check and state['drone_position'][2] < -5:
-			print('altitude adjustment!')
+			#print('altitude adjustment!')
 			self._drone.move(0, 0, 1, 2)
 			# reset state kinematics variables
 			state['drone_position'] = self._drone.get_position()
