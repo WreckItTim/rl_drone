@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_alpha0' # subcategory of test type
+test_name = 'beta_beta0' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -113,7 +113,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'continuous' # discrete continuous
+	action_type = 'discrete' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -721,7 +721,7 @@ elif not read_config:
 				'tau':hp.uniform('tau', 0, 1.0),
 				'gamma':hp.quniform('gamma', 1, 6, 1),
 			},
-			model_type = 'TD3',
+			model_type = 'DQN',
 			default_params={
 				'policy': policy,
 				'policy_kwargs': policy_kwargs,
