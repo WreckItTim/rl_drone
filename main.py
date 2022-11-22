@@ -170,7 +170,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				#'-RenderOffscreen',
+				'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -721,13 +721,13 @@ elif not read_config:
 				'tau':hp.uniform('tau', 0, 1.0),
 				'gamma':hp.quniform('gamma', 1, 6, 1),
 			},
-			model_type = 'DQN',
+			model_type = 'TD3',
 			default_params={
 				'policy': policy,
 				'policy_kwargs': policy_kwargs,
 				'verbose': 0,
 				'buffer_size': evaluate_frequency * 10,
-				'learning_starts' = evaluate_frequency
+				'learning_starts': evaluate_frequency
 			},
 			resets_components = [
 				'TrainEnvironment',
