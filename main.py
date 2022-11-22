@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'alphaTest' # subcategory of test type
+test_name = 'alpha_zeta2' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -19,7 +19,7 @@ utils.set_read_write_paths(working_directory = working_directory)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
 	'timestamp': utils.get_timestamp(),
-	'repo_version': 'lambda',
+	'repo_version': 'beta_beta',
 	'test_name': test_name,
 	}
 # select rather to overwrite meta data in configuration file (if already exists)
@@ -81,19 +81,23 @@ elif not read_config:
 	image_height = 84 
 	image_width = 84 
 	vector_sensors = [
-		'Distance', # [1]
-		'DronePosition', # [3]
-		'DroneOrientation', # [1]
-		'GoalPosition', # [3]
-		'GoalOrientation', # [1]
+		#'Distance', # [1]
+		#'DronePosition', # [3]
+		#'DroneOrientation', # [1]
+		#'GoalPosition', # [3]
+		#'GoalOrientation', # [1]
 		#'DroneToGoalPosition', # [3]
-		#'DroneToGoalDistance', # [1]
-		#'DroneToGoalOrientation', # [1]
+		'DroneToGoalDistance', # [1]
+		'DroneToGoalOrientation', # [1]
+		'DroneToGoalAltitude', # [1]
 		'FlattenedCamera', # [x]
 		]
-	flattened_camera_length = 5*4
+	flat_cols = [16, 32, 52, 68, 84]
+	#flat_rows = [21, 42, 63, 84]
+	flat_rows = [42]
+	other_length = 3
 	# vector shape is hard coded
-	vector_length = flattened_camera_length + 9
+	vector_length = len(flat_cols)*len(flat_rows) + other_length
 	# set number of timesteps to keep in current state
 	nTimesteps = 4
 	# set modality Multi used
@@ -101,7 +105,7 @@ elif not read_config:
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
-	include_z = True
+	include_z = False
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
@@ -115,9 +119,10 @@ elif not read_config:
 	# how many training episode before we evaluate/update?
 	evaluate_frequency = 100
 	# bounds on map (where the drone can go)
-	x_bounds = [-100, 100]
-	y_bounds = [-100, 100]
-	z_bounds = [-100, 100]
+	max_distance = 100
+	x_bounds = [-1*max_distance, max_distance]
+	y_bounds = [-1*max_distance, max_distance]
+	z_bounds = [-1*max_distance, max_distance]
 	
 
 	# **** CREATE COMPONENTS ****
@@ -159,8 +164,7 @@ elif not read_config:
 			settings_directory = 'maps/airsim_settings/',
 			setting_files = [
 				'lightweight', 
-				'tellocamera', 
-				'bellydistance',
+				#'bellydistance',
 				],
 			release_directory = 'local/airsim_maps/',
 			release_name = 'Blocks',
@@ -221,18 +225,18 @@ elif not read_config:
 	)
 	GaussianNoise(
 		mean = 0,
-		deviation = math.radians(5),
+		deviation = math.radians(4),
 		name = 'OrientationNoise',
 	)
 	from transformers.gaussianblur import GaussianBlur
 	GaussianBlur(
-		sigma = 4,
+		sigma = 2,
 		name = 'DepthNoise',
 	)
 	from transformers.normalize import Normalize
 	Normalize(
-		min_input = -100, # min distance
-		max_input = 100, # max distance
+		min_input = -1*max_distance, # min distance
+		max_input = max_distance, # max distance
 		min_output = 0.1, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
 		name = 'NormalizePosition',
@@ -246,14 +250,14 @@ elif not read_config:
 	)
 	Normalize(
 		min_input = 0, # min depth
-		max_input = 100, # max depth
+		max_input = max_distance, # max depth
 		min_output = 1, # SB3 uses 0-255 pixel values
 		max_output = 255, # SB3 uses 0-255 pixel values
 		name = 'NormalizeDepth',
 	)
 	Normalize(
 		min_input = 0, # min depth
-		max_input = 100, # max depth
+		max_input = max_distance, # max depth
 		min_output = 0, # SB3 uses 0-1 floating point values
 		max_output = 1, # SB3 uses 0-1 floating point values
 		name = 'NormalizeDistance',
@@ -265,13 +269,14 @@ elif not read_config:
 	)
 	from transformers.resizeflat import ResizeFlat
 	ResizeFlat(
-		length = 5,
-		max_rows = [21, 42, 63, 84],
+		max_cols = flat_cols,
+		max_rows = flat_rows,
 		name = 'ResizeFlat',
 	)
 
 	# SENSOR
 	if drone == 'AirSim' and 'Camera' in image_sensors:
+		# images are 256 x 144 (width x height)
 		from sensors.airsimcamera import AirSimCamera
 		AirSimCamera(
 			airsim_component = 'Map',
@@ -371,10 +376,13 @@ elif not read_config:
 		Distance(
 			misc_component = 'Drone',
 			misc2_component = 'Goal',
+			include_x = True,
+			include_y = True,
+			include_z = False,
 			prefix = 'drone_to_goal',
 			transformers_components = [
 				'PositionNoise',
-				'NormalizePosition',
+				'NormalizeDistance',
 				], 
 			name = 'DroneToGoalDistance',
 		)
@@ -390,6 +398,21 @@ elif not read_config:
 				],
 			name = 'DroneToGoalOrientation',
 		)
+	if 'DroneToGoalAltitude' in vector_sensors:
+		from sensors.distance import Distance
+		Distance(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			include_x = False,
+			include_y = False,
+			include_z = True,
+			prefix = 'drone_to_goal',
+			transformers_components = [
+				'PositionNoise',
+				'NormalizeDistance',
+				],
+			name = 'DroneToGoalAltitude',
+		)
 	if 'FlattenedCamera' in vector_sensors:
 		from sensors.airsimcamera import AirSimCamera
 		AirSimCamera(
@@ -401,9 +424,10 @@ elif not read_config:
 			compress = False,
 			is_gray = True,
 			transformers_components = [
+				'ResizeImage',
+				'DepthNoise',
+				'NormalizeDistance',
 				'ResizeFlat',
-				'PositionNoise',
-				'NormalizePosition',
 				],
 			name = 'FlattenedCamera',
 			)
@@ -536,7 +560,7 @@ elif not read_config:
 			duration = step_duration,
 			zero_min_threshold=-0.1,
 			zero_max_threshold=0.1,
-			name = 'MoveUpward',
+			name = 'MoveVertical',
 		)
 		from actions.rotate import Rotate 
 		Rotate(
@@ -555,10 +579,10 @@ elif not read_config:
 			actions_components=[
 				'MoveForward',
 				'MoveForward2',
-				'MoveUp',
-				'MoveUp2',
-				'MoveDown',
-				'MoveDown2',
+				#'MoveUp',
+				#'MoveUp2',
+				#'MoveDown',
+				#'MoveDown2',
 				'RotateLeft',
 				'RotateLeft2',
 				'RotateRight',
@@ -571,7 +595,7 @@ elif not read_config:
 		ContinuousActor(
 			actions_components=[
 				'MoveForward',
-				'MoveUpward',
+				#'MoveVertical',
 				'Rotate',
 				],
 			name='Actor',
@@ -591,6 +615,14 @@ elif not read_config:
 		include_z = include_z,
 		to_start=True,
 		name = 'GoalReward',
+	)
+	from rewards.distance import Distance
+	Distance(
+		drone_component = 'Drone',
+		goal_component = 'Goal',
+		max_distance = max_distance,
+		include_z = include_z,
+		name = 'DistanceReward',
 	)
 	from rewards.steps import Steps
 	Steps(
@@ -612,13 +644,15 @@ elif not read_config:
 			'AvoidReward',
 			'GoalReward',
 			'StepsReward',
-			'BoundsReward',
+			'DistanceReward',
+			#'BoundsReward',
 		],
 		reward_weights = [
 			1,
 			1,
 			1,
 			1,
+			#1,
 		],
 		name = 'Rewarder',
 	)
@@ -636,6 +670,14 @@ elif not read_config:
 		tolerance = goal_tolerance, 
 		include_z = include_z,
 		name = 'GoalTerminator',
+	)
+	from terminators.distance import Distance
+	Distance(
+		drone_component = 'Drone',
+		goal_component = 'Goal',
+		max_distance = max_distance,
+		include_z = include_z,
+		name = 'DistanceTerminator',
 	)
 	from terminators.rewardthresh import RewardThresh
 	RewardThresh(
@@ -659,6 +701,7 @@ elif not read_config:
 
 	# MODEL
 	print('observation', observation)
+	policy_kwargs = None
 	if observation == 'Image': 
 		policy = 'CnnPolicy'
 	elif observation == 'Vector': 
@@ -666,7 +709,9 @@ elif not read_config:
 	elif observation == 'Multi': 
 		policy = 'MultiInputPolicy'
 	print('policy', policy)
-	policy_kwargs = None
+	policy_kwargs = {
+		'net_arch':[64,64],
+	}
 	if model == 'Hyper':
 		from models.hyper import Hyper
 		Hyper(
@@ -681,7 +726,7 @@ elif not read_config:
 				'policy': policy,
 				'policy_kwargs': policy_kwargs,
 				'verbose': 0,
-				'buffer_size': evaluate_frequency * 100,
+				'buffer_size': evaluate_frequency * 10,
 			},
 			resets_components = [
 				'TrainEnvironment',
@@ -700,7 +745,7 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-4,
-			buffer_size = evaluate_frequency * 100,
+			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 32,
 			tau = 1.0,
@@ -710,7 +755,7 @@ elif not read_config:
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			target_update_interval = evaluate_frequency * 10,
+			target_update_interval = evaluate_frequency * 4,
 			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
 			exploration_final_eps = 0.1,
@@ -732,7 +777,7 @@ elif not read_config:
 			environment_component = 'TrainEnvironment',
 			policy = policy,
 			learning_rate = 1e-3,
-			buffer_size = evaluate_frequency * 100,
+			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 100,
 			tau = 0.005,
@@ -745,35 +790,7 @@ elif not read_config:
 			optimize_memory_usage = False,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
-			policy_kwargs = None,
-			verbose = 0,
-			seed = None,
-			device = "auto",
-			init_setup_model = True,
-			model_path = read_model_path if read_model else None,
-			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-			name='Model',
-		)
-	elif model == 'DDPG':
-		from models.ddpg import DDPG
-		DDPG(
-			environment_component = 'TrainEnvironment',
-			policy = policy,
-			learning_rate = 1e-3,
-			buffer_size = evaluate_frequency * 100,
-			learning_starts = evaluate_frequency,
-			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
-			action_noise = None,
-			replay_buffer_class = None,
-			replay_buffer_kwargs = None,
-			optimize_memory_usage = False,
-			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-			create_eval_env = False,
-			policy_kwargs = None,
+			policy_kwargs = policy_kwargs,
 			verbose = 0,
 			seed = None,
 			device = "auto",
@@ -783,6 +800,34 @@ elif not read_config:
 			name='Model',
 		)
 	'''
+	elif model == 'DDPG':
+		from models.ddpg import DDPG
+		DDPG(
+			environment_component = 'TrainEnvironment',
+			policy = policy,
+			learning_rate = 1e-3,
+			buffer_size = evaluate_frequency * 10,
+			learning_starts = evaluate_frequency,
+			batch_size = 100,
+			tau = 0.005,
+			gamma = 0.99,
+			train_freq = (1, "episode"),
+			gradient_steps = -1,
+			action_noise = None,
+			replay_buffer_class = None,
+			replay_buffer_kwargs = None,
+			optimize_memory_usage = False,
+			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+			create_eval_env = False,
+			policy_kwargs = None,
+			verbose = 0,
+			seed = None,
+			device = "auto",
+			init_setup_model = True,
+			model_path = read_model_path if read_model else None,
+			replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
+			name='Model',
+		)
 	elif model == 'A2C':
 		from models.a2c import A2C
 		A2C(
@@ -1007,12 +1052,14 @@ elif not read_config:
 			'CollisionTerminator',
 			'GoalTerminator',
 			'StepsTerminator',
-			'BoundsTerminator',
+			'DistanceTerminator',
+			#'BoundsTerminator',
 			],
 		spawner_component='TrainSpawner',
 		goal_component='Goal',
 		evaluator_component='Evaluator',
 		saver_component='TrainSaver',
+		altitude_check=True,
 		is_evaluation_environment=False,
 		name = 'TrainEnvironment',
 	)
@@ -1025,12 +1072,14 @@ elif not read_config:
 			'CollisionTerminator',
 			'GoalTerminator',
 			'StepsTerminator',
-			'BoundsTerminator',
+			'DistanceTerminator',
+			#'BoundsTerminator',
 			],
 		spawner_component='EvaluateSpawner',
 		goal_component='Goal',
 		evaluator_component=None,
 		saver_component='EvaluateSaver',
+		altitude_check=True,
 		is_evaluation_environment=True,
 		name = 'EvaluateEnvironment',
 	)

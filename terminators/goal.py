@@ -10,7 +10,8 @@ class Goal(Terminator):
 	def __init__(self, 
 				 drone_component, 
 				 goal_component,
-				 tolerance=0,
+				 tolerance=4,
+				 max_distance=100,
 				 include_z=True,
 				 ):
 		super().__init__()
@@ -26,5 +27,9 @@ class Goal(Terminator):
 		if distance < self.tolerance:
 			state['termination_reason'] = 'goal'
 			state['termination_result'] = 'success'
+			return True
+		if distance > self.max_distance:
+			state['termination_reason'] = 'max_distance'
+			state['termination_result'] = 'failure'
 			return True
 		return False

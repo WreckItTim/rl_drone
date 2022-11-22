@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\others"
+    "\\datastructs",
+    "\\rewards",
+    "\\terminators"
   ],
-  "SelectedNode": "\\others\\evaluator.py",
+  "SelectedNode": "\\terminators\\distance.py",
   "PreviewInSolutionExplorer": false
 }
