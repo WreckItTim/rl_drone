@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_beta0' # subcategory of test type
+test_name = 'beta_alpha1' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 10_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -113,7 +113,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'discrete' # discrete continuous
+	action_type = 'continuous' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -777,12 +777,12 @@ elif not read_config:
 		TD3(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
-			learning_rate = 1e-3,
+			learning_rate = 1e-6,
 			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
+			tau = 0.8428,
+			gamma = 0.9999,
 			train_freq = (1, "episode"),
 			gradient_steps = -1,
 			action_noise = None,
