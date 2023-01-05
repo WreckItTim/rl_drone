@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_beta2' # subcategory of test type
+test_name = 'beta_alpha2' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -113,7 +113,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'discrete' # discrete continuous
+	action_type = 'continuous' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -745,12 +745,12 @@ elif not read_config:
 		DQN(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
-			learning_rate = 1e-6,
+			learning_rate = 0.0001,
 			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 32,
-			tau = 0.4,
-			gamma = 0.999999,
+			tau = 1.0,
+			gamma = 0.99,
 			train_freq = 4,
 			gradient_steps = 1,
 			replay_buffer_class = None,
@@ -759,7 +759,7 @@ elif not read_config:
 			target_update_interval = evaluate_frequency * 4,
 			exploration_fraction = 0.1,
 			exploration_initial_eps = 1.0,
-			exploration_final_eps = 0.1,
+			exploration_final_eps = 0.05,
 			max_grad_norm = 1,
 			tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 			create_eval_env = False,
@@ -777,12 +777,12 @@ elif not read_config:
 		TD3(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
-			learning_rate = 1e-6,
+			learning_rate = 0.001,
 			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 100,
-			tau = 0.8428,
-			gamma = 0.9999,
+			tau = 0.005,
+			gamma = 0.99,
 			train_freq = (1, "episode"),
 			gradient_steps = -1,
 			action_noise = None,
