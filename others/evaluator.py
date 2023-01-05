@@ -17,9 +17,12 @@ class Evaluator(Other):
 			  evaluation_counter = 0,
 			  stopping_reward = 9,
 			  best = 0,
+			  best_eval = 0,
+			  patience = 64,
+			  wait = 0,
 			  curriculum = True,
-			  goal_component=None,
-			  steps_components=None,
+			  goal_component = None,
+			  steps_components = None,
 			  ): 
 		self.connect_priority = -1 # needs other components to connect first
 
@@ -72,21 +75,28 @@ class Evaluator(Other):
 			reward = self.evaluate_episode()
 			# log results
 			total_reward += reward
-		# counter++
-		self.evaluation_counter += 1
 
-		# CHECK STOPPING CRITERIA and best model
-		stop = False
 		mean_reward = total_reward / self.nEpisodes
 		print('Evaluated with average reward:', mean_reward)
-		# check for best model
-		if mean_reward > self.best:
-			self._model.save_best()
-			self.best = mean_reward
-		# check stopping criteria (don't stop on first evaluation)
-		if mean_reward > self.stopping_reward and self.evaluation_counter > 1:
-			print('Stopping criteria met!')
+
+		stop = False
+		if mean_reward > self.stopping_reward:
+			self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
+			self._goal.random_dim_min += 4
+			self._goal.random_dim_max += 4
+			self.best = self._goal.random_dim_min
+			self._model._best_goal = self.best # relay information to hyper search
+			self.best_eval = self.evaluation_counter
+			for step in self._steps:
+				step.max_steps = 8 + self._goal.random_dim_max
+			self.wait = 0
+			print('Amping up distance to goal to', self._goal.random_dim_min)
+		else:
+			self.wait += 1
+		if self.wait >= self.patience:
 			stop = True
+
+		self.evaluation_counter += 1
 		return stop
 
 	# handle resets while training		
@@ -96,16 +106,7 @@ class Evaluator(Other):
 			# evaluate for a set of episodes
 			stop = self.evaluate_set()
 			if stop:
-				if self.curriculum and self._goal.random_dim_max <= 100:
-					self._model._best_goal = self._goal.random_dim_min
-					self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
-					self._goal.random_dim_min += 4
-					self._goal.random_dim_max += 4
-					for step in self._steps:
-						step.max_steps = 8 + self._goal.random_dim_max
-					print('Amping up distance to goal to', self._goal.random_dim_min)
-				else:
-					Configuration.get_active().controller.stop()
+				Configuration.get_active().controller.stop()
 
 	# when using the debug controller
 	def debug(self):
