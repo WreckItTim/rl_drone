@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_gamma1' # subcategory of test type
+test_name = 'beta_alpha3' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -93,8 +93,8 @@ elif not read_config:
 		'FlattenedCamera', # [x]
 		]
 	flat_cols = [16, 32, 52, 68, 84]
-	flat_rows = [21, 42, 63, 84]
-	#flat_rows = [42]
+	#flat_rows = [21, 42, 63, 84]
+	flat_rows = [42]
 	other_length = 3
 	# vector shape is hard coded
 	vector_length = len(flat_cols)*len(flat_rows) + other_length
@@ -579,10 +579,10 @@ elif not read_config:
 			actions_components=[
 				'MoveForward',
 				'MoveForward2',
-				'MoveUp',
-				'MoveUp2',
-				'MoveDown',
-				'MoveDown2',
+				#'MoveUp',
+				#'MoveUp2',
+				#'MoveDown',
+				#'MoveDown2',
 				'RotateLeft',
 				'RotateLeft2',
 				'RotateRight',
@@ -595,7 +595,7 @@ elif not read_config:
 		ContinuousActor(
 			actions_components=[
 				'MoveForward',
-				'MoveVertical',
+				#'MoveVertical',
 				'Rotate',
 				],
 			name='Actor',
@@ -777,12 +777,12 @@ elif not read_config:
 		TD3(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
-			learning_rate = 0.001,
+			learning_rate = 0.01,
 			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
+			tau = 0.1593,
+			gamma = 0.99999,
 			train_freq = (1, "episode"),
 			gradient_steps = -1,
 			action_noise = None,
