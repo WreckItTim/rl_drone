@@ -80,7 +80,9 @@ class Evaluator(Other):
 		print('Evaluated with average reward:', mean_reward)
 
 		stop = False
+		success = False
 		if mean_reward > self.stopping_reward:
+			success = True
 			self._goal.xyz_point += np.array([4, 0, 0], dtype=float)
 			self._goal.random_dim_min += 4
 			self._goal.random_dim_max += 4
@@ -97,14 +99,18 @@ class Evaluator(Other):
 			stop = True
 
 		self.evaluation_counter += 1
-		return stop
+		return stop, success
 
 	# handle resets while training		
 	def reset(self):
 		# check when to do next set of evaluations
 		if self._train_environment.episode_counter % self.frequency == 0:
-			# evaluate for a set of episodes
-			stop = self.evaluate_set()
+			# evaluate for a set of episodes, until failure
+			while True:
+				stop, success = self.evaluate_set()
+				if not success:
+					break
+			# close up shop
 			if stop:
 				Configuration.get_active().controller.stop()
 
