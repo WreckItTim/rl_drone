@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_alpha3' # subcategory of test type
+test_name = 'beta_beta3' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'TD3' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -113,7 +113,7 @@ elif not read_config:
 	# set tolerance to reach goal within (arbitrary units depending on drone)
 	goal_tolerance = 4
 	# set action space type
-	action_type = 'continuous' # discrete continuous
+	action_type = 'discrete' # discrete continuous
 	# how many episodes in each evaluation set?
 	num_eval_episodes = 6
 	# how many training episode before we evaluate/update?
@@ -745,12 +745,12 @@ elif not read_config:
 		DQN(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
-			learning_rate = 0.0001,
+			learning_rate = 1e-6,
 			buffer_size = evaluate_frequency * 10,
 			learning_starts = evaluate_frequency,
 			batch_size = 32,
-			tau = 1.0,
-			gamma = 0.99,
+			tau = .8428,
+			gamma = 0.9999,
 			train_freq = 4,
 			gradient_steps = 1,
 			replay_buffer_class = None,
