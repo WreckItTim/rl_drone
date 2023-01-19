@@ -1,10 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\datastructs",
-    "\\models",
-    "\\others"
+    "\\maps",
+    "\\maps\\airsim_settings"
   ],
-  "SelectedNode": "\\datastructs\\relativegoal.py",
+  "SelectedNode": "\\terminators",
   "PreviewInSolutionExplorer": false
 }
