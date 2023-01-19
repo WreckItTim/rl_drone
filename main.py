@@ -10,7 +10,7 @@ utils.set_operating_system()
 
 
 # CREATE and set read/write DIRECTORIES
-test_name = 'beta_beta3' # subcategory of test type
+test_name = 'beta_delta0' # subcategory of test type
 working_directory = 'local/runs/' + test_name + '/'
 utils.set_read_write_paths(working_directory = working_directory)
 
@@ -69,7 +69,7 @@ elif not read_config:
 
 	# **** SET PARAMETERS ****
 	# RL model to use
-	model = 'DQN' # DQN A2C DDPG PPO SAC TD3 Hyper
+	model = 'Hyper' # DQN A2C DDPG PPO SAC TD3 Hyper
 	# set drone type to use
 	drone = 'AirSim' # AirSim Tello
 	# set sensors to use
@@ -93,8 +93,8 @@ elif not read_config:
 		'FlattenedCamera', # [x]
 		]
 	flat_cols = [16, 32, 52, 68, 84]
-	#flat_rows = [21, 42, 63, 84]
-	flat_rows = [42]
+	flat_rows = [21, 42, 63, 84]
+	#flat_rows = [42]
 	other_length = 3
 	# vector shape is hard coded
 	vector_length = len(flat_cols)*len(flat_rows) + other_length
@@ -105,7 +105,7 @@ elif not read_config:
 	# set observer component to handle the observation space
 	observer = 'Multi' if observation == 'Multi' else 'Single'
 	# detrmine to include z-axis (vertical) in objective during calulations
-	include_z = False
+	include_z = True
 	# voxels to check valid spawn/objective points on map and visualize results (optional)
 	use_voxels = True
 	# set max steps
@@ -122,7 +122,7 @@ elif not read_config:
 	max_distance = 100
 	x_bounds = [-1*max_distance, max_distance]
 	y_bounds = [-1*max_distance, max_distance]
-	z_bounds = [-1*max_distance, max_distance]
+	z_bounds = [-1*max_distance, -4]
 	
 
 	# **** CREATE COMPONENTS ****
@@ -141,7 +141,7 @@ elif not read_config:
 		random_dim_max = 10,
 		x_bounds = x_bounds,
 		y_bounds = y_bounds,
-		z_bounds = [-4, -4],
+		z_bounds = z_bounds,
 		random_yaw_on_train = False,
 		random_yaw_on_evaluate = False,
 		random_yaw_min = -1 * math.pi,
@@ -170,7 +170,7 @@ elif not read_config:
 			release_name = 'Blocks',
 			console_flags = [
 				'-Windowed',
-				'-RenderOffscreen',
+				#'-RenderOffscreen',
 			],
 			name = 'Map',
 		)
@@ -579,10 +579,10 @@ elif not read_config:
 			actions_components=[
 				'MoveForward',
 				'MoveForward2',
-				#'MoveUp',
-				#'MoveUp2',
-				#'MoveDown',
-				#'MoveDown2',
+				'MoveUp',
+				'MoveUp2',
+				'MoveDown',
+				'MoveDown2',
 				'RotateLeft',
 				'RotateLeft2',
 				'RotateRight',
@@ -595,7 +595,7 @@ elif not read_config:
 		ContinuousActor(
 			actions_components=[
 				'MoveForward',
-				#'MoveVertical',
+				'MoveVertical',
 				'Rotate',
 				],
 			name='Actor',
