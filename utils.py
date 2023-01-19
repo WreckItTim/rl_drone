@@ -151,10 +151,6 @@ def get_controller(controller_type,
 			callback = None,
 			log_interval = -1,
 			tb_log_name = tb_log_name,
-			eval_env = None,
-			eval_freq = -1,
-			n_eval_episodes = -1,
-			eval_log_path = None,
 			continue_training = continue_training,
 			)
 	# evaluate will read in a trained model and evaluate on given environment

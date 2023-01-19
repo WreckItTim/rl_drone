@@ -57,7 +57,7 @@ class AirSimCamera(Sensor):
 		while len(img_array) <= 0: # loop for dead images (happens some times)
 			response = self._airsim._client.simGetImages([self._image_request])[0]
 			if self.as_float:
-				np_flat = np.array(response.image_data_float, dtype=np.float)
+				np_flat = np.array(response.image_data_float, dtype=float)
 			else:
 				np_flat = np.fromstring(response.image_data_uint8, dtype=np.uint8)
 			if self.is_gray:

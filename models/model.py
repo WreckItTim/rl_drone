@@ -47,10 +47,6 @@ class Model(Component):
 		callback = None,
 		log_interval = -1,
 		tb_log_name = None,
-		eval_env = None,
-		eval_freq = -1,
-		n_eval_episodes = -1,
-		eval_log_path = None,
 		reset_num_timesteps = False,
 		):
 		utils.speak('LEARN')
@@ -60,10 +56,6 @@ class Model(Component):
 			callback = callback,
 			log_interval= log_interval,
 			tb_log_name = tb_log_name,
-			eval_env = eval_env,
-			eval_freq = eval_freq,
-			n_eval_episodes = n_eval_episodes,
-			eval_log_path = eval_log_path,
 			reset_num_timesteps = reset_num_timesteps,
 		)
 		utils.speak('DONE LEARN')

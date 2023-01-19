@@ -2,10 +2,11 @@
 from component import Component
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
+import gym
 from gym import spaces
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3
-class Environment(Component):
+class Environment(gym.Env, Component):
 	@staticmethod
 	def show_state(state):
 		action = state['transcribed_action']

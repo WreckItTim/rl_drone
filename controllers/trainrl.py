@@ -13,10 +13,6 @@ class TrainRL(Controller):
 				 callback = None,
 				 log_interval = -1,
 				 tb_log_name = None,
-				 eval_env = None,
-				 eval_freq = -1,
-				 n_eval_episodes = -1,
-				 eval_log_path = None,
 				 continue_training=True,
 				 ):
 		super().__init__()
@@ -45,9 +41,5 @@ class TrainRL(Controller):
 			callback = self.callback,
 			log_interval = self.log_interval,
 			tb_log_name = self.tb_log_name,
-			eval_env = self.eval_env,
-			eval_freq = self.eval_freq,
-			n_eval_episodes = self.n_eval_episodes,
-			eval_log_path = self.eval_log_path,
 			reset_num_timesteps = _reset_num_timesteps,
 			)

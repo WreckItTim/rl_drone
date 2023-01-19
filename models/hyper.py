@@ -69,10 +69,6 @@ class Hyper(Model):
 			callback = self._callback,
 			log_interval = self._log_interval,
 			tb_log_name = self._tb_log_name,
-			eval_env = self._eval_env,
-			eval_freq = self._eval_freq,
-			n_eval_episodes = self._n_eval_episodes,
-			eval_log_path = self._eval_log_path,
 			reset_num_timesteps = self._reset_num_timesteps,
 		)
 
@@ -92,10 +88,6 @@ class Hyper(Model):
 		callback = None,
 		log_interval = -1,
 		tb_log_name = None,
-		eval_env = None,
-		eval_freq = -1,
-		n_eval_episodes = -1,
-		eval_log_path = None,
 		reset_num_timesteps = False,
 		):
 		utils.speak('LEARN')
@@ -105,10 +97,6 @@ class Hyper(Model):
 		self._callback = callback
 		self._log_interval = log_interval
 		self._tb_log_name = tb_log_name
-		self._eval_env = eval_env
-		self._eval_freq = eval_freq
-		self._n_eval_episodes = n_eval_episodes
-		self._eval_log_path = eval_log_path
 		self._reset_num_timesteps = reset_num_timesteps
 	
 		# run Hyperopt - minimizing the objective function, with the given grid space, using TPE method, and 16 max iterations
