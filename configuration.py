@@ -18,6 +18,12 @@ class Configuration():
 	def set_controller(self, controller):
 		self.controller = controller
 		controller._configuration = self
+
+	# master resets everything for a new learning loop (fresh episode, counters, etc)
+	def reset_all(self):
+		for component_name in self.components:
+			component = self.get_component(component_name)
+			component.reset_learning()
 		
 	#  keep track of component benchmarks
 	def log_benchmark(self, master_key, key, value):

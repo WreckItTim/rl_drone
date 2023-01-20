@@ -1,4 +1,4 @@
-# abstract class used to handle abstract components
+# abstract class used to misc components
 from component import Component
 
 class Other(Component):
@@ -11,9 +11,20 @@ class Other(Component):
 	def reset(self, reset_state):
 		pass
 
-	# when using the debug controller
+	def reset_learning(self, reset_state):
+		pass
+
+	def save(self):
+		pass
+
+	def load(self):
+		pass
+
 	def debug(self):
 		pass
 
 	def connect(self):
 		super().connect()
+
+	def disconnect(self):
+		super().disconnect()

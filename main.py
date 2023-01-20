@@ -31,7 +31,7 @@ continue_training = False
 controller_type = 'train' # debug train evaluate empty
 controller = utils.get_controller(
 	controller_type = controller_type,
-	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -729,14 +729,7 @@ elif not read_config:
 				'buffer_size': evaluate_frequency * 10,
 				'learning_starts': evaluate_frequency
 			},
-			resets_components = [
-				'TrainEnvironment',
-				'EvaluateEnvironment',
-				'Evaluator',
-				'StepsReward',
-				'StepsTerminator',
-				'Goal',
-			],
+			nRuns = 4,
 			max_evals = 32,
 			name='Model',
 		)

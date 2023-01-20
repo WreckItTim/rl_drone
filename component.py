@@ -94,6 +94,10 @@ def _init_wrapper(init_method):
 		del kwargs['disconnect_priority']
 		part = kwargs['part']
 		del kwargs['part']
+		overide_timer = kwargs['overide_timer']
+		del kwargs['overide_timer']
+		overide_memory = kwargs['overide_memory']
+		del kwargs['overide_memory']
 
 		# GET CONFIGURATION OBJECT
 		if configuration is None:
@@ -153,14 +157,15 @@ def _init_wrapper(init_method):
 		# CALL BASE INIT
 		self._dumps = [] # list of variables to keep temporal track of for later memory dumps
 		self._part = part
-		self._add_timers = True # change in base init method to false to not add
+		self._add_timers = False # change in base init method to false to not add
+		self._add_memories = False # change in base init method to false to not add
 		self._set_name = True # change in base init method to false to not add
 		self._add_to_configuration = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
 		if overide_timer is not None:
 			self._add_timers = overide_timer # can override to add timer from constructor
 		if overide_memory is not None:
-			self._overide_memory = overide_memory # can override to add memory tracker from constructor
+			self._add_memories = overide_memory # can override to add memory tracker from constructor
 
 		# SET PIRORITIES for load orders, to default of 0 if not set yet or not passed in as argument
 		if connect_priority is None and getattr(self, "connect_priority", None) is None:
@@ -258,6 +263,10 @@ class Component():
 
 	# resets and end of episode to prepare for next
 	def reset(self):
+		pass
+
+	# makes a step in an episode
+	def step(self):
 		pass
 
 	# stops component - if error is reached

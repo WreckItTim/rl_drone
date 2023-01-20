@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\examples",
-    "\\models"
+    "\\modifiers"
   ],
-  "SelectedNode": "\\models\\hyper.py",
+  "SelectedNode": "\\modifiers\\modifier.py",
   "PreviewInSolutionExplorer": false
 }
