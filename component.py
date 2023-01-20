@@ -157,6 +157,10 @@ def _init_wrapper(init_method):
 		self._set_name = True # change in base init method to false to not add
 		self._add_to_configuration = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
+		if overide_timer is not None:
+			self._add_timers = overide_timer # can override to add timer from constructor
+		if overide_memory is not None:
+			self._overide_memory = overide_memory # can override to add memory tracker from constructor
 
 		# SET PIRORITIES for load orders, to default of 0 if not set yet or not passed in as argument
 		if connect_priority is None and getattr(self, "connect_priority", None) is None:
@@ -195,6 +199,8 @@ def _init_wrapper(init_method):
 					  connect_priority = None, 
 					  disconnect_priority = None,
 					  part = 0,
+					  overide_timer = None,
+					  overide_memory = None,
 					  )
 
 # the component class itself

@@ -1,9 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\maps",
-    "\\maps\\airsim_settings"
+    "\\examples",
+    "\\models"
   ],
-  "SelectedNode": "\\terminators",
+  "SelectedNode": "\\models\\hyper.py",
   "PreviewInSolutionExplorer": false
 }

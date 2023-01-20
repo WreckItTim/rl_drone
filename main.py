@@ -1021,7 +1021,7 @@ elif not read_config:
 		},
 		frequency=evaluate_frequency, 
 		save_configuration_file=True,
-		save_benchmarks=False,
+		save_benchmarks=True,
 		name='TrainSaver',
 	)
 	from others.saver import Saver
@@ -1038,7 +1038,7 @@ elif not read_config:
 		},
 		frequency=num_eval_episodes, 
 		save_configuration_file=False,
-		save_benchmarks=False,
+		save_benchmarks=True,
 		name='EvaluateSaver',
 	)
 
@@ -1062,6 +1062,7 @@ elif not read_config:
 		saver_component='TrainSaver',
 		altitude_check=True,
 		is_evaluation_environment=False,
+		overide_timer = True,
 		name = 'TrainEnvironment',
 	)
 	DroneRL(
@@ -1082,6 +1083,7 @@ elif not read_config:
 		saver_component='EvaluateSaver',
 		altitude_check=True,
 		is_evaluation_environment=True,
+		overide_timer = True,
 		name = 'EvaluateEnvironment',
 	)
 utils.speak('configuration created!')

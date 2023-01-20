@@ -5,9 +5,10 @@ from sys import getsizeof
 class Configuration():
 	active = None
 
-	def __init__(self, meta, add_timers=False):
+	def __init__(self, meta, add_timers=False, add_memories=False):
 		self.meta = meta
 		self.add_timers = add_timers
+		self.add_memories = add_memories
 		self.components = {}
 		self.benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
 
@@ -29,9 +30,10 @@ class Configuration():
 	def benchmark_memory(self):
 		for component_name in self.components:
 			component = self.get_component(component_name)
-			nBytes = getsizeof(component) # self.__sizeof__()
-			nKiloBytes = nBytes * 0.000977
-			self.benchmarks['memory'][component._name] = nKiloBytes
+			if component._add_memories:
+				nBytes = getsizeof(component) # self.__sizeof__()
+				nKiloBytes = nBytes * 0.000977
+				self.benchmarks['memory'][component._name] = nKiloBytes
 
 	# saves benchmarks
 	def log_benchmarks(self, write_path=None):

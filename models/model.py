@@ -41,6 +41,8 @@ class Model(Component):
 		self.best_model_path = utils.get_global_parameter('working_directory') + 'best_model.zip'
 		# set up replay buffer path to write to
 		self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer.pkl'
+		# set up model path to write to
+		self.best_replay_buffer_path = utils.get_global_parameter('working_directory') + 'best_replay_buffer.zip'
 
 	def learn(self, 
 		total_timesteps=10_000,

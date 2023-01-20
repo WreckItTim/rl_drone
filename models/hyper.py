@@ -62,6 +62,7 @@ class Hyper(Model):
 		self.model_path = utils.get_global_parameter('working_directory') + 'model_' + str(self._iter_count) + '.zip'
 		self.best_model_path = utils.get_global_parameter('working_directory') + 'best_model_' + str(self._iter_count) + '.zip'
 		self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer_' + str(self._iter_count) + '.pkl'
+		self.best_replay_buffer_path = utils.get_global_parameter('working_directory') + 'best_replay_buffer_' + str(self._iter_count) + '.pkl'
 
 		# run sb3 model (parent class will make calls to this)
 		self._sb3model.learn(

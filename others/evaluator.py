@@ -77,7 +77,7 @@ class Evaluator(Other):
 			total_reward += reward
 
 		mean_reward = total_reward / self.nEpisodes
-		print('Evaluated with average reward:', mean_reward)
+		print('Evaluation #' + str(self.evaluation_counter) + ' evaluated with average reward:', mean_reward)
 
 		stop = False
 		success = False
@@ -91,6 +91,8 @@ class Evaluator(Other):
 			self.best_eval = self.evaluation_counter
 			for step in self._steps:
 				step.max_steps = 8 + self._goal.random_dim_max
+			self._model.save(self.best_model_path)
+			self._model.save_replay_buffer(self.best_replay_buffer_path)
 			self.wait = 0
 			print('Amping up distance to goal to', self._goal.random_dim_min)
 		else:
