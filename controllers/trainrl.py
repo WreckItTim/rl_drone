@@ -37,8 +37,7 @@ class TrainRL(Controller):
 		# will use new model weights
 		else:
 			_total_timesteps = self.total_timesteps
-			for component in self._configuration.components:
-				component.reset_learning()
+			self._configuration.reset_all()
 		# learn baby learn
 		self._model.learn(
 			total_timesteps = _total_timesteps,

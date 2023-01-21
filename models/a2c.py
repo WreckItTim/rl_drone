@@ -23,7 +23,6 @@ class A2C(Model):
 			sde_sample_freq = -1,
 			normalize_advantage = False,
 			tensorboard_log = None,
-			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,

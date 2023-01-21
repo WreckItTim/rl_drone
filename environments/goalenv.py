@@ -41,11 +41,11 @@ class GoalEnv(Environment):
 	# best route to do this is a saver modifier
 	# track_vars are strings with which variables to save
 	def set_save(self
-			  , track_save
-			  , track_vars=[
+			  track_save,
+			  track_vars=[
 				  'observations', 
 				  'states',
-				  ]
+				  ],
 			  ):
 		self._track_save = track_save
 		self._track_vars = track_vars.copy()

@@ -7,12 +7,15 @@ import os
 class Saver(Other):
 	@_init_wrapper
 	def __init__(self,
-			environment_component,
+			  base_component, # componet with method to modify
+			  parent_method, # name of parent method to modify
+			  order, # modify 'pre' or 'post'?
+			  frequency = 1, # use modifiation after how many calls to parent method?
+			  counter = 0, # keepts track of number of calls to parent method
+			
+			  environment_component,
 			  modified_component,
-		parent_method = 'reset',
-		exectue = 'after',
-		frequency = 1,
-		counter = 0,
+		
 			save_components=None,
 			save_variables = {},
 			frequency=10,
@@ -22,11 +25,31 @@ class Saver(Other):
 			save_benchmarks=True,
 			write_folder=None
 	):
-		self.connect_priority = -999 # connects after everything else
-		if write_folder is None:
-			self.write_folder = utils.get_global_parameter('working_directory')
-		if not os.path.exists(self.write_folder):
-			os.makedirs(self.write_folder)
+		super().__init__(base_component, parent_method, order, frequency, counter)
+
+	def step(self, state):
+		pass
+
+	def reset(self, reset_state):
+		pass
+
+	def reset_learning(self, reset_state):
+		pass
+
+	def save(self):
+		pass
+
+	def load(self):
+		pass
+
+	def debug(self):
+		pass
+
+	def connect(self):
+		super().connect()
+
+	def disconnect(self):
+		super().disconnect()
 
 	def connect(self):
 		super().connect()

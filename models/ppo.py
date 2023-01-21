@@ -25,7 +25,6 @@ class PPO(Model):
 			sde_sample_freq = -1,
 			target_kl = None,
 			tensorboard_log = None,
-			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,

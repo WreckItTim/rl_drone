@@ -235,10 +235,15 @@ class Component():
 	# write any vars to file
 	def save(self, write_folder, state=None):
 		pass
-	
-	# read any vars to file
-	def load(self, read_folder, state=None):
-		pass
+
+	# this will toggle if keep track of vars to save
+	# warning this can be expensive
+	def set_save(self,
+			  track_save,
+			  track_vars=[],
+			  ):
+		self._track_save = track_save
+		self._track_vars = track_vars.copy()
 
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed
 	# WARNING: if you overwrite this make sure to call super()

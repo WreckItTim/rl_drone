@@ -22,7 +22,6 @@ class DDPG(Model):
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
 			tensorboard_log = None,
-			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,

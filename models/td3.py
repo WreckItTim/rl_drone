@@ -25,7 +25,6 @@ class TD3(Model):
 			target_policy_noise = 0.2,
 			target_noise_clip = 0.5,
 			tensorboard_log = None,
-			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,

@@ -26,7 +26,6 @@ class DQN(Model):
 			exploration_final_eps = 0.05,
 			max_grad_norm = 10,
 			tensorboard_log = None,
-			create_eval_env = False,
 			policy_kwargs = None,
 			verbose = 0,
 			seed = None,

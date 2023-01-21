@@ -13,7 +13,6 @@ class Hyper(Model):
 	@_init_wrapper
 	def __init__(self, 
 			  environment_component,
-			  evaluator_component,
 			  _space,
 			  model_type,
 			  default_params={},
@@ -44,11 +43,13 @@ class Hyper(Model):
 	def objective(self, params):
 		scores = []
 		self._iter_count += 1
-		print('HYPER iter', self._iter_count)
 		for n in range(self.nRuns):
-			print('HYPER run', n)
+			utils.speak('HYPER iter:{self._iter_count} run:{n}')
+			
 			# reset components and vars for new learning loop
 			self._configuration.reset_all()
+
+			# set model hyper parameters
 			model_arguments = self.default_params.copy()
 			model_arguments.update(params)
 			if 'learning_rate' in params:
@@ -59,15 +60,15 @@ class Hyper(Model):
 				if param not in self._results_table:
 					self._results_table[param] = []
 				self._results_table[param].append(model_arguments[param])
-			utils.write_json(model_arguments, utils.get_global_parameter('working_directory') + 'model_arguments_' + str(self._iter_count) + '.json')
 			model_arguments['env'] = self._environment
 
 			# make sb3model
 			self._sb3model = self.sb3Type(**model_arguments)
-			self.model_path = utils.get_global_parameter('working_directory') + 'model_' + str(self._iter_count) + '.zip'
-			self.best_model_path = utils.get_global_parameter('working_directory') + 'best_model_' + str(self._iter_count) + '.zip'
-			self.replay_buffer_path = utils.get_global_parameter('working_directory') + 'replay_buffer_' + str(self._iter_count) + '.pkl'
-			self.best_replay_buffer_path = utils.get_global_parameter('working_directory') + 'best_replay_buffer_' + str(self._iter_count) + '.pkl'
+
+			# set write prefixes
+			self._write_folder = utils.get_global_parameter('working_directory') + 'Hyper/'
+			self._write_folder += 'iter' + str(self._iter_count) + '_'
+			self._write_folder += 'run' + str(self.n) + '_'
 
 			# run sb3 model (parent class will make calls to this)
 			self._sb3model.learn(
@@ -79,13 +80,13 @@ class Hyper(Model):
 			)
 
 			# update table
-			self._results_table['run' + str(n)].append(self._evaluator.best)
-			scores.append(self._evaluator.best)
+			self._results_table['run' + str(n)].append(self._score)
+			scores.append(self._score)
 
 		# print table
-		scores_path = utils.get_global_parameter('working_directory') + 'scores.csv'
+		results_path = utils.get_global_parameter('working_directory') +  + 'Hyper/hyper_results.csv'
 		pdf = pd.DataFrame(self._results_table)
-		pdf.to_csv(scores_path)
+		pdf.to_csv(results_path)
 
 		# return -mean of all runs (hyperopt minimizes the objective)
 		return_val = -1.0 * np.mean(scores)
@@ -100,7 +101,6 @@ class Hyper(Model):
 		tb_log_name = None,
 		reset_num_timesteps = False,
 		):
-		utils.speak('LEARN')
 		
 		# set params
 		self._total_timesteps = total_timesteps
@@ -111,4 +111,3 @@ class Hyper(Model):
 	
 		# run Hyperopt - minimizing the objective function, with the given grid space, using TPE method, and 16 max iterations
 		best = fmin(self.objective, self._space, algo=tpe.suggest, max_evals=self.max_evals)
-		utils.speak('DONE LEARN')

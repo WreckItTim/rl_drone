@@ -159,6 +159,19 @@ DiscreteActor(
 	name='Actor',
 )
 
+# CREATE MODEL
+from models.dqn import DQN
+DQN(
+	environment_component = 'TrainEnvironment',
+	policy = 'MlpPolicy',
+	policy_kwargs = {'net_arch':[64,64]},
+	buffer_size = 1000,
+	learning_starts = 100,
+	target_update_interval = 100,
+	tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+	name='Model',
+)
+
 
 
 
@@ -576,18 +589,6 @@ Bounds(
 )
 
 # MODEL
-print('observation', observation)
-policy_kwargs = None
-if observation == 'Image': 
-	policy = 'CnnPolicy'
-elif observation == 'Vector': 
-	policy = 'MlpPolicy'
-elif observation == 'Multi': 
-	policy = 'MultiInputPolicy'
-print('policy', policy)
-policy_kwargs = {
-	'net_arch':[64,64],
-}
 if model == 'Hyper':
 	from models.hyper import Hyper
 	Hyper(
@@ -607,38 +608,6 @@ if model == 'Hyper':
 		},
 		nRuns = 4,
 		max_evals = 32,
-		name='Model',
-	)
-elif model == 'DQN':
-	from models.dqn import DQN
-	DQN(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 1e-6,
-		buffer_size = evaluate_frequency * 10,
-		learning_starts = evaluate_frequency,
-		batch_size = 32,
-		tau = .8428,
-		gamma = 0.9999,
-		train_freq = 4,
-		gradient_steps = 1,
-		replay_buffer_class = None,
-		replay_buffer_kwargs = None,
-		optimize_memory_usage = False,
-		target_update_interval = evaluate_frequency * 4,
-		exploration_fraction = 0.1,
-		exploration_initial_eps = 1.0,
-		exploration_final_eps = 0.05,
-		max_grad_norm = 1,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = policy_kwargs,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
 		name='Model',
 	)
 elif model == 'TD3':
