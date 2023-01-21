@@ -1,8 +1,10 @@
-# abstract class used to handle all components
 from controllers.controller import Controller
 from component import _init_wrapper
 from configuration import Configuration
 
+# will load at a list of all components
+# allows user to view and debug each component independently 
+# or move drone around
 class Debug(Controller):
 	# constructor
 	@_init_wrapper

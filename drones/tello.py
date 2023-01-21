@@ -1,10 +1,8 @@
 import numpy as np
-import cv2
 from threading import Thread
 import socket
 from drones.drone import Drone
 from os import system
-from time import sleep
 from component import _init_wrapper
 import utils
 

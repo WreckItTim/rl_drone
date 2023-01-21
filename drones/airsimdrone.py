@@ -1,11 +1,8 @@
 # drone launched through airsim api - requires an airsim relase map
 import setup_path # need this in same directory as python code for airsim
 import airsim
-import utils
 from drones.drone import Drone
-import math
 from component import _init_wrapper
-from time import sleep
 
 class AirSimDrone(Drone):
 	@_init_wrapper
@@ -25,14 +22,13 @@ class AirSimDrone(Drone):
 		self._airsim._client.reset()
 		self._airsim._client.enableApiControl(True)
 		self._airsim._client.armDisarm(True)
-		#sleep(1)
 		self.take_off()
 		self.check_collision()
 
 	def take_off(self):
 		# take-off has some issues in airsim (sometimes the move after takeoff will fall to ground)
 		# also prints outs lookahead values to console some times 
-		# just seems more stable to send command to fly up rather than using takeoff
+		# for w/e reason it is more stable to send command to fly up rather than using takeoff
 		#self._airsim._client.takeoffAsync().join()
 		self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
 

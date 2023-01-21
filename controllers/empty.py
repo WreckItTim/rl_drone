@@ -1,8 +1,8 @@
-# abstract class used to handle all components
 from controllers.controller import Controller
 from component import _init_wrapper
 from configuration import Configuration
 
+# empty controller just connects all components
 class Empty(Controller):
 	# constructor
 	@_init_wrapper

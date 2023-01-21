@@ -5,12 +5,22 @@ from sys import getsizeof
 class Configuration():
 	active = None
 
-	def __init__(self, meta, add_timers=False, add_memories=False):
+	def __init__(self, 
+			  meta, 
+			  controller = None
+			  add_timers=False, 
+			  add_memories=False,
+			  ):
 		self.meta = meta
 		self.add_timers = add_timers
 		self.add_memories = add_memories
 		self.components = {}
-		self.benchmarks = {'time':{'units':'microseconds'}, 'memory':{'units':'kilobytes'}}
+		self.benchmarks = {
+			'time':{'units':'microseconds'}, 
+			'memory':{'units':'kilobytes'},
+			}
+		Configuration.set_active(configuration)
+		self.set_controller(controller)
 
 	def update_meta(self, meta):
 		self.meta.update(meta)

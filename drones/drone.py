@@ -1,13 +1,12 @@
 from component import Component
 
+# abstract class to handle drone
+# there are several parent methods here left to define by the programmer
+# not all need defined, depends on implementation
 class Drone(Component):
 	# constructor
 	def __init__(self):
 		pass
-
-	# when using the debug controller
-	def debug(self):
-		self.reset()
 
 	# updates number of collisions and returns same 
 	def check_collision(self):
@@ -71,9 +70,5 @@ class Drone(Component):
 
 	# enter hover mode
 	def hover(self):
-		raise NotImplementedError
-
-	# reset to prepare for next run (episode for RL)
-	def reset(self):
 		raise NotImplementedError
 		

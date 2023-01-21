@@ -14,7 +14,7 @@ class FixedMove(Action):
 			  x_speed=0, 
 			  y_speed=0, 
 			  z_speed=0, 
-			  duration=2
+			  duration=0,
 			  ):
 		pass
 

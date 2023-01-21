@@ -1,7 +1,7 @@
-# trains a reinforcment learning algorithm
 from controllers.controller import Controller
 from component import _init_wrapper
 
+# simply runs an evaluation set on the given evaluation environment
 class EvaluateRL(Controller):
     # constructor
     @_init_wrapper

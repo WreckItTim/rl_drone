@@ -37,7 +37,7 @@ class Orientation(Sensor):
 			position1 = np.array(self._misc.get_position())
 			position2 = np.array(self._misc2.get_position())
 			distance_vector = position2 - position1
-			yaw_1_2 = utils.position_to_yaw(distance_vector)
+			yaw_1_2 = math.atan2(distance_vector[1], distance_vector[0])
 			yaw1 = self._misc.get_yaw()
 			yaw_diff = yaw_1_2 - yaw1
 			yaw_diff = (yaw_diff + math.pi) % (2*math.pi) - math.pi

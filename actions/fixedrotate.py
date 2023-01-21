@@ -6,8 +6,8 @@ class FixedRotate(Action):
 	@_init_wrapper
 	def __init__(self, 
 			  drone_component, 
-			  yaw_rate, 
-			  duration=2
+			  yaw_rate=0, 
+			  duration=0,
 			  ):
 		pass
 

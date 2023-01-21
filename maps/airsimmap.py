@@ -5,9 +5,7 @@ import os
 from component import _init_wrapper
 import setup_path # need this in same directory as python code for airsim
 import airsim
-from datastructs.voxels import Voxels
-import time
-import signal
+from others.voxels import Voxels
 import psutil
 
 # handles airsim release executables
@@ -18,52 +16,53 @@ class AirSimMap(Map):
 	def __init__(self,
 				 # voxels for 2d/3d numpy array represtation of objects
 				 voxels_component=None,
+				 # path to release .sh/.exe file to be launched (exlude .sh/.exe)
+				 # if this is not None, will launch airsim map automatically
+				 # otherwise it is up to the user to launch on their own
+				 release_path:str = None,
 				 # can define json-structured settings
 				 settings:dict = None,
 				 # or define setting files to read in from given directory
-				 settings_directory:str = 'maps/airsim_settings/',
 				 # will aggregate passed in json settings and all files
 				 # update priority is given to the settings argument and last listed files
 				 # amoung the settings must be information for which sensors to use
 				 # below arg is a list of file names, see the maps/airsim_settings for examples
+				 settings_directory:str = 'maps/airsim_settings/',
 				 setting_files:list = ['vanilla'],
-				 # directory to release .exe file to be launched
-				 release_directory:str = None,
-				 # name of release .exe/.sh file to be launched, inside relase_directory
-				 release_name:str = None,
 				 # optional flags to put in command line when launching
 				 console_flags = None,
 				 ):
 		super().__init__()
-		# get path to release executable file to launch
-		self._release_path = os.path.join(release_directory, release_name, release_name)
-		# create setting dictionary
-		self.settings = {}
-		if settings is not None:
-			self.settings = settings.copy()
-		# read in any other settings files
-		other_settings = {}
-		if setting_files is not None:
-			other_settings = self.read_settings(settings_directory, setting_files)
-		# merge all settings
-		self.settings.update(other_settings)
-		# write to temp file to be read in when launching realease executable
-		self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
-		self.write_settings(self.settings, self._settings_path)
-		if 'LocalHostIp' in self.settings:
-			utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
-		else:
-			utils.set_global_parameter('LocalHostIp', '127.0.0.1')
-		if 'ApiServerPort' in self.settings:
-			utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
-		else:
-			utils.set_global_parameter('ApiServerPort', 41451)
-		# pipeline to open for console output
 		self._pid = None
 		self._client = None
+		# get path to release executable file to launch
+		if release_path is not None:
+			self.release_path = release_path.replace('.exe', '').replace('.sh', '')
+			# create setting dictionary
+			self.settings = {}
+			if settings is not None:
+				self.settings = settings.copy()
+			# read in any other settings files
+			other_settings = {}
+			if setting_files is not None:
+				other_settings = self.read_settings(settings_directory, setting_files)
+			# merge all settings
+			self.settings.update(other_settings)
+			# write to temp file to be read in when launching realease executable
+			self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
+			self.write_settings(self.settings, self._settings_path)
+			if 'LocalHostIp' in self.settings:
+				utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
+			else:
+				utils.set_global_parameter('LocalHostIp', '127.0.0.1')
+			if 'ApiServerPort' in self.settings:
+				utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
+			else:
+				utils.set_global_parameter('ApiServerPort', 41451)
+			# pipeline to open for console output
 
 	def make_voxels(self,
-			  # ABSOLUTE path to right to, must be absolute
+			  # ABSOLUTE path to write to, must be absolute
 			  absolute_path:str,
 			  # voxel params if make new voxels (else these are set from read)
 			  center = [0,0,0], # in meters
@@ -86,33 +85,40 @@ class AirSimMap(Map):
 	# launch airsim map
 	def connect(self):
 		super().connect()
-		OS = utils.get_global_parameter('OS')
-		flags = ''
-		if self.console_flags is not None:
-			flags = ' '.join(self.console_flags)
-		if OS == 'Windows':
-			# send command to terminal to launch the relase executable, if can
-			if os.path.exists(self._release_path):
-				print(f'Launching AirSim at {self._release_path}')
-				terminal_command = f'{self._release_path}.exe {flags} -settings=\"{self._settings_path}\"'
-				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-				self._pid = process.pid
+		if self.release_path is not None:
+			# check OS to determine how to launch map
+			OS = utils.get_global_parameter('OS')
+			# set flags
+			flags = ''
+			if self.console_flags is not None:
+				flags = ' '.join(self.console_flags)
+			# launch map from OS
+			if OS == 'Windows':
+				_release_path = self.release_path + '.exe'
+				# send command to terminal to launch the relase executable, if can
+				if os.path.exists(_release_path):
+					print(f'Launching AirSim at {_release_path}')
+					terminal_command = f'{_release_path}.exe {flags} -settings=\"{self._settings_path}\"'
+					process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+					self._pid = process.pid
+				else:
+					print('Please manually launch Airsim.')
+			elif OS == 'Linux':
+				_release_path = self.release_path + '.sh'
+				# send command to terminal to launch the relase executable, if can
+				if os.path.exists(_release_path):
+					print(f'Launching AirSim at {_release_path}')
+					terminal_command = f'sh {_release_path}.sh {flags} -settings=\"{self._settings_path}\"'
+					process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
+					self._pid = process.pid
+				else:
+					print('Please manually launch Airsim.')
 			else:
 				print('Please manually launch Airsim.')
-		if OS == 'Linux':
-			# send command to terminal to launch the relase executable, if can
-			if os.path.exists(self._release_path):
-				print(f'Launching AirSim at {self._release_path}')
-				terminal_command = f'sh {self._release_path}.sh {flags} -settings=\"{self._settings_path}\"'
-				process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
-				self._pid = process.pid
-			else:
-				print('Please manually launch Airsim.')
-		if OS == 'Darwin':
+		else:
 			print('Please manually launch Airsim.')
 		# prompt user to confirm when launch is successful (can launch manually if needs be)
-		print(f'Send any key when AirSim is fully launched, this make take several minutes....')
-		x = input()
+		utils.prompt(f'Send any key when AirSim is fully launched, this make take several minutes....')
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_global_parameter('LocalHostIp'),

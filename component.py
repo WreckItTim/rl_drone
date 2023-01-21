@@ -233,11 +233,11 @@ class Component():
 		pass
 
 	# write any vars to file
-	def save(self, state=None):
+	def save(self, write_folder, state=None):
 		pass
 	
 	# read any vars to file
-	def load(self, state=None):
+	def load(self, read_folder, state=None):
 		pass
 
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed

@@ -13,8 +13,7 @@ class Actor(Component):
 	def reset(self, state=None):
 		for action in self._actions:
 			action.reset(state)
-
-
+			
 	# returns action space for this actor
 	def get_space(self):
 		raise NotImplementedError

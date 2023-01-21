@@ -1,9 +1,7 @@
 # abstract class used to handle maps - where the drone is flying in
 # this is the part that connects the program to the real application
 from component import Component
-from datastructs.voxels import Voxels
-import utils
-import numpy as np
+
 
 class Map(Component):
 	# constructor
