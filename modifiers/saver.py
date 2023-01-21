@@ -9,59 +9,31 @@ class Saver(Other):
 	def __init__(self,
 			  base_component, # componet with method to modify
 			  parent_method, # name of parent method to modify
+			  track_vars, # which class specific variables to save [str]
 			  order, # modify 'pre' or 'post'?
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			
-			  environment_component,
-			  modified_component,
-		
-			save_components=None,
-			save_variables = {},
-			frequency=10,
-			save_model=True,
-			save_replay_buffer=True,
-			save_configuration_file=True,
-			save_benchmarks=True,
-			write_folder=None
-	):
+			  write_folder = None, # will default to working_directory/component_name/
+			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  ):
 		super().__init__(base_component, parent_method, order, frequency, counter)
-
-	def step(self, state):
-		pass
-
-	def reset(self, reset_state):
-		pass
-
-	def reset_learning(self, reset_state):
-		pass
-
-	def save(self):
-		pass
-
-	def load(self):
-		pass
-
-	def debug(self):
-		pass
+		if write_folder is None:
+			self.write_folder = utils.get_global_parameter('working_directory')
+			self.write_folder += self._base._name + '/'
 
 	def connect(self):
 		super().connect()
+		self._base.set_save(True, self.track_vars)
 
-	def disconnect(self):
-		super().disconnect()
-
-	def connect(self):
-		super().connect()
-		self._paths = []
-		for component in self._save:
-			component_name = component._name
-			sub_folder = self.write_folder + component_name + '/'
-			if not os.path.exists(sub_folder):
-				os.makedirs(sub_folder)
-			self._paths.append(sub_folder)
-			for variable in self.save_variables[component_name]:
-				component._dumps.append(variable)
+	def activate(self, state=None):
+		self.counter += 1
+		if self.counter % self.frequency != 0:
+			if not (self.counter == 1 and self.activate_on_first):
+				return
+		_write_folder = self.write_folder + self._base.write_prefix()
+		if not os.path.exists(_write_folder):
+			os.makedirs(_write_folder)
+		self._base.save(_write_folder, state)
 
 
 	def save(self):
@@ -72,10 +44,3 @@ class Saver(Other):
 		if self.save_benchmarks:
 			self._configuration.log_benchmarks(self.write_folder + 'benchmarks.json')
 
-	def reset(self):
-		if self._environment.episode_counter % self.frequency == 0:
-			self.save()
-
-	# when using the debug controller
-	def debug(self):
-		self.save()

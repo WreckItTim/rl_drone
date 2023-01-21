@@ -236,14 +236,13 @@ class Component():
 	def save(self, write_folder, state=None):
 		pass
 
-	# this will toggle if keep track of vars to save
-	# warning this can be expensive
-	def set_save(self,
-			  track_save,
-			  track_vars=[],
-			  ):
-		self._track_save = track_save
-		self._track_vars = track_vars.copy()
+	# kill connection, clean up as needed
+	def disconnect(self, state=None):
+		pass
+
+	# does whatever to check whatever (used for debugging mode)
+	def debug(self, state=None):
+		pass
 
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed
 	# WARNING: if you overwrite this make sure to call super()
@@ -266,13 +265,18 @@ class Component():
 				component = self._configuration.get_component(component_name)
 			setattr(self, member_name, component)
 
-	# kill connection, clean up as needed
-	def disconnect(self, state=None):
-		pass
+	# this will toggle if keep track of vars to save
+	# warning this can be expensive
+	def set_save(self,
+			  track_save,
+			  track_vars,
+			  ):
+		self._track_save = track_save
+		self._track_vars = track_vars.copy()
 
-	# does whatever to check whatever (used for debugging mode)
-	def debug(self, state=None):
-		pass
+	# returns a prefix to put before writing anyting to file
+	def write_prefix(self):
+		return ''
 
 
 	# CLASS METHODS - ovewrite as needed from child

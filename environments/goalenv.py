@@ -40,7 +40,7 @@ class GoalEnv(Environment):
 	# note this is expensive, so must dump using save() from time to time
 	# best route to do this is a saver modifier
 	# track_vars are strings with which variables to save
-	def set_save(self
+	def set_save(self,
 			  track_save,
 			  track_vars=[
 				  'observations', 
@@ -111,7 +111,7 @@ class GoalEnv(Environment):
 		done = False
 		for terminator in self._terminators:
 			done = done or terminator.terminate(self._states[this_step])
-		state['done'] = done
+		self._states[this_step]['done'] = done
 		# save data?
 		if self._track_save and 'observations' in self._track_vars:
 			self._observations[observation_name] = observation_data.copy()

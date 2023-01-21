@@ -54,8 +54,8 @@ GoalEnv(
 		'DistanceTerminator',
 		],
 	goal_component='Goal',
-	overide_timer = True, # time benchmark on
-	name = 'TrainEnvironment',
+	overide_timer=True, # time benchmark on
+	name='TrainEnvironment',
 )
 # CREATE EVALUATE ENVIRONMENT
 GoalEnv(
@@ -71,7 +71,7 @@ GoalEnv(
 		],
 	goal_component='Goal',
 	is_evaluation_environment=True,
-	name = 'EvaluateEnvironment',
+	name='EvaluateEnvironment',
 )
 
 # CREATE MAP
