@@ -1,13 +1,12 @@
-# discrete move in one direction
 from actions.action import Action
 from component import _init_wrapper
-import numpy as np
 import math
 
+# continuous move forward that will scale the input x,y,z speeds by the rl_output
 class Move(Action):
 	# constructor takes 4d array where first 3 components are direction and 4th component is speed
 	# note that speed is an arbitrary unit that is defined by the drone
-	# this is a continuous action that will scale the input x,y,z speeds by the rl_output
+	# zero threshold determines when to not move forward - sets a real 0 value
 	@_init_wrapper
 	def __init__(self, 
 			  drone_component,
@@ -16,23 +15,24 @@ class Move(Action):
 			  base_z_speed=0, 
 			  zero_min_threshold=-0.1,
 			  zero_max_threshold=0.1,
-			  duration=2
+			  duration=2,
 			  ):
-		super().__init__()
+		# set these values for continuous actions
+		# they determine the possible ranges of output from rl algorithm
 		self._min_val = -1
 		self._max_val = 1
-
-	def act(self, rl_output):
+		
+	# move at input rate
+	def step(self, state):
+		rl_output = state['rl_output'][self._idx]
+		# check for true zero
 		if rl_output > self.zero_min_threshold and rl_output < self.zero_max_threshold:
 			return
 		# must orient self with yaw
-		yaw = self._drone.get_yaw() # yaw counterclockwise rotationa bout z-axis
+		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
+		# calculate rate from rl_output
 		adjusted_x_speed = float(rl_output * self.base_x_speed * math.cos(yaw) + rl_output * self.base_y_speed * math.sin(yaw))
 		adjusted_y_speed = float(rl_output * self.base_y_speed * math.cos(yaw) + rl_output * self.base_x_speed * math.sin(yaw))
 		adjusted_z_speed = float(rl_output * self.base_z_speed)
+		# move calculated rate
 		self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
-		
-	# when using the debug controller
-	def debug(self):
-		self.act()
-		return(f'position {self._drone.get_position()} yaw {self._drone.get_yaw()}')

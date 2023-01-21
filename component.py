@@ -7,6 +7,7 @@ from functools import wraps, partialmethod
 from configuration import Configuration
 
 # README - for all new classes that you make (I suggest everyone read this to understand how the repo works anyways):
+# see the actors folder for the simplest examples
 # all classes are children of this Component class 
 # this uses overlapping logic for serialization, connecting, running, logging, conflict management...
 # after you know how this works you can copy and paste new child classes and have them integrated into the repo, working in seconds
@@ -206,35 +207,42 @@ def _init_wrapper(init_method):
 					  part = 0,
 					  overide_timer = None,
 					  overide_memory = None,
+					  _state=None,
 					  )
 
 # the component class itself
 class Component():
-	# decorate all child sub-Component classes __init__() like this (wihtout the comment):
+	# PARENT METHODS - all components have access to these
+	
+	# constructor
+	# decorate all, and only, child sub-Component classes __init__() like this (wihtout the comment):
 	#@_init_wrapper
-	def __init__(self):
+	def __init__(self, _state=None):
+		raise NotImplementedError
+	
+	# takes a step in an episode
+	def step(self, state=None):
 		pass
 
+	# resets and end of episode to prepare for next
+	def reset(self, state=None):
+		pass
 
-	# CLASS METHODS - ovewrite as needed from child
+	# use to reset learning loop attributes
+	def reset_learning(self, state=None):
+		pass
 
-	# estimate memory used by this component (in bytes)
-	def __sizeof__(self):
-		total_memory = 0
-		variables = vars(self)
-		for key in variables:
-			variable = variables[key]
-			if callable(variable):
-				continue
-			if isinstance(variable, Component):
-				total_memory += 8
-			else: 
-				total_memory += getsizeof(variable)
-		return total_memory
+	# write any vars to file
+	def save(self, state=None):
+		pass
+	
+	# read any vars to file
+	def load(self, state=None):
+		pass
 
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed
-	# if you overwrite this make sure to call super()
-	def connect(self):
+	# WARNING: if you overwrite this make sure to call super()
+	def connect(self, state=None):
 		for components_pair in self._connect_components_list:
 			member_name, component_names = components_pair
 			if component_names is None:
@@ -254,34 +262,30 @@ class Component():
 			setattr(self, member_name, component)
 
 	# kill connection, clean up as needed
-	def disconnect(self):
+	def disconnect(self, state=None):
 		pass
 
 	# does whatever to check whatever (used for debugging mode)
-	def debug(self):
+	def debug(self, state=None):
 		pass
 
-	# resets and end of episode to prepare for next
-	def reset(self):
-		pass
 
-	# makes a step in an episode
-	def step(self):
-		pass
+	# CLASS METHODS - ovewrite as needed from child
 
-	# stops component - if error is reached
-	def stop(self):
-		self.disconnect()
+	# estimate memory used by this component (in bytes)
+	def __sizeof__(self):
+		total_memory = 0
+		variables = vars(self)
+		for key in variables:
+			variable = variables[key]
+			if callable(variable):
+				continue
+			if isinstance(variable, Component):
+				total_memory += 8
+			else: 
+				total_memory += getsizeof(variable)
+		return total_memory
 
-	# dumps memory to file (not all components use this)
-	# primary example is for observations 
-		# (this will dump most recent observations file)
-	def dump(self, write_folder, params={}):
-		pass
-
-	# use to reset learning loop attributes
-	def reset_learning(self):
-		pass
 
 	# HELPER METHODS
 

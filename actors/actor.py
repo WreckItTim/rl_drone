@@ -1,24 +1,20 @@
-# abstract class used to handle actions
-from actions.action import Action
 from component import Component
 
+# abstract class used to handle actions
 class Actor(Component):
-    # constructor
-    def __init__(self):
-        pass
+	# contstructor
+	def __init__(self,
+			  actions_components=[], 
+			  _state=None,
+			  ):
+		raise NotImplementedError
+	
+	# resets and end of episode to prepare for next
+	def reset(self, state=None):
+		for action in self._actions:
+			action.reset(state)
 
-    # interprets output from an RL model to take action, then takes it
-    # returns transcribed action as string (for logging purposes only)
-    def act(self, rl_output):
-        raise NotImplementedError
 
-    def connect(self):
-        super().connect()
-
-    def reset(self):
-        for action in self._actions:
-            action.reset()
-
-    # returns action space for this actor
-    def get_space(self):
-        raise NotImplementedError
+	# returns action space for this actor
+	def get_space(self):
+		raise NotImplementedError
