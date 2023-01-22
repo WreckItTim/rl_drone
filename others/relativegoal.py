@@ -1,5 +1,4 @@
-# abstract class used to handle abstract components
-from datastructs.datastruct import DataStruct
+from others.other import Other
 from component import _init_wrapper
 import random
 import math
@@ -7,8 +6,7 @@ import utils
 import numpy as np
 
 # set goal according to drone's starting position and orientation
-# WARNING: you must add this to the others_components in your environment
-class RelativeGoal(DataStruct):
+class RelativeGoal(Other):
 
 	@_init_wrapper
 	def __init__(self, 
@@ -26,7 +24,6 @@ class RelativeGoal(DataStruct):
 				 random_yaw_on_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
 				 random_yaw_max = math.pi,
-				 reset_on_step = False,
 			 ):
 		self.xyz_point = np.array(xyz_point, dtype=float)
 		self._x = self.xyz_point[0]
@@ -45,10 +42,11 @@ class RelativeGoal(DataStruct):
 		x = drone_position[0] + alpha * relative_position[0] * math.cos(yaw) + alpha * relative_position[1] * math.sin(yaw)
 		y = drone_position[1] + alpha * relative_position[1] * math.cos(yaw) + alpha * relative_position[0] * math.sin(yaw)
 		z = drone_position[2] + relative_position[2]
-		# for in bounds
+		# make in bounds
 		x = min(self.x_bounds[1], max(self.x_bounds[0], x))
 		y = min(self.y_bounds[1], max(self.y_bounds[0], y))
 		z = min(self.z_bounds[1], max(self.z_bounds[0], z))
+		# check if goal is in an object
 		in_object = self._map.at_object_2d(x, y)
 		return x, y, z, in_object
 
@@ -89,14 +87,3 @@ class RelativeGoal(DataStruct):
 				break
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_position, relative_yaw, alpha)
 			alpha -= 0.1
-
-	# if reset on each step
-	def step(self, state):
-		if self.reset_on_step:
-			self.reset()
-		state['goal_position'] = self.get_position()
-		state['goal_yaw'] = self.get_yaw()
-
-	# when using the debug controller
-	def debug(self):
-		self.reset()

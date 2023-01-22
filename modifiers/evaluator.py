@@ -1,58 +1,49 @@
 from modifiers.modifier import Modifier
 from component import _init_wrapper
 import utils
-import os
 from configuration import Configuration
 import numpy as np
 
-# TODO: adjust components that involved number of steps, no longer handles from here
-
+# Charlie works in goal based environments (A to B)
 # Charlie evaluates every number episodes
 # Charlie actively saves the best model
 # Charlie amps up distance to goal on each success
 	# then repeats for each success until failure
 # if the model doesn't improve after some episodes
 	# then Charlie will end the learning loop
-# Charlie will evaluate at the 0th episode (before training)
-	# I prefer this so we can see training w.r.t complete random weights
+# Charlie updates _best_score in the model component
 class EvaluatorCharlie(Modifier):
 	@_init_wrapper
 	def __init__(self, 
-			  evaluate_environment_component,
-			  model_component,
-			  goal_component,
-			  modified_component,
-		parent_method = 'reset',
-		exectue = 'after',
-		frequency = 1,
-		counter = 0,
-			  amp_up_static = [4, 0, 0],
-			  amp_up_random = 4,
-			  episodes = 1,
-			  success = -1,
-			  patience = 64,
-			  best = 0,
-			  best_eval = 0,
-			  evaluation_counter = 0,
-			  reset_counter = 0,
-			  wait = 0,
-			  verbose = 2,
+			  base_component, # componet with method to modify
+			  parent_method, # name of parent method to modify
+			  order, # modify 'pre' or 'post'?
+			  evaluate_environment_component, # environment to run eval in
+			  goal_component, # environment to run eval in
+			  best_score = 0, # metric to improve
+			  best_eval = 0, # evaluation set corresponding to best_score
+			  amp_up_static = [4, 0, 0], # increases static goal distance
+			  amp_up_random = 4, # increases random goal distance
+			  nEpisodes = 1, # number of episodes to evaluate each set
+			  nSuccess = -1, # number of successfull episodes for set success, -1=all
+			  patience = 64, # number of sets to wait to improve best_score
+			  wait = 0, # number of sets have been waiting to improve score
+			  set_counter = 0, # count number of eval sets
+			  random = False, # set true to select randomly from spawn objects
+			  frequency = 1, # use modifiation after how many calls to parent method?
+			  counter = 0, # keepts track of number of calls to parent method
+			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
 			  ): 
 		self.connect_priority = -1 # needs other components to connect first
 		self.amp_up_static = np.array(amp_up_static, dtype=float)
-		if success < 0:
-			self.success = episodes
-
-	# get static learning loop values for future resets
-	def connect(self):
-		super().connect()
+		if self.nSuccess < 0:
+			self.nSuccess = self.nEpisodes
 
 	# reset learning loop to static values from connect()
 	def reset_learning(self):
-		self.best = 0
+		self.best_score = 0
 		self.best_eval = 0
 		self.evaluation_counter = 0
-		self.reset_counter = 0
 		self.wait = 0
 
 	# steps through one evaluation episode

@@ -49,9 +49,13 @@ class Model(Component):
 	# save sb3 model and replay_buffer to path
 	def save(self, write_folder):
 		if 'model' in self._track_vars:
-			self._sb3model.save(write_folder + 'model.zip')
+			self.save_model(write_folder + 'model.zip')
 		if '_has_replay_buffer' in self._track_vars and self._has_replay_buffer:
-			self._sb3model.save_replay_buffer(write_folder +  + 'replay_buffer.zip')
+			self.save_replay_buffer(write_folder +  + 'replay_buffer.zip')
+	def save_model(self, path):
+		self._sb3model.save(path)
+	def save_replay_buffer(self, path):
+		self._sb3model.save_replay_buffer(path)
 
 	# load sb3 model from path, must set sb3Load from child
 	def load_model(self, path):

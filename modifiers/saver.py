@@ -13,10 +13,10 @@ class Saver(Other):
 			  order, # modify 'pre' or 'post'?
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			  write_folder = None, # will default to working_directory/component_name/
 			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  write_folder = None, # will default to working_directory/component_name/
 			  ):
-		super().__init__(base_component, parent_method, order, frequency, counter)
+		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		if write_folder is None:
 			self.write_folder = utils.get_global_parameter('working_directory')
 			self.write_folder += self._base._name + '/'
@@ -26,21 +26,8 @@ class Saver(Other):
 		self._base.set_save(True, self.track_vars)
 
 	def activate(self, state=None):
-		self.counter += 1
-		if self.counter % self.frequency != 0:
-			if not (self.counter == 1 and self.activate_on_first):
-				return
-		_write_folder = self.write_folder + self._base.write_prefix()
-		if not os.path.exists(_write_folder):
-			os.makedirs(_write_folder)
-		self._base.save(_write_folder, state)
-
-
-	def save(self):
-		for idx, component in enumerate(self._save):
-			component.dump(self._paths[idx])
-		if self.save_configuration_file:
-			self._configuration.save(self.write_folder + 'configuration.json')
-		if self.save_benchmarks:
-			self._configuration.log_benchmarks(self.write_folder + 'benchmarks.json')
-
+		if self.check_counter():
+			_write_folder = self.write_folder + self._base.write_prefix()
+			if not os.path.exists(_write_folder):
+				os.makedirs(_write_folder)
+			self._base.save(_write_folder, state)

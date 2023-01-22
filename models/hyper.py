@@ -7,6 +7,7 @@ from stable_baselines3 import TD3 as sb3TD3
 import utils
 import pandas as pd
 import numpy as np
+import os
 
 class Hyper(Model):
 	# constructor
@@ -18,6 +19,7 @@ class Hyper(Model):
 			  default_params={},
 			  max_evals = 16,
 			  nRuns = 1,
+			  write_folder = None, # writes hyper results to
 		):
 		super().__init__()
 		self._is_hyper = True
@@ -38,12 +40,25 @@ class Hyper(Model):
 
 	def connect(self):
 		super().connect()
+		if self.write_folder is None:
+			self.write_folder = utils.get_global_parameter('working_directory') + self._name + '/'
+		if not os.path.exists(self.write_folder):
+			os.makedirs(self.write_folder)
+
+		
+	# set model write prefixes
+	# to be used by save modifiers
+	def write_prefix(self):
+		prefix = 'iter' + str(self._iter_count) + '_'
+		prefix += 'run' + str(self._n) + '_'
+		return prefix
 	
 	# hyperopt objective to minimize
 	def objective(self, params):
 		scores = []
 		self._iter_count += 1
 		for n in range(self.nRuns):
+			self._n = n
 			utils.speak('HYPER iter:{self._iter_count} run:{n}')
 			
 			# reset components and vars for new learning loop
@@ -65,11 +80,6 @@ class Hyper(Model):
 			# make sb3model
 			self._sb3model = self.sb3Type(**model_arguments)
 
-			# set write prefixes
-			self._write_folder = utils.get_global_parameter('working_directory') + 'Hyper/'
-			self._write_folder += 'iter' + str(self._iter_count) + '_'
-			self._write_folder += 'run' + str(self.n) + '_'
-
 			# run sb3 model (parent class will make calls to this)
 			self._sb3model.learn(
 				total_timesteps = self._total_timesteps,
@@ -80,11 +90,11 @@ class Hyper(Model):
 			)
 
 			# update table
-			self._results_table['run' + str(n)].append(self._score)
-			scores.append(self._score)
+			self._results_table['run' + str(n)].append(self._best_score)
+			scores.append(self._best_score)
 
 		# print table
-		results_path = utils.get_global_parameter('working_directory') +  + 'Hyper/hyper_results.csv'
+		results_path = self.write_folder + '/hyper_results.csv'
 		pdf = pd.DataFrame(self._results_table)
 		pdf.to_csv(results_path)
 

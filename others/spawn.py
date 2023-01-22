@@ -67,4 +67,4 @@ class Spawn(Other):
 
 	# debug mode
 	def debug(self):
-		utils.speak('spawn = ' + str(self.get_spawn())
+		utils.speak('spawn = ' + str(self.get_spawn()))

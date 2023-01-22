@@ -25,12 +25,19 @@ class Modifier(Component):
 			  order, # modify 'pre' or 'post'?
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
+			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
 			  ):
 		# modify base method with this one
 		base_method = getattr(self._base, parent_method)
 		modification = getattr(self, parent_method)
 		setattr(self._base, parent_method, _modify(base_method, modification, order))
 		self.connect_priority = -999 # connects after everything else
+
+	# increments counter and checks if we activate based on counter
+	def check_counter(self):
+		self.counter += 1
+		return (self.counter == 1 and self.activate_on_first or
+		self.counter % self.frequency == 0)
 
 	# define this from child - this is whatever the modifier does
 	def activate(self, state=None):
