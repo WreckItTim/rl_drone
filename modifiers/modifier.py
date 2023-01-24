@@ -23,6 +23,8 @@ class Modifier(Component):
 			  base_component, # componet with method to modify
 			  parent_method, # name of parent method to modify
 			  order, # modify 'pre' or 'post'?
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
 			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
@@ -33,11 +35,26 @@ class Modifier(Component):
 		setattr(self._base, parent_method, _modify(base_method, modification, order))
 		self.connect_priority = -999 # connects after everything else
 
-	# increments counter and checks if we activate based on counter
-	def check_counter(self):
+	# increments counter and checks if we activate
+	def check_counter(self, state=None):
+		# check if we do not activate on eval environ
+		if state['is_evaluation_env']:
+			if not self.on_evaluate:
+				return False
+		# check if we do not activate on train environ
+		else:
+			if not self.on_train:
+				return False
+		# we now know that we are in proper environment...
 		self.counter += 1
-		return (self.counter == 1 and self.activate_on_first or
-		self.counter % self.frequency == 0)
+		# check if we do not activate on first call
+		if not self.counter == 1 and self.activate_on_first :
+			return False
+		# check if we are off frequency
+		if not self.counter % self.frequency == 0:
+			return False
+		# cleared all checks
+		return True
 
 	# define this from child - this is whatever the modifier does
 	def activate(self, state=None):
@@ -60,7 +77,7 @@ class Modifier(Component):
 		self.activate(state)
 
 	# write any vars to file
-	def save(self, write_folder, state=None):
+	def save(self, state=None):
 		# add write_folder to state if you need to use it then del from state
 		self.activate(state)
 

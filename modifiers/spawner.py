@@ -1,5 +1,5 @@
 # abstract class used to handle abstract components
-from others.other import Other
+from modifiers.modifier import Modifier
 from component import _init_wrapper
 import utils
 import random
@@ -7,7 +7,7 @@ import random
 # this will select from several spawn objects and move drone there
 # option is to randomly select from passed in spawn objects or static rotating queue
 # spawn objects are defined in others
-class Spawner(Other):
+class Spawner(Modifier):
 
 	@_init_wrapper
 	def __init__(self, 
@@ -20,6 +20,8 @@ class Spawner(Other):
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
 			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			 ):
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self._rotating_index = 0
@@ -38,8 +40,8 @@ class Spawner(Other):
 		return next_spawn
 
 	# select spawn then spawn drone
-	def activate(self):
-		if self.check_counter():
+	def activate(self, state=None):
+		if self.check_counter(state):
 			next_spawn = self.get_next_spawn()
 			position, yaw = next_spawn.get_spawn()
 			self._drone.teleport(position[0], position[1], position[2], yaw)

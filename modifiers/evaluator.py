@@ -19,31 +19,48 @@ class EvaluatorCharlie(Modifier):
 			  parent_method, # name of parent method to modify
 			  order, # modify 'pre' or 'post'?
 			  evaluate_environment_component, # environment to run eval in
-			  goal_component, # environment to run eval in
 			  best_score = 0, # metric to improve
 			  best_eval = 0, # evaluation set corresponding to best_score
 			  amp_up_static = [4, 0, 0], # increases static goal distance
 			  amp_up_random = 4, # increases random goal distance
 			  nEpisodes = 1, # number of episodes to evaluate each set
-			  nSuccess = -1, # number of successfull episodes for set success, -1=all
+			  success = -1, # number of successfull episodes for set success, -1=all
 			  patience = 64, # number of sets to wait to improve best_score
 			  wait = 0, # number of sets have been waiting to improve score
 			  set_counter = 0, # count number of eval sets
 			  random = False, # set true to select randomly from spawn objects
+			  write_folder = None, # writes best model / replay buffer here
+			  track_vars = ['model', 'replay_buffer'], # which best vars to write
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
 			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  verbose = 2,
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			  ): 
 		self.connect_priority = -1 # needs other components to connect first
 		self.amp_up_static = np.array(amp_up_static, dtype=float)
-		if self.nSuccess < 0:
-			self.nSuccess = self.nEpisodes
+		if self.success < 0:
+			self.success = self.nEpisodes
+		if write_folder is None:
+			self.write_folder = utils.get_global_parameter('working_directory')
+			self.write_folder += self._name + '/'
+
+	def activate(self, state=None):
+		if self.check_counter(state):
+			# evaluate for a set of episodes, until failure
+			total_success = False
+			while not total_success:
+				stop, total_success = self.evaluate_set()
+			# close up shop?
+			if stop:
+				Configuration.get_active().controller.stop()
 
 	# reset learning loop to static values from connect()
 	def reset_learning(self):
 		self.best_score = 0
 		self.best_eval = 0
-		self.evaluation_counter = 0
+		self.set_counter = 0
 		self.wait = 0
 
 	# steps through one evaluation episode
@@ -75,41 +92,22 @@ class EvaluatorCharlie(Modifier):
 		total_success = nSuccess >= self.success
 		if total_success:
 			# amp up goal distance
-			self._goal.xyz_point += self.amp_up_static
-			self._goal.random_dim_min += self.amp_up_random
-			self._goal.random_dim_max += self.amp_up_random
+			self._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
 			# update best
-			self.best = self._goal.random_dim_min
-			self.best_eval = self.evaluation_counter
+			self.best_score = self._evaluate_environment._goal.random_dim_min
+			self.best_eval = self.set_counter
 			# save best
-			self._model.save(self.best_model_path)
-			self._model.save_replay_buffer(self.best_replay_buffer_path)
+			if 'model' in self.track_vars:
+				self._evaluate_environment._model.save_model(self.write_folder + 'best_')
+			if 'replay_buffer' in self.track_vars:
+				self._evaluate_environment._model.save_replay_buffer(self.write_folder + 'best_')
 			# update early stopping
 			self.wait = 0
 			if self.verbose > 1:
-				print(f'Amping up goal distance to {self._goal.random_dim_min}')
+				print(f'Amped up goal distance to {self._goal.random_dim_min}')
 		else:
 			# update early stopping
 			self.wait += 1
 
-		self.evaluation_counter += 1
+		self.set_counter += 1
 		return self.wait >= self.patience, total_success
-
-	# handle resets while training		
-	def reset(self):
-		# check when to do next set of evaluations
-		if self.reset_counter % self.frequency == 0:
-			# evaluate for a set of episodes, until failure
-			total_success = False
-			while not total_success:
-				stop, total_success = self.evaluate_set()
-			# close up shop?
-			if stop:
-				Configuration.get_active().controller.stop()
-		self.reset_counter += 1
-
-	# when using the debug controller
-	def debug(self):
-		# evaluate for a set of episodes
-		stop, total_success = self.evaluate_set()
-		print('Total Success?', total_success, 'Stopping Criteria Met?', stop)

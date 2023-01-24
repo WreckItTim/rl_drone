@@ -20,7 +20,6 @@ class GoalEnv(Environment):
 				 actor_component, 
 				 observer_component, 
 				 rewarder_component, 
-				 terminators_components,
 				 goal_component,
 				 others_components=None,
 				 step_counter=0, 
@@ -61,7 +60,9 @@ class GoalEnv(Environment):
 	# save observations and states
 	# these are done in chunks rather than individual files
 		# this saves memory, reduces zip time, and avoids clutter
-	def save(self, write_folder):
+	# pass in write_folder to state
+	def save(self, state):
+		write_folder = state['write_folder']
 		if not self._track_save:
 			utils.warning('called VanillaEnv.save() without setting _track_save=True, nothing to save')
 			return
@@ -106,11 +107,8 @@ class GoalEnv(Environment):
 			for other in self._others:
 				other.step(self._states[this_step])
 		# assign rewards (stores total rewards and individual rewards in state)
-		total_reward = self._rewarder.step(self._states[this_step])
-		# check for termination
-		done = False
-		for terminator in self._terminators:
-			done = done or terminator.terminate(self._states[this_step])
+		# also checks if we are done with episode
+		total_reward, done = self._rewarder.step(self._states[this_step])
 		self._states[this_step]['done'] = done
 		# save data?
 		if self._track_save and 'observations' in self._track_vars:
@@ -125,26 +123,29 @@ class GoalEnv(Environment):
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
-		# reset all components, several reset() methods may be blank
-		# order may matter here, currently no priority queue set-up, may need later
-		self._drone.reset()
-		self._goal.reset()
-		if self._others is not None:
-			for other in self._others:
-				other.reset()
-		self._actor.reset()
-		self._observer.reset()
-		self._rewarder.reset()
-		for terminator in self._terminators:
-			terminator.reset()
-
 		# init state(s)
 		self._nSteps = 0 # steps this episode
+		self._states[this_step]['nSteps'] = self._nSteps
 		this_step = 'step_'+str(self._nSteps)
 		self._states = {this_step:{}}
+		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
+
+		# reset drone and goal components, several reset() methods may be blank
+		# order may matter here, currently no priority queue set-up, may need later
+		self._drone.reset(self._states[this_step])
 		self._states[this_step]['drone_position'] = self._drone.get_position()
 		self._states[this_step]['yaw'] = self._drone.get_yaw() 
+
+		self._goal.reset(self._states[this_step])
 		self._states[this_step]['goal_position'] = self._goal.get_position()
+
+		# reset other components
+		if self._others is not None:
+			for other in self._others:
+				other.reset(self._states[this_step])
+		self._actor.reset(self._states[this_step])
+		self._observer.reset(self._states[this_step])
+		self._rewarder.reset(self._states[this_step])
 
 		# get first observation
 		observation_data, observation_name = self._observer.step(self._state)

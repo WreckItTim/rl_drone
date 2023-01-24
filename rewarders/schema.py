@@ -12,11 +12,13 @@ class Schema(Rewarder):
         assert len(rewards_components) == len(reward_weights), 'not equal number of reward components and weights'
         
     # calculates rewards from agent's current state (call to when taking a step)
-    def reward(self, state):
+    def step(self, state):
         total_reward = 0
+        done = False
         for idx, reward in enumerate(self._rewards):
-            value = reward.reward(state)
+            value, this_done = reward.step(state)
             state['reward_from_' + reward._name] = value
             total_reward += self.reward_weights[idx] * value
+            done = done or this_done
         state['total_reward'] = total_reward
-        return total_reward
+        return total_reward, done

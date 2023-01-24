@@ -11,8 +11,8 @@ class Normalize(Transformer):
 	def __init__(self, 
 				 min_input=0, 
 				 max_input=255,
-				 min_output=0, 
-				 max_output=100,
+				 min_output=0.1, # reserver 0 for offline sensors
+				 max_output=1,
 				 ):
 		super().__init__()
 
@@ -24,4 +24,4 @@ class Normalize(Transformer):
 						 )
 		if type(observation) == Vector:
 			normalized = np.reshape(normalized, (len(normalized),))
-		observation.save_transformation(self, normalized)
+		observation.set_data(normalized)

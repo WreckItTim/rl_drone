@@ -233,7 +233,8 @@ class Component():
 		pass
 
 	# write any vars to file
-	def save(self, write_folder, state=None):
+	# pass in write_folder to state
+	def save(self, state=None):
 		pass
 
 	# kill connection, clean up as needed

@@ -1,7 +1,6 @@
 # rewards based on number of steps taken in episode
 from rewards.reward import Reward
 from component import _init_wrapper
-import math
 import numpy as np
 
 class Distance(Reward):
@@ -12,6 +11,7 @@ class Distance(Reward):
 				 goal_component,
 				 include_z=False,
 				 max_distance=100,
+				 terminate=True, # =True will terminate episodes if too far
 	):
 		super().__init__()
 
@@ -26,10 +26,15 @@ class Distance(Reward):
 		return distance
 
 	# calculates rewards from agent's current state (call to when taking a step)
-	def reward(self, state):
+	def step(self, state):
 		distance = self.get_distance()
 
 		value = 0
+		done = False
 		if distance > self.max_distance:
 			value = -10
-		return value
+			done = True
+		if done and self.terminate:
+			state['termination_reason'] = 'distance'
+			state['termination_result'] = 'failure'
+		return value, done and self.terminate

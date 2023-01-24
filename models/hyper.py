@@ -1,4 +1,3 @@
-# hyper optimiztion
 from models.model import Model
 from stable_baselines3 import DQN as sb3DQN
 from component import _init_wrapper
@@ -9,6 +8,9 @@ import pandas as pd
 import numpy as np
 import os
 
+# hyper optimiztion, uses hyperopt lib for gaussian search
+# this hyper search optimizes max goal ditance traveled
+# adjust best_score for your needs
 class Hyper(Model):
 	# constructor
 	@_init_wrapper
@@ -90,8 +92,9 @@ class Hyper(Model):
 			)
 
 			# update table
-			self._results_table['run' + str(n)].append(self._best_score)
-			scores.append(self._best_score)
+			bset_score = self._environment._goal.random_dim_min
+			self._results_table['run' + str(n)].append(bset_score)
+			scores.append(bset_score)
 
 		# print table
 		results_path = self.write_folder + '/hyper_results.csv'

@@ -1,5 +1,4 @@
 # used to handle image observations saved as np arrays
-import utils
 from observations.observation import Observation
 
 class Vector(Observation):
@@ -15,20 +14,3 @@ class Vector(Observation):
 		self.names = names
 		if names is None:
 			self.names = [str(idx) for idx in range(len(self._data))]
-
-	# displays observation to console
-	def display(self):
-		utils.speak(self._data)
-
-	# write as json
-	def write(self, 
-		   directory_path = None, 
-		   file_name = None,
-		   ):
-		file_path = super().write(
-			directory_path = directory_path, 
-			file_name = file_name,
-			)
-		self.data_path = file_path + '.json'
-		data_dict = {name:self._data[idx] for idx, name in enumerate(self.names)}
-		utils.write_json(data_dict, self.data_path)

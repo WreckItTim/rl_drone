@@ -7,7 +7,7 @@ import math
 
 # gets orientation from a miscellaneous component
 # yaw is expressed betwen [0, 2pi)  
-# pass in a second component to get the orienation between the two
+# pass in a second component to get the orienation difference between the two
 class Orientation(Sensor):
 	
 	@_init_wrapper
@@ -17,9 +17,8 @@ class Orientation(Sensor):
 				 prefix = '',
 				 transformers_components = None,
 				 offline = False,
-			  raw_code=None,
 			  ):
-		super().__init__(offline, raw_code)
+		super().__init__(offline)
 
 	def create_obj(self, data):
 		observation = Vector(
@@ -28,7 +27,7 @@ class Orientation(Sensor):
 		return observation
 
 	# get state information from drone
-	def sense2(self):
+	def step(self, state=None):
 		data = []
 		if self._misc2 is None:
 			yaw = self._misc.get_yaw()
@@ -43,4 +42,5 @@ class Orientation(Sensor):
 			yaw_diff = (yaw_diff + math.pi) % (2*math.pi) - math.pi
 			data.append(yaw_diff)
 		observation = self.create_obj(data)
-		return observation
+		transformed = self.transform(observation)
+		return transformed

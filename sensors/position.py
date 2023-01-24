@@ -14,9 +14,8 @@ class Position(Sensor):
 				 prefix = '',
 				 transformers_components = None,
 				 offline = False,
-				 raw_code=None,
 			  ):
-		super().__init__(offline, raw_code)
+		super().__init__(offline)
 		
 	def create_obj(self, data):
 		observation = Vector(
@@ -25,7 +24,7 @@ class Position(Sensor):
 		return observation
 		
 	# get information reltaive between current and objective point
-	def sense2(self):
+	def step(self, state=None):
 		data = []
 		if self._misc2 is None:
 			position = self._misc.get_position()
@@ -41,4 +40,5 @@ class Position(Sensor):
 			data.append(distance_vector[2])
 
 		observation = self.create_obj(data)
-		return observation
+		transformed = self.transform(observation)
+		return transformed

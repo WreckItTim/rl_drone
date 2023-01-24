@@ -10,7 +10,7 @@ class GaussianNoise(Transformer):
 	@_init_wrapper
 	def __init__(self, 
 					mean = 0,
-					deviation = 0.1,
+					deviation = 0.5,
 				 ):
 		super().__init__()
 
@@ -21,4 +21,4 @@ class GaussianNoise(Transformer):
 		noisy_arr = arr + noise
 		if type(observation) == Vector:
 			noisy_arr = np.reshape(noisy_arr, (len(noisy_arr),))
-		observation.save_transformation(self, noisy_arr)
+		observation.set_data(noisy_arr)

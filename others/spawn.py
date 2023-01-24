@@ -24,7 +24,7 @@ class Spawn(Other):
 				 z_max=0,
 				 yaw_min=0,
 				 yaw_max=0,
-				 random=True,
+				 random=False,
 				 ):
 		super().__init__()
 		# define if spawn method will be random or static

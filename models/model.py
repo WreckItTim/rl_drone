@@ -47,7 +47,9 @@ class Model(Component):
 		self._track_vars = track_vars.copy()
 	
 	# save sb3 model and replay_buffer to path
-	def save(self, write_folder):
+	# pass in write_folder to state
+	def save(self, state):
+		write_folder= state['write_folder']
 		if 'model' in self._track_vars:
 			self.save_model(write_folder + 'model.zip')
 		if '_has_replay_buffer' in self._track_vars and self._has_replay_buffer:

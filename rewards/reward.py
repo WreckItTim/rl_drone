@@ -7,15 +7,8 @@ class Reward(Component):
 		pass
 
 	# calculates rewards from agent's current state (call to when taking a step)
-	def reward(self, state):
+	def step(self, state):
 		raise NotImplementedError
-
-	# when using the debug controller
-	def debug(self):
-		return self.reward({})
 
 	def connect(self):
 		super().connect()
-
-	def reset(self):
-		pass

@@ -9,7 +9,7 @@ class GaussianBlur(Transformer):
 	# sigma is scale (std) of blur
 	@_init_wrapper
 	def __init__(self, 
-					sigma = 4,
+					sigma = 2,
 				 ):
 		super().__init__()
 
@@ -22,4 +22,4 @@ class GaussianBlur(Transformer):
 			channel_axis=0,
 		)
 
-		observation.save_transformation(self, blurred)
+		observation.set_data(blurred)

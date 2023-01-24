@@ -8,23 +8,9 @@ class Observer(Component):
 	def __init__(self):
 		pass
 
-	# when using the debug controller
-	def debug(self):
-		self.observe().display()
-
-	def connect(self):
-		super().connect()
-
-	def cleanup(self):
-		for sensor in self._sensors:
-			sensor.cleanup()
-
 	# returns observation transcribed for input into RL model
-	def observe(self, cleanup=True):
+	def step(self, state=None):
 		raise NotImplementedError
-
-	def reset(self):
-		pass
 
 	# returns observation space for this observer
 	def get_space(self):

@@ -37,6 +37,11 @@ class RelativeGoal(Other):
 	def get_yaw(self):
 		position = self.get_position()
 		return math.atan2(position[1], position[0])
+
+	def amp_up(self, static_amp=[0,0,0], min_amp=0, max_amp=0):
+		self.xyz_point += np.array(static_amp)
+		self.random_dim_min += min_amp
+		self.random_dim_max += max_amp
 	
 	def calculate_xyz(self, drone_position, relative_position, yaw, alpha):
 		x = drone_position[0] + alpha * relative_position[0] * math.cos(yaw) + alpha * relative_position[1] * math.sin(yaw)
@@ -51,7 +56,8 @@ class RelativeGoal(Other):
 		return x, y, z, in_object
 
 	# need to recalculate relative point at each reset
-	def reset(self, is_evaluation=False):
+	def reset(self, state):
+		is_evaluation = state['is_evaluation_env']
 		drone_position = self._drone.get_position()
 		# random point?
 		relative_position = self.xyz_point.copy()

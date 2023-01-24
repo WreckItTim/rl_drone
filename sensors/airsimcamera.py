@@ -34,12 +34,11 @@ class AirSimCamera(Sensor):
 			  image_type=2, 
 			  as_float=True, 
 			  compress=False, 
-			  is_gray=False,
+			  is_gray=True,
 			  transformers_components=None,
 			  offline = False,
-			  raw_code=None,
 			  ):
-		super().__init__(offline, raw_code)
+		super().__init__(offline)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
 		if image_type in [1, 2, 3, 4]:
 			self.is_gray = True
@@ -52,7 +51,7 @@ class AirSimCamera(Sensor):
 		return observation
 
 	# takes a picture with camera
-	def sense2(self):
+	def step(self, state=None):
 		img_array = []
 		while len(img_array) <= 0: # loop for dead images (happens some times)
 			response = self._airsim._client.simGetImages([self._image_request])[0]
@@ -71,4 +70,5 @@ class AirSimCamera(Sensor):
 					# make channel-first
 					img_array = np.moveaxis(img_array, 2, 0)
 		observation = self.create_obj(img_array)
-		return observation
+		transformed = self.transform(observation)
+		return transformed

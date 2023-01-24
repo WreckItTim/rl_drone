@@ -15,9 +15,8 @@ class AirSimDistance(Sensor):
 			  airsim_component,
 			  transformers_components=None,
 			  offline = False,
-			  raw_code=None,
 			  ):
-		super().__init__(offline, raw_code)
+		super().__init__(offline)
 
 	def create_obj(self, data):
 		observation = Vector(
@@ -26,7 +25,8 @@ class AirSimDistance(Sensor):
 		return observation
 
 	# takes a picture with camera
-	def sense2(self):
+	def step(self, state=None):
 		distance = np.array(self._airsim._client.getDistanceSensorData().distance)
 		observation = self.create_obj([distance])
-		return observation
+		transformed = self.transform(observation)
+		return transformed

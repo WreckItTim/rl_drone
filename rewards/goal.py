@@ -11,11 +11,12 @@ class Goal(Reward):
 	def __init__(self,
 				 drone_component, 
 				 goal_component, 
-				 tolerance=0, # min distance from goal for success 
+				 tolerance=4, # min distance from goal for success 
 				 include_z=True,
 				 to_start=True,
 				 # if to_start=True will calculate rewards relative to start position
 				 # if to_start=False will calculate rewards relative to last position
+				 terminate=True, # =True will terminate episodes when Goal
 				 ):
 		super().__init__()
 		#self.init_normalization()
@@ -39,12 +40,17 @@ class Goal(Reward):
 			self._last_distance = distance
 
 		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
-
+		
+		done = False
 		value = distance_reward
 		if distance <= self.tolerance:
 			value += 10
+			done = True
+		if done and self.terminate:
+			state['termination_reason'] = 'goal'
+			state['termination_result'] = 'success'
 
-		return value
+		return value, done and self.terminate
 
 	def reset(self):
 		self._last_distance = self.get_distance()

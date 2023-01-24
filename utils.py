@@ -117,7 +117,18 @@ def get_global_parameter(key):
 
 
 # COMMUNICATE WITH USER
+global_log = []
+def add_to_log(msg):
+	global_log.append(msg)
+	print_global_log()
+def print_global_log():
+	file = open('log.txt', 'w')
+	for item in global_log:
+		file.write(item + "\n")
+	file.close()
+
 def speak(msg):
+	add_to_log(msg)
 	print(msg)
 
 def prompt(msg):
@@ -128,6 +139,7 @@ def get_user_input():
 	return input()
 
 def error(msg):
+	add_to_log(msg)
 	raise Exception('ERROR:', msg)
 
 def warning(msg):
@@ -138,7 +150,7 @@ def warning(msg):
 # STOPWATCH
 # simple stopwatch to time whatevs, in (float) seconds
 # keeps track of laps along with final time
-class Stopwatch:
+class StopWatch:
   def __init__(self):
     self.start_time = time.time()
     self.last_time = self.start_time

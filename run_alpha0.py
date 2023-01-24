@@ -40,6 +40,7 @@ configuration = Configuration(meta, controller)
 
 # **** CREATE COMPONENTS ****
 
+
 # CREATE TRAIN ENVIRONMENT
 from environments.goalenv import GoalEnv
 GoalEnv(
@@ -74,6 +75,7 @@ GoalEnv(
 	name='EvaluateEnvironment',
 )
 
+
 # CREATE MAP
 from maps.airsimmap import AirSimMap
 AirSimMap(
@@ -97,6 +99,7 @@ Voxels(
 	name = 'Voxels',
 	)
 
+
 # CREATE DRONE
 from drones.airsimdrone import AirSimDrone
 AirSimDrone(
@@ -104,10 +107,12 @@ AirSimDrone(
 	name='Drone',
 )
 
+
 # CREATE ACTION SPACE
 move_speed = 1 
 yaw_rate = 11.25
 step_duration = 2 
+# ACTIONS
 from actions.fixedmove import FixedMove 
 FixedMove(
 	drone_component = 'Drone', 
@@ -146,6 +151,7 @@ FixedRotate(
 	duration = step_duration,
 	name = 'RotateRight2',
 )
+# ACTOR
 from actors.discreteactor import DiscreteActor
 DiscreteActor(
 	actions_components=[
@@ -158,6 +164,7 @@ DiscreteActor(
 		],
 	name='Actor',
 )
+
 
 # CREATE MODEL
 from models.dqn import DQN
@@ -173,336 +180,122 @@ DQN(
 )
 
 
-
-
-from other.relativegoal import RelativeGoal
+# CREATE GOAL
+max_distance = 100
+x_bounds = [-1*max_distance, max_distance]
+y_bounds = [-1*max_distance, max_distance]
+z_bounds = [-1*max_distance, -4]
+from others.relativegoal import RelativeGoal
 RelativeGoal(
 	drone_component = 'Drone',
 	map_component = 'Map',
 	xyz_point = [6, 0, 0],
 	random_point_on_train = True,
 	random_point_on_evaluate = False,
-	min_amp_up = 0,
-	max_amp_up = 0,
 	random_dim_min = 6,
 	random_dim_max = 10,
 	x_bounds = x_bounds,
 	y_bounds = y_bounds,
 	z_bounds = z_bounds,
-	random_yaw_on_train = False,
+	random_yaw_on_train = True,
 	random_yaw_on_evaluate = False,
 	random_yaw_min = -1 * math.pi,
 	random_yaw_max = math.pi,
-	reset_on_step = False,
 	name = 'Goal',
 	)
 
+
+# CREATE OBSERVATION SPACE
 flat_cols = [16, 32, 52, 68, 84]
-flat_rows = [21, 42, 63, 84]
-other_length = 3
-vector_length = len(flat_cols)*len(flat_rows) + other_length
-# vector shape is hard coded
-# set number of timesteps to keep in current state
-nTimesteps = 4
-# set modality Multi used
-observation = 'Vector' # Image Vector Multi
-# set observer component to handle the observation space
-observer = 'Multi' if observation == 'Multi' else 'Single'
-# detrmine to include z-axis (vertical) in objective during calulations
-include_z = True
-# voxels to check valid spawn/objective points on map and visualize results (optional)
-use_voxels = True
-# set max steps
-max_steps = 14
-# set tolerance to reach goal within (arbitrary units depending on drone)
-goal_tolerance = 4
-# set action space type
-action_type = 'discrete' # discrete continuous
-# how many episodes in each evaluation set?
-num_eval_episodes = 6
-# how many training episode before we evaluate/update?
-evaluate_frequency = 100
-# bounds on map (where the drone can go)
-max_distance = 100
-x_bounds = [-1*max_distance, max_distance]
-y_bounds = [-1*max_distance, max_distance]
-z_bounds = [-1*max_distance, -4]
-	
-
-
-
-# TRANSFORMER, 0 reserved for bad data
+# OBSERVER
+from observers.single import Single
+Single(
+	sensors_components = ['GoalDistance', 'GoalOrientation', 'FlattenedDepth'], 
+	vector_length = 2 + len(flat_cols),
+	nTimesteps = 4,
+	name = 'Observer',
+)
+# SENSORS
+from sensors.distance import Distance
+Distance(
+	misc_component = 'Drone',
+	misc2_component = 'Goal',
+	include_z = False,
+	prefix = 'drone_to_goal',
+	transformers_components = [
+		'PositionNoise',
+		'NormalizeDistance',
+		], 
+	name = 'DroneToGoalDistance',
+)
+from sensors.orientation import Orientation
+Orientation(
+	misc_component = 'Drone',
+	misc2_component = 'Goal',
+	prefix = 'drone_to_goal',
+	transformers_components = [
+		'OrientationNoise',
+		'NormalizeOrientation',
+		],
+	name = 'DroneToGoalOrientation',
+)
+from sensors.airsimcamera import AirSimCamera
+AirSimCamera(
+	airsim_component = 'Map',
+	transformers_components = [
+		'ResizeImage',
+		'DepthNoise',
+		'NormalizeDistance',
+		'ResizeFlat',
+		],
+	name = 'FlattenedCamera',
+	)
+# TRANSFORMERS
 from transformers.gaussiannoise import GaussianNoise
 GaussianNoise(
-	mean = 0,
-	deviation = 0.5,
 	name = 'PositionNoise',
 )
 GaussianNoise(
-	mean = 0,
 	deviation = math.radians(4),
 	name = 'OrientationNoise',
 )
 from transformers.gaussianblur import GaussianBlur
 GaussianBlur(
-	sigma = 2,
 	name = 'DepthNoise',
 )
 from transformers.normalize import Normalize
 Normalize(
-	min_input = -1*max_distance, # min distance
-	max_input = max_distance, # max distance
-	min_output = 0.1, # SB3 uses 0-1 floating point values
-	max_output = 1, # SB3 uses 0-1 floating point values
-	name = 'NormalizePosition',
-)
-Normalize(
 	min_input = -1 * math.pi, # min angle
 	max_input = math.pi, # max angle
-	min_output = 0.1, # SB3 uses 0-1 floating point values
-	max_output = 1, # SB3 uses 0-1 floating point values
 	name = 'NormalizeOrientation',
 )
 Normalize(
-	min_input = 0, # min depth
 	max_input = max_distance, # max depth
-	min_output = 1, # SB3 uses 0-255 pixel values
-	max_output = 255, # SB3 uses 0-255 pixel values
-	name = 'NormalizeDepth',
-)
-Normalize(
-	min_input = 0, # min depth
-	max_input = max_distance, # max depth
-	min_output = 0, # SB3 uses 0-1 floating point values
-	max_output = 1, # SB3 uses 0-1 floating point values
 	name = 'NormalizeDistance',
 )
 from transformers.resizeimage import ResizeImage
 ResizeImage(
-	image_shape = (image_height, image_width),
 	name = 'ResizeImage',
 )
 from transformers.resizeflat import ResizeFlat
 ResizeFlat(
 	max_cols = flat_cols,
-	max_rows = flat_rows,
 	name = 'ResizeFlat',
 )
 
-# SENSOR
-if drone == 'AirSim' and 'Camera' in image_sensors:
-	# images are 256 x 144 (width x height)
-	from sensors.airsimcamera import AirSimCamera
-	AirSimCamera(
-		airsim_component = 'Map',
-		raw_code = 'AirSimDepthCamera',
-		camera_view = '0',
-		image_type = 2,
-		as_float = True,
-		compress = False,
-		is_gray = True,
-		transformers_components = [
-			'ResizeImage',
-			'DepthNoise',
-			'NormalizeDepth',
-			],
-		name = 'Camera',
-		)
-if drone == 'AirSim' and 'Distance' in vector_sensors:
-	from sensors.airsimdistance import AirSimDistance
-	AirSimDistance(
-		airsim_component = 'Map',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizeDistance',
-			],
-		name = 'Distance',
-	)
-if drone == 'Tello' and 'Camera' in image_sensors:
-	from sensors.portcamera import PortCamera
-	PortCamera(
-		port = 'udp://0.0.0.0:11111',
-		is_gray = False,
-		transformers_components = [
-			'ResizeImage',
-			'DepthNoise',
-			'NormalizeDepth',
-			],
-		name = 'Camera',
-	)
-if 'DronePosition' in vector_sensors:
-	from sensors.position import Position
-	Position(
-		misc_component = 'Drone',
-		prefix = 'drone',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizePosition',
-			],
-		name = 'DronePosition',
-	)
-if 'DroneOrientation' in vector_sensors:
-	from sensors.orientation import Orientation
-	Orientation(
-		misc_component = 'Drone',
-		prefix = 'drone',
-		transformers_components = [
-			'OrientationNoise',
-			'NormalizeOrientation',
-			],
-		name = 'DroneOrientation',
-	)
-if 'GoalPosition' in vector_sensors:
-	from sensors.position import Position
-	Position(
-		misc_component = 'Goal',
-		prefix = 'goal',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizePosition',
-			],
-		name = 'GoalPosition',
-	)
-if 'GoalOrientation' in vector_sensors:
-	from sensors.orientation import Orientation
-	Orientation(
-		misc_component = 'Goal',
-		prefix = 'goal',
-		transformers_components = [
-			'OrientationNoise',
-			'NormalizeOrientation',
-			],
-		name = 'GoalOrientation',
-	)
-if 'DroneToGoalPosition' in vector_sensors:
-	from sensors.position import Position
-	Position(
-		misc_component = 'Drone',
-		misc2_component = 'Goal',
-		prefix = 'drone_to_goal',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizePosition',
-			], 
-		name = 'DroneToGoalPosition',
-	)
-if 'DroneToGoalDistance' in vector_sensors:
-	from sensors.distance import Distance
-	Distance(
-		misc_component = 'Drone',
-		misc2_component = 'Goal',
-		include_x = True,
-		include_y = True,
-		include_z = False,
-		prefix = 'drone_to_goal',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizeDistance',
-			], 
-		name = 'DroneToGoalDistance',
-	)
-if 'DroneToGoalOrientation' in vector_sensors:
-	from sensors.orientation import Orientation
-	Orientation(
-		misc_component = 'Drone',
-		misc2_component = 'Goal',
-		prefix = 'drone_to_goal',
-		transformers_components = [
-			'OrientationNoise',
-			'NormalizeOrientation',
-			],
-		name = 'DroneToGoalOrientation',
-	)
-if 'DroneToGoalAltitude' in vector_sensors:
-	from sensors.distance import Distance
-	Distance(
-		misc_component = 'Drone',
-		misc2_component = 'Goal',
-		include_x = False,
-		include_y = False,
-		include_z = True,
-		prefix = 'drone_to_goal',
-		transformers_components = [
-			'PositionNoise',
-			'NormalizeDistance',
-			],
-		name = 'DroneToGoalAltitude',
-	)
-if 'FlattenedCamera' in vector_sensors:
-	from sensors.airsimcamera import AirSimCamera
-	AirSimCamera(
-		airsim_component = 'Map',
-		raw_code = 'AirSimDepthCamera',
-		camera_view = '0',
-		image_type = 2,
-		as_float = True,
-		compress = False,
-		is_gray = True,
-		transformers_components = [
-			'ResizeImage',
-			'DepthNoise',
-			'NormalizeDistance',
-			'ResizeFlat',
-			],
-		name = 'FlattenedCamera',
-		)
-	
-# OBSERVER
-if observer == 'Single':
-	from observers.single import Single
-	if observation == 'Vector':
-		sensor_array = vector_sensors
-	if observation == 'Image':
-		sensor_array = image_sensors
-	Single(
-		sensors_components = sensor_array, 
-		vector_length = vector_length,
-		is_image = observation == 'Image',
-		image_height = image_height, 
-		image_width = image_width,
-		image_bands = image_bands,
-		nTimesteps = nTimesteps,
-		name = 'Observer',
-	)
-if observer == 'Multi':
-	from observers.single import Single
-	Single(
-		sensors_components = vector_sensors, 
-		vector_length = vector_length,
-		is_image = False,
-		nTimesteps = nTimesteps,
-		name = 'ObserverVector',
-	)
-	Single(
-		sensors_components = image_sensors, 
-		is_image = True,
-		image_height = image_height, 
-		image_width = image_width,
-		image_bands = image_bands,
-		nTimesteps = nTimesteps,
-		name = 'ObserverImage',
-	)
-	from observers.multi import Multi
-	Multi(
-		vector_observer_component = 'ObserverVector',
-		image_observer_component = 'ObserverImage',
-		name = 'Observer',
-		)
 
-
-# REWARD
-from rewards.avoid import Avoid
-Avoid(
+# CREATE REWARDS AND TERMINATORS
+# REWARDS
+from rewards.collision import Collision
+Collision(
 	drone_component = 'Drone',
-	name = 'AvoidReward',
+	name = 'CollisionReward',
 )
 from rewards.goal import Goal
 Goal(
 	drone_component = 'Drone',
 	goal_component = 'Goal',
-	tolerance = goal_tolerance, 
-	include_z = include_z,
-	to_start=True,
+	include_z = False,
 	name = 'GoalReward',
 )
 from rewards.distance import Distance
@@ -510,264 +303,44 @@ Distance(
 	drone_component = 'Drone',
 	goal_component = 'Goal',
 	max_distance = max_distance,
-	include_z = include_z,
+	include_z = False,
 	name = 'DistanceReward',
 )
 from rewards.steps import Steps
 Steps(
-	max_steps = max_steps,
+	max_steps = 14,
+	update_steps = True,
+	step_ratio = 1,
 	name = 'StepsReward',
-)
-from rewards.bounds import Bounds
-Bounds(
-	drone_component = 'Drone',
-	x_bounds = x_bounds,
-	y_bounds = y_bounds,
-	z_bounds = z_bounds,
-	name = 'BoundsReward',
 )
 # REWARDER
 from rewarders.schema import Schema
 Schema(
 	rewards_components = [
-		'AvoidReward',
+		'CollisionReward',
 		'GoalReward',
-		'StepsReward',
 		'DistanceReward',
-		#'BoundsReward',
+		'StepsReward',
 	],
 	reward_weights = [
 		1,
 		1,
 		1,
 		1,
-		#1,
 	],
 	name = 'Rewarder',
 )
 
-# TERMINATOR
-from terminators.collision import Collision
-Collision(
-	drone_component = 'Drone',
-	name = 'CollisionTerminator',
-)
-from terminators.goal import Goal
-Goal(
-	drone_component = 'Drone',
-	goal_component = 'Goal',
-	tolerance = goal_tolerance, 
-	include_z = include_z,
-	name = 'GoalTerminator',
-)
-from terminators.distance import Distance
-Distance(
-	drone_component = 'Drone',
-	goal_component = 'Goal',
-	max_distance = max_distance,
-	include_z = include_z,
-	name = 'DistanceTerminator',
-)
-from terminators.rewardthresh import RewardThresh
-RewardThresh(
-	rewarder_component='Rewarder',
-	min_reward = 0,
-	name = 'RewardTerminator',
-)
-from terminators.maxsteps import MaxSteps
-MaxSteps(
-	max_steps = max_steps,
-	name = 'StepsTerminator',
-)
-from terminators.bounds import Bounds
-Bounds(
-	drone_component = 'Drone',
-	x_bounds = x_bounds,
-	y_bounds = y_bounds,
-	z_bounds = z_bounds,
-	name = 'BoundsTerminator',
-)
 
-# MODEL
-if model == 'Hyper':
-	from models.hyper import Hyper
-	Hyper(
-		environment_component = 'TrainEnvironment',
-		_space = {
-			'learning_rate':hp.quniform('learning_rate', 1, 6, 1),
-			'tau':hp.uniform('tau', 0, 1.0),
-			'gamma':hp.quniform('gamma', 1, 6, 1),
-		},
-		model_type = 'DQN',
-		default_params={
-			'policy': policy,
-			'policy_kwargs': policy_kwargs,
-			'verbose': 0,
-			'buffer_size': evaluate_frequency * 10,
-			'learning_starts': evaluate_frequency
-		},
-		nRuns = 4,
-		max_evals = 32,
-		name='Model',
-	)
-elif model == 'TD3':
-	from models.td3 import TD3
-	TD3(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 0.01,
-		buffer_size = evaluate_frequency * 10,
-		learning_starts = evaluate_frequency,
-		batch_size = 100,
-		tau = 0.1593,
-		gamma = 0.99999,
-		train_freq = (1, "episode"),
-		gradient_steps = -1,
-		action_noise = None,
-		replay_buffer_class = None,
-		replay_buffer_kwargs = None,
-		optimize_memory_usage = False,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = policy_kwargs,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-		name='Model',
-	)
-'''
-elif model == 'DDPG':
-	from models.ddpg import DDPG
-	DDPG(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 1e-3,
-		buffer_size = evaluate_frequency * 10,
-		learning_starts = evaluate_frequency,
-		batch_size = 100,
-		tau = 0.005,
-		gamma = 0.99,
-		train_freq = (1, "episode"),
-		gradient_steps = -1,
-		action_noise = None,
-		replay_buffer_class = None,
-		replay_buffer_kwargs = None,
-		optimize_memory_usage = False,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = None,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-		name='Model',
-	)
-elif model == 'A2C':
-	from models.a2c import A2C
-	A2C(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 7e-4,
-		n_steps = 5,
-		gamma = 0.99,
-		gae_lambda = 1.0,
-		ent_coef = 0.0,
-		vf_coef = 0.5,
-		max_grad_norm = 0.5,
-		rms_prop_eps = 1e-5,
-		use_rms_prop = True,
-		use_sde = False,
-		sde_sample_freq = -1,
-		normalize_advantage = False,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = None,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-		name='Model',
-	)
-elif model == 'PPO':
-	from models.ppo import PPO
-	PPO(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 1e-3,
-		n_steps = 2048,
-		batch_size = 64,
-		n_epochs = 10,
-		gamma = 0.99,
-		gae_lambda = 0.95,
-		clip_range = 0.2,
-		clip_range_vf = None,
-		normalize_advantage = True,
-		ent_coef = 0.0,
-		vf_coef = 0.5,
-		max_grad_norm = 0.5,
-		use_sde = False,
-		sde_sample_freq = -1,
-		target_kl = None,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = None,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-		name='Model',
-	)
-elif model == 'SAC':
-	from models.sac import SAC
-	SAC(
-		environment_component = 'TrainEnvironment',
-		policy = policy,
-		learning_rate = 1e-3,
-		buffer_size = every_nEpisodes * 10,
-		learning_starts = every_nEpisodes,
-		batch_size = 256,
-		tau = 0.005,
-		gamma = 0.99,
-		train_freq = 1,
-		gradient_steps = 1,
-		action_noise = None,
-		replay_buffer_class = None,
-		replay_buffer_kwargs = None,
-		optimize_memory_usage = False,
-		ent_coef = "auto",
-		target_update_interval = 1,
-		target_entropy = "auto",
-		use_sde = False,
-		sde_sample_freq = -1,
-		use_sde_at_warmup = False,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-		create_eval_env = False,
-		policy_kwargs = None,
-		verbose = 0,
-		seed = None,
-		device = "auto",
-		init_setup_model = True,
-		model_path = read_model_path if read_model else None,
-		replay_buffer_path = read_replay_buffer_path if read_replay_buffer else None,
-		name='Model',
-	)
-'''
-	
-
+# CREATE MODIFIERS
 # SPAWNER
 start_z = -4 
-from others.spawner import Spawner
-from datastructs.spawn import Spawn
+from modifiers.spawner import Spawner
+from others.spawn import Spawn
 Spawner(
+	base_component = 'Drone',
+	parent_method = 'reset',
+	drone_component = 'Drone',
 	spawns_components=[
 		Spawn(
 			map_component = 'Map',
@@ -782,118 +355,106 @@ Spawner(
 			random=True,
 		),
 	],
+	order='post',
+	on_evaluate = False,
 	name='TrainSpawner',
 )
 Spawner(
+	base_component = 'Drone',
+	parent_method = 'reset',
+	drone_component = 'Drone',
 	spawns_components=[
 		Spawn(
 			z=start_z,
 			yaw=math.radians(0),
-			random=False,
 			),
 		Spawn(
 			z=start_z,
 			yaw=math.radians(45),
-			random=False,
 			),
 		Spawn(
 			z=start_z,
 			yaw=math.radians(135),
-			random=False,
 			),
 		Spawn(
 			z=start_z,
 			yaw=math.radians(180),
-			random=False,
 			),
 		Spawn(
 			z=start_z,
 			yaw=math.radians(-130),
-			random=False,
 			),
 		Spawn(
 			z=start_z,
 			yaw=math.radians(-45),
-			random=False,
 			),
 	],
+	order='post',
+	on_train = False,
 	name='EvaluateSpawner',
 )
-
 # EVALUATOR
-from others.evaluator import Evaluator
+from modifiers.evaluator import Evaluator
 Evaluator(
-	train_environment_component = 'TrainEnvironment',
+	base_component = 'TrainEnvironment',
+	parent_method = 'reset',
+	order='pre',
 	evaluate_environment_component = 'EvaluateEnvironment',
-	model_component = 'Model',
-	frequency = evaluate_frequency,
-	nEpisodes = num_eval_episodes,
-	stopping_reward = 10,
-	curriculum = True,
-	goal_component = 'Goal',
-	steps_components = [
-		'StepsReward',
-		'StepsTerminator',
-	],
-
+	nEpisodes = 6,
+	frequency = 100,
+	activate_on_first = True,
 	name = 'Evaluator',
 )
-
 # SAVER
-from others.saver import Saver
+from modifiers.saver import Saver
 Saver(
-	environment_component = 'TrainEnvironment',
-	save_components = [
-		'TrainEnvironment',
-		'Model',
-	],
-	save_variables = {
-		'TrainEnvironment':[
-			'states',
-			'observations',
-		],
-		'Model':[
-			'model',
-			'replay_buffer',
-		],
-	},
-	frequency=evaluate_frequency, 
-	save_configuration_file=True,
-	save_benchmarks=True,
-	name='TrainSaver',
+	base_component = 'TrainEnvironment',
+	parent_method = 'reset',
+	track_vars = [
+				  'observations', 
+				  'states',
+				  ],
+	order = 'post',
+	frequency = 100,
+	name='TrainEnvSaver',
 )
-from others.saver import Saver
 Saver(
-	environment_component = 'EvaluateEnvironment',
-	save_components = [
-		'EvaluateEnvironment',
-	],
-	save_variables = {
-		'EvaluateEnvironment':[
-			'states',
-			'observations',
-		],
-	},
-	frequency=num_eval_episodes, 
-	save_configuration_file=False,
-	save_benchmarks=True,
-	name='EvaluateSaver',
+	base_component = 'Model',
+	parent_method = 'reset',
+	track_vars = [
+				  'model', 
+				  'replay_buffer',
+				  ],
+	order = 'post',
+	frequency = 100,
+	on_evaluate = False,
+	name='ModelSaver',
 )
+Saver(
+	base_component = 'EvaluateEnvironment',
+	parent_method = 'reset',
+	track_vars = [
+				  'observations', 
+				  'states',
+				  ],
+	order = 'post',
+	frequency = 6,
+	name='EvalEnvSaver',
+)
+
 
 utils.speak('configuration created!')
 
 
-t1 = time()
+stopwatch = utils.StopWatch()
 # CONNECT COMPONENTS
 model = str(configuration.get_component('Model')._child())
-print('connecting with model', model)
 configuration.connect_all()
-print('connected with model', model)
 if 'dqn' in model:
 	print(configuration.get_component('Model')._sb3model.q_net)
 if 'ddpg' in model or 'td3'  in model:
 	print(configuration.get_component('Model')._sb3model.critic)
-print('all components connected. Send any key to continue...')
+utils.speak('all components connected. Send any key to continue...')
 x = input()
 
 # WRITE CONFIGURATION
@@ -901,10 +462,8 @@ configuration.save()
 
 # RUN CONTROLLER
 configuration.controller.run()
-t2 = time()
-delta_t = (t2 - t1) / 3600
-print('ran in', delta_t, 'hours')
-
+stopwatch.stop()
+utils.speak(f'ran in {stopwatch.delta_time / 3600} hours')
 
 # done
 configuration.controller.stop()
