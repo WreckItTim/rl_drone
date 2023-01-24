@@ -1,4 +1,4 @@
-from datastructs.datastruct import DataStruct
+from others.other import Other
 from component import _init_wrapper
 import random
 import numpy as np
@@ -10,7 +10,7 @@ import binvox as bv
 # you can create a .binvox file with voxels info from an AirSim/Unreal map with simCreateVoxelGrid()
 # voxel is a compressed 3d boolean array with indexed positions to surfaces of all objects, True=surface, False=empty
 # currently supported file formats are: .binvox
-class Voxels(DataStruct):
+class Voxels(Other):
 	# example:
 	# x_length = 200, y_length = 200, z_length = 100, resolution = 0.5, center = [0, 0, 0]
 	# x-axis would have 200/0.5=400 grid points, centered around origin with meter range [-100, 100)

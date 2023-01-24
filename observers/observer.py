@@ -6,7 +6,7 @@ from os import makedirs
 class Observer(Component):
 	# constructor
 	def __init__(self):
-		pass
+		self.connect_priority = 1 # before environ to get_space
 
 	# returns observation transcribed for input into RL model
 	def step(self, state=None):

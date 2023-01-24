@@ -13,13 +13,13 @@ class Spawner(Modifier):
 	def __init__(self, 
 			  base_component, # componet with method to modify
 			  parent_method, # name of parent method to modify
-			  done_component, # drone to spawn
+			  drone_component, # drone to spawn
 			  spawns_components, # list of spawn objects
 			  order, # modify 'pre' or 'post'?
 			  random = False, # set true to select randomly from spawn objects
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
 			 ):
@@ -40,7 +40,7 @@ class Spawner(Modifier):
 		return next_spawn
 
 	# select spawn then spawn drone
-	def activate(self, state=None):
+	def activate(self, state):
 		if self.check_counter(state):
 			next_spawn = self.get_next_spawn()
 			position, yaw = next_spawn.get_spawn()

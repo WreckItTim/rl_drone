@@ -27,13 +27,14 @@ class Model(Component):
 		if self.read_model_path is not None and exists(self.read_model_path):
 			self.load_model(self.read_model_path)
 			self._sb3model.set_env(self._model_arguments['env'])
-			print('loaded model from file')
+			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
+		print('model_args')
 		# replay buffer init
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)
-			print('loaded replay buffer from file')
+			utils.speak('loaded replay buffer from file')
 			
 	# this will toggle if to checkpoint model and replay buffer
 	def set_save(self,

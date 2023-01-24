@@ -18,7 +18,7 @@ class AirSimDrone(Drone):
 		return has_collided 
 
 	# resets on episode
-	def reset(self):
+	def reset(self, state=None):
 		self._airsim._client.reset()
 		self._airsim._client.enableApiControl(True)
 		self._airsim._client.armDisarm(True)
@@ -40,7 +40,7 @@ class AirSimDrone(Drone):
 	def stop(self):
 		self.hover()
 	
-	def disconnect(self):
+	def disconnect(self, state=None):
 		pass
 
 	# TODO: having problems with it landing sometimes - if done right after a move() command

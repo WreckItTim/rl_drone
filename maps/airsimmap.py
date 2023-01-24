@@ -97,26 +97,28 @@ class AirSimMap(Map):
 				_release_path = self.release_path + '.exe'
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
-					print(f'Launching AirSim at {_release_path}')
-					terminal_command = f'{_release_path}.exe {flags} -settings=\"{self._settings_path}\"'
+					utils.speak(f'Launching AirSim at {_release_path}')
+					terminal_command = f'{_release_path} {flags} -settings=\"{self._settings_path}\"'
+					utils.speak(f'Issuing command to OS: {terminal_command}')
 					process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 					self._pid = process.pid
 				else:
-					print('Please manually launch Airsim.')
+					utils.speak('Please manually launch Airsim.')
 			elif OS == 'Linux':
 				_release_path = self.release_path + '.sh'
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
-					print(f'Launching AirSim at {_release_path}')
-					terminal_command = f'sh {_release_path}.sh {flags} -settings=\"{self._settings_path}\"'
+					utils.speak(f'Launching AirSim at {_release_path}')
+					terminal_command = f'sh {_release_path} {flags} -settings=\"{self._settings_path}\"'
+					utils.speak(f'Issuing command to OS: {terminal_command}')
 					process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
 					self._pid = process.pid
 				else:
-					print('Please manually launch Airsim.')
+					utils.speak('Please manually launch Airsim.')
 			else:
-				print('Please manually launch Airsim.')
+				utils.speak('Please manually launch Airsim.')
 		else:
-			print('Please manually launch Airsim.')
+			utils.speak('Please manually launch Airsim.')
 		# prompt user to confirm when launch is successful (can launch manually if needs be)
 		utils.prompt(f'Send any key when AirSim is fully launched, this make take several minutes....')
 		# establish communication link with airsim client

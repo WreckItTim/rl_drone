@@ -73,10 +73,6 @@ class RelativeGoal(Other):
 			relative_position[1] = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
 			neg_pos = random.choice([-1, 1])
 			relative_position[2] = neg_pos * random.uniform(self.random_dim_min, self.random_dim_max)
-		# amp up max if training reset
-		if not is_evaluation:
-			self.random_dim_min += self.min_amp_up
-			self.random_dim_max += self.max_amp_up
 		# random yaw? # yaw counterclockwise rotation about z-axis
 		if not is_evaluation and self.random_yaw_on_train:
 			relative_yaw = random.uniform(self.random_yaw_min, self.random_yaw_max)

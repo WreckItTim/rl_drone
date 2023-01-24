@@ -40,3 +40,4 @@ pip install matplotlib==3.6.3
 pip install gym==0.21.0
 pip install gym-notices==0.0.8
 pip install stable-baselines3==1.7.0
+pip install tensorboard==2.11.2

@@ -27,16 +27,12 @@ class Modifier(Component):
 			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = False, # will activate on first call otherwise only if % is not 0
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
-		# modify base method with this one
-		base_method = getattr(self._base, parent_method)
-		modification = getattr(self, parent_method)
-		setattr(self._base, parent_method, _modify(base_method, modification, order))
 		self.connect_priority = -999 # connects after everything else
 
 	# increments counter and checks if we activate
-	def check_counter(self, state=None):
+	def check_counter(self, state):
 		# check if we do not activate on eval environ
 		if state['is_evaluation_env']:
 			if not self.on_evaluate:
@@ -48,8 +44,9 @@ class Modifier(Component):
 		# we now know that we are in proper environment...
 		self.counter += 1
 		# check if we do not activate on first call
-		if not self.counter == 1 and self.activate_on_first :
-			return False
+		if self.counter == 1: 
+			if not self.activate_on_first:
+				return False
 		# check if we are off frequency
 		if not self.counter % self.frequency == 0:
 			return False
@@ -62,32 +59,44 @@ class Modifier(Component):
 
 	# takes a step in an episode
 	def step(self, state=None):
-		self.activate(state)
+		if self.parent_method == 'step':
+			self.activate(state)
 
 	# resets and end of episode to prepare for next
 	def reset(self, state=None):
-		self.activate(state)
+		if state is None: # then must be an environment object
+			state = {'is_evaluation_env' : self._base.is_evaluation_env}
+		if self.parent_method == 'reset':
+			self.activate(state)
 
 	# use to reset learning loop attributes
 	def reset_learning(self, state=None):
-		self.activate(state)
+		if self.parent_method == 'reset_learning':
+			self.activate(state)
 	
 	# kill connection, clean up as needed
 	def disconnect(self, state=None):
-		self.activate(state)
+		if self.parent_method == 'disconnect':
+			self.activate(state)
 
 	# write any vars to file
 	def save(self, state=None):
 		# add write_folder to state if you need to use it then del from state
-		self.activate(state)
+		if self.parent_method == 'save':
+			self.activate(state)
 
 	# does whatever to check whatever (used for debugging mode)
 	def debug(self, state=None):
-		self.activate(state)
+		if self.parent_method == 'debug':
+			self.activate(state)
 		
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed
 	# WARNING: if you overwrite this make sure to call super()
 	def connect(self, state=None):
 		super().connect(state)
+		# modify base method with this one
+		base_method = getattr(self._base, self.parent_method)
+		modification = getattr(self, self.parent_method)
+		setattr(self._base, self.parent_method, _modify(base_method, modification, self.order))
 		if self.parent_method == 'connect':
 			self.activate(state)

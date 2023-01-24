@@ -87,9 +87,10 @@ class GoalEnv(Environment):
 	# activate needed components
 	def step(self, rl_output):
 		# next step
-		self._nSteps += 0 # steps this episode
+		self._nSteps += 1 # total number of steps
 		self.step_counter += 1 # total number of steps
 		this_step = 'step_'+str(self._nSteps)
+		self._states[this_step] = {}
 		self._states[this_step]['nSteps'] = self._nSteps
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
@@ -118,16 +119,16 @@ class GoalEnv(Environment):
 		if done: 
 			self.episode_counter += 1
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done, None
+		return observation_data, total_reward, done, self._states[this_step]
 
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
 		# init state(s)
 		self._nSteps = 0 # steps this episode
-		self._states[this_step]['nSteps'] = self._nSteps
 		this_step = 'step_'+str(self._nSteps)
 		self._states = {this_step:{}}
+		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 
 		# reset drone and goal components, several reset() methods may be blank
@@ -148,7 +149,7 @@ class GoalEnv(Environment):
 		self._rewarder.reset(self._states[this_step])
 
 		# get first observation
-		observation_data, observation_name = self._observer.step(self._state)
+		observation_data, observation_name = self._observer.step(self._states[this_step])
 		self._last_observation_name = observation_name
 		
 		# save data?

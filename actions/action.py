@@ -4,7 +4,7 @@ from component import Component
 class Action(Component):
 
 	# contstructor
-	def __init__(self, _state=None):
+	def __init__(self):
 		raise NotImplementedError
 	
 	# establish connection to be used in episode - connects all components to eachother and calls child connect() for anything else needed

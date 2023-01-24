@@ -7,7 +7,7 @@ class Configuration():
 
 	def __init__(self, 
 			  meta, 
-			  controller = None
+			  controller = None,
 			  add_timers=False, 
 			  add_memories=False,
 			  ):
@@ -19,7 +19,7 @@ class Configuration():
 			'time':{'units':'microseconds'}, 
 			'memory':{'units':'kilobytes'},
 			}
-		Configuration.set_active(configuration)
+		Configuration.set_active(self)
 		self.set_controller(controller)
 
 	def update_meta(self, meta):

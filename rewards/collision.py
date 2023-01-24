@@ -2,7 +2,7 @@ from rewards.reward import Reward
 from component import _init_wrapper
 
 # penalizes/terminates when colliding with objects
-class Avoid(Reward):
+class Collision(Reward):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 

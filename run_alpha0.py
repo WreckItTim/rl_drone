@@ -48,12 +48,6 @@ GoalEnv(
 	actor_component='Actor', 
 	observer_component='Observer', 
 	rewarder_component='Rewarder', 
-	terminators_components=[
-		'CollisionTerminator',
-		'GoalTerminator',
-		'StepsTerminator',
-		'DistanceTerminator',
-		],
 	goal_component='Goal',
 	overide_timer=True, # time benchmark on
 	name='TrainEnvironment',
@@ -64,14 +58,8 @@ GoalEnv(
 	actor_component='Actor', 
 	observer_component='Observer', 
 	rewarder_component='Rewarder', 
-	terminators_components=[
-		'CollisionTerminator',
-		'GoalTerminator',
-		'StepsTerminator',
-		'DistanceTerminator',
-		],
 	goal_component='Goal',
-	is_evaluation_environment=True,
+	is_evaluation_env=True,
 	name='EvaluateEnvironment',
 )
 
@@ -226,7 +214,7 @@ Distance(
 		'PositionNoise',
 		'NormalizeDistance',
 		], 
-	name = 'DroneToGoalDistance',
+	name = 'GoalDistance',
 )
 from sensors.orientation import Orientation
 Orientation(
@@ -237,7 +225,7 @@ Orientation(
 		'OrientationNoise',
 		'NormalizeOrientation',
 		],
-	name = 'DroneToGoalOrientation',
+	name = 'GoalOrientation',
 )
 from sensors.airsimcamera import AirSimCamera
 AirSimCamera(
@@ -248,7 +236,7 @@ AirSimCamera(
 		'NormalizeDistance',
 		'ResizeFlat',
 		],
-	name = 'FlattenedCamera',
+	name = 'FlattenedDepth',
 	)
 # TRANSFORMERS
 from transformers.gaussiannoise import GaussianNoise
@@ -308,9 +296,6 @@ Distance(
 )
 from rewards.steps import Steps
 Steps(
-	max_steps = 14,
-	update_steps = True,
-	step_ratio = 1,
 	name = 'StepsReward',
 )
 # REWARDER
@@ -394,15 +379,14 @@ Spawner(
 	name='EvaluateSpawner',
 )
 # EVALUATOR
-from modifiers.evaluator import Evaluator
-Evaluator(
+from modifiers.evaluatorcharlie import EvaluatorCharlie
+EvaluatorCharlie(
 	base_component = 'TrainEnvironment',
 	parent_method = 'reset',
 	order='pre',
 	evaluate_environment_component = 'EvaluateEnvironment',
 	nEpisodes = 6,
 	frequency = 100,
-	activate_on_first = True,
 	name = 'Evaluator',
 )
 # SAVER
@@ -416,6 +400,7 @@ Saver(
 				  ],
 	order = 'post',
 	frequency = 100,
+	activate_on_first = False,
 	name='TrainEnvSaver',
 )
 Saver(
@@ -428,6 +413,7 @@ Saver(
 	order = 'post',
 	frequency = 100,
 	on_evaluate = False,
+	activate_on_first = False,
 	name='ModelSaver',
 )
 Saver(
@@ -439,6 +425,7 @@ Saver(
 				  ],
 	order = 'post',
 	frequency = 6,
+	activate_on_first = False,
 	name='EvalEnvSaver',
 )
 

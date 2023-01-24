@@ -207,7 +207,6 @@ def _init_wrapper(init_method):
 					  part = 0,
 					  overide_timer = None,
 					  overide_memory = None,
-					  _state=None,
 					  )
 
 # the component class itself
@@ -217,7 +216,7 @@ class Component():
 	# constructor
 	# decorate all, and only, child sub-Component classes __init__() like this (wihtout the comment):
 	#@_init_wrapper
-	def __init__(self, _state=None):
+	def __init__(self):
 		raise NotImplementedError
 	
 	# takes a step in an episode
@@ -265,6 +264,10 @@ class Component():
 			else:
 				component = self._configuration.get_component(component_name)
 			setattr(self, member_name, component)
+		if hasattr(self, '_name'):
+			utils.speak(f'connected component with name {self._name}')
+		else:
+			utils.speak(f'connected component of type {type(self)}')
 
 	# this will toggle if keep track of vars to save
 	# warning this can be expensive

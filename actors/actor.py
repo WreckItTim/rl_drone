@@ -4,10 +4,8 @@ from component import Component
 class Actor(Component):
 	# contstructor
 	def __init__(self,
-			  actions_components=[], 
-			  _state=None,
 			  ):
-		raise NotImplementedError
+		self.connect_priority = 1 # before environ to get_space
 	
 	# resets and end of episode to prepare for next
 	def reset(self, state=None):

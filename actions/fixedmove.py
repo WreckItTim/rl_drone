@@ -19,7 +19,7 @@ class FixedMove(Action):
 		pass
 
 	# move at fixed rate
-	def step(self):
+	def step(self, state=None):
 		# must orient with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		adjusted_x_speed = float(self.x_speed * math.cos(yaw) + self.y_speed * math.sin(yaw))

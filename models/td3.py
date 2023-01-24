@@ -8,7 +8,7 @@ class TD3(Model):
 	@_init_wrapper
 	def __init__(self,
 			environment_component,
-			policy = 'CnnPolicy',
+			policy = 'MlpPolicy',
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
 			learning_starts = 100,
@@ -29,10 +29,9 @@ class TD3(Model):
 			verbose = 0,
 			seed = None,
 			device = "auto",
-			init_setup_model = False,
-			model_path = None,
-			best_model_path=None,
-			replay_buffer_path = None,
+			init_setup_model = True,
+			read_model_path=None, 
+			read_replay_buffer_path=None, 
 		):
 		kwargs = locals()
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
@@ -40,16 +39,15 @@ class TD3(Model):
 			'__class__',
 			'environment_component',
 			'init_setup_model',
-			'model_path',
-			'best_model_path',
-			'replay_buffer_path',
+			'read_model_path',
+			'read_replay_buffer_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3TD3
 		self.sb3Load = sb3TD3.load
 		self._has_replay_buffer = True
-		super().__init__(model_path=model_path, 
-				   best_model_path=best_model_path, 
-				   replay_buffer_path=replay_buffer_path, 
+		super().__init__(
+				   read_model_path=read_model_path, 
+				   read_replay_buffer_path=read_replay_buffer_path, 
 				   _model_arguments=_model_arguments,
 				   )
