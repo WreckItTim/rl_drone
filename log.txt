@@ -30,7 +30,6 @@ connected component with name ResizeImage
 connected component with name ResizeFlat
 connected component with name CollisionReward
 connected component with name GoalReward
-connected component with name DistanceReward
 connected component with name StepsReward
 connected component with name Rewarder
 connected component with name Spawn__1
@@ -49,3 +48,10 @@ connected component with name ModelSaver
 connected component with name EvalEnvSaver
 connected component of type <class 'controllers.trainrl.TrainRL'>
 all components connected. Send any key to continue...
+Evaluation #0 evaluated with nSuccess:3
+Evaluation #1 evaluated with nSuccess:3
+Evaluation #2 evaluated with nSuccess:1
+Evaluation #3 evaluated with nSuccess:1
+Evaluation #4 evaluated with nSuccess:3
+Evaluation #5 evaluated with nSuccess:3
+Evaluation #6 evaluated with nSuccess:4

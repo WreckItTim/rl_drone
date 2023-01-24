@@ -25,7 +25,7 @@ class Steps(Reward):
 		if nSteps >= self.max_steps:
 			done = True
 		if done and self.terminate:
-			state['termination_reason'] = 'distance'
+			state['termination_reason'] = 'steps'
 			state['termination_result'] = 'failure'
 		return value, done and self.terminate
 

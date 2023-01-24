@@ -115,11 +115,11 @@ class GoalEnv(Environment):
 		if self._track_save and 'observations' in self._track_vars:
 			self._observations[observation_name] = observation_data.copy()
 		if self._track_save and 'states' in self._track_vars and done: 
-			self._all_states['episode_' + str(self.episode_counter)] = self._states[this_step].copy()
+			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.episode_counter += 1
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done, self._states[this_step]
+		return observation_data, total_reward, done, self._states[this_step].copy()
 
 	# called at end of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode

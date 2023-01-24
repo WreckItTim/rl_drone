@@ -14,7 +14,7 @@ OS = utils.setup(
 # CREATE CONTROLLER
 controller = utils.get_controller(
 	controller_type = 'train',
-	total_timesteps = 1_000, # optional if using train - all other hypers set from model instance
+	total_timesteps = 200, # optional if using train - all other hypers set from model instance
 	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -49,7 +49,7 @@ GoalEnv(
 	observer_component='Observer', 
 	rewarder_component='Rewarder', 
 	goal_component='Goal',
-	overide_timer=True, # time benchmark on
+	#overide_timer=True, # time benchmark on
 	name='TrainEnvironment',
 )
 # CREATE EVALUATE ENVIRONMENT
@@ -283,16 +283,9 @@ from rewards.goal import Goal
 Goal(
 	drone_component = 'Drone',
 	goal_component = 'Goal',
-	include_z = False,
-	name = 'GoalReward',
-)
-from rewards.distance import Distance
-Distance(
-	drone_component = 'Drone',
-	goal_component = 'Goal',
 	max_distance = max_distance,
 	include_z = False,
-	name = 'DistanceReward',
+	name = 'GoalReward',
 )
 from rewards.steps import Steps
 Steps(
@@ -304,11 +297,9 @@ Schema(
 	rewards_components = [
 		'CollisionReward',
 		'GoalReward',
-		'DistanceReward',
 		'StepsReward',
 	],
 	reward_weights = [
-		1,
 		1,
 		1,
 		1,
@@ -379,14 +370,17 @@ Spawner(
 	name='EvaluateSpawner',
 )
 # EVALUATOR
+checkpoint = 10
+nEvalEpisodes = 6
 from modifiers.evaluatorcharlie import EvaluatorCharlie
 EvaluatorCharlie(
 	base_component = 'TrainEnvironment',
 	parent_method = 'reset',
 	order='pre',
 	evaluate_environment_component = 'EvaluateEnvironment',
-	nEpisodes = 6,
-	frequency = 100,
+	model_component = 'Model',
+	nEpisodes = nEvalEpisodes,
+	frequency = checkpoint,
 	name = 'Evaluator',
 )
 # SAVER
@@ -399,7 +393,7 @@ Saver(
 				  'states',
 				  ],
 	order = 'post',
-	frequency = 100,
+	frequency = checkpoint,
 	activate_on_first = False,
 	name='TrainEnvSaver',
 )
@@ -411,7 +405,7 @@ Saver(
 				  'replay_buffer',
 				  ],
 	order = 'post',
-	frequency = 100,
+	frequency = checkpoint,
 	on_evaluate = False,
 	activate_on_first = False,
 	name='ModelSaver',
@@ -424,7 +418,7 @@ Saver(
 				  'states',
 				  ],
 	order = 'post',
-	frequency = 6,
+	frequency = nEvalEpisodes,
 	activate_on_first = False,
 	name='EvalEnvSaver',
 )

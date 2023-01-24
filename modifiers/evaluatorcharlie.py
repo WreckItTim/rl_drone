@@ -19,6 +19,7 @@ class EvaluatorCharlie(Modifier):
 			  parent_method, # name of parent method to modify
 			  order, # modify 'pre' or 'post'?
 			  evaluate_environment_component, # environment to run eval in
+			  model_component, # used to make predictions, track best model
 			  best_score = 0, # metric to improve
 			  best_eval = 0, # evaluation set corresponding to best_score
 			  amp_up_static = [4, 0, 0], # increases static goal distance
@@ -52,9 +53,10 @@ class EvaluatorCharlie(Modifier):
 	def activate(self, state=None):
 		if self.check_counter(state):
 			# evaluate for a set of episodes, until failure
-			total_success = False
-			while not total_success:
+			while(True):
 				stop, total_success = self.evaluate_set()
+				if not total_success:
+					break
 			# close up shop?
 			if stop:
 				Configuration.get_active().controller.stop()
@@ -78,7 +80,8 @@ class EvaluatorCharlie(Modifier):
 			# take next step
 			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
 		# end of episode
-		return state['termination_result']
+		print('eval episode terminated', state['termination_reason'])
+		return state['termination_result'] == 'success'
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
@@ -90,24 +93,24 @@ class EvaluatorCharlie(Modifier):
 			nSuccess += self.evaluate_episode()
 
 		if self.verbose > 0:
-			utils.speak(f'Evaluation #{self.evaluation_counter} evaluated with nSuccess:{nSuccess}')
-
+			utils.speak(f'Evaluation #{self.set_counter} evaluated with nSuccess:{nSuccess}')
+			
 		total_success = nSuccess >= self.success
 		if total_success:
 			# amp up goal distance
-			self._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
+			self._evaluate_environment._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
 			# update best
 			self.best_score = self._evaluate_environment._goal.random_dim_min
 			self.best_eval = self.set_counter
 			# save best
 			if 'model' in self.track_vars:
-				self._evaluate_environment._model.save_model(self.write_folder + 'best_')
+				self._model.save_model(self.write_folder + 'best_')
 			if 'replay_buffer' in self.track_vars:
-				self._evaluate_environment._model.save_replay_buffer(self.write_folder + 'best_')
+				self._model.save_replay_buffer(self.write_folder + 'best_')
 			# update early stopping
 			self.wait = 0
 			if self.verbose > 1:
-				print(f'Amped up goal distance to {self._goal.random_dim_min}')
+				utils.speak(f'Amped up goal distance to {self.best_score}')
 		else:
 			# update early stopping
 			self.wait += 1
