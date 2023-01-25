@@ -85,7 +85,7 @@ class RelativeGoal(Other):
 		in_object = True
 		while in_object:
 			if alpha < 0.1:
-				self.reset(is_evaluation)
+				self.reset(state)
 				break
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_position, relative_yaw, alpha)
 			alpha -= 0.1

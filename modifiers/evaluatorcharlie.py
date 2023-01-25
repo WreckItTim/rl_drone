@@ -3,6 +3,7 @@ from component import _init_wrapper
 import utils
 from configuration import Configuration
 import numpy as np
+import os
 
 # Charlie works in goal based environments (A to B)
 # Charlie evaluates every number episodes
@@ -32,12 +33,12 @@ class EvaluatorCharlie(Modifier):
 			  random = False, # set true to select randomly from spawn objects
 			  write_folder = None, # writes best model / replay buffer here
 			  track_vars = ['model', 'replay_buffer'], # which best vars to write
-			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
-			  verbose = 2,
+			  verbose = 1, # handles output (level 1 is set level, level 2 is episode level)
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
+			  frequency = 1, # use modifiation after how many calls to parent method?
+			  counter = -1 , # keepts track of number of calls to parent method
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ): 
 		self.connect_priority = -1 # needs other components to connect first
 		self.amp_up_static = np.array(amp_up_static, dtype=float)
@@ -49,6 +50,8 @@ class EvaluatorCharlie(Modifier):
 		if self.write_folder is None:
 			self.write_folder = utils.get_global_parameter('working_directory')
 			self.write_folder += self._name + '/'
+			if not os.path.exists(self.write_folder):
+				os.makedirs(self.write_folder)
 
 	def activate(self, state=None):
 		if self.check_counter(state):
@@ -59,7 +62,7 @@ class EvaluatorCharlie(Modifier):
 					break
 			# close up shop?
 			if stop:
-				Configuration.get_active().controller.stop()
+				self._configuration.controller.stop()
 
 	# reset learning loop to static values from connect()
 	def reset_learning(self):
@@ -80,7 +83,6 @@ class EvaluatorCharlie(Modifier):
 			# take next step
 			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
 		# end of episode
-		print('eval episode terminated', state['termination_reason'])
 		return state['termination_result'] == 'success'
 
 	# evaluates all episodes for this next set
@@ -104,12 +106,12 @@ class EvaluatorCharlie(Modifier):
 			self.best_eval = self.set_counter
 			# save best
 			if 'model' in self.track_vars:
-				self._model.save_model(self.write_folder + 'best_')
+				self._model.save_model(self.write_folder + 'best_model.zip')
 			if 'replay_buffer' in self.track_vars:
-				self._model.save_replay_buffer(self.write_folder + 'best_')
+				self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
 			# update early stopping
 			self.wait = 0
-			if self.verbose > 1:
+			if self.verbose > 0:
 				utils.speak(f'Amped up goal distance to {self.best_score}')
 		else:
 			# update early stopping

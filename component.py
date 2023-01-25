@@ -223,8 +223,12 @@ class Component():
 	def step(self, state=None):
 		pass
 
-	# resets and end of episode to prepare for next
+	# resets at the beginning of an episode to prepare for next
 	def reset(self, state=None):
+		pass
+
+	# called at the end of an episode to clean up
+	def end(self, state=None):
 		pass
 
 	# use to reset learning loop attributes

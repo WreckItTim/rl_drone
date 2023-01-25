@@ -3,6 +3,7 @@ import setup_path # need this in same directory as python code for airsim
 import airsim
 from drones.drone import Drone
 from component import _init_wrapper
+import math
 
 class AirSimDrone(Drone):
 	@_init_wrapper
@@ -15,6 +16,10 @@ class AirSimDrone(Drone):
 	def check_collision(self):
 		collision_info = self._airsim._client.simGetCollisionInfo()
 		has_collided = collision_info.has_collided
+		# collisions with floor are sometimes not registered
+		if not has_collided:
+			position = self.get_position()
+			has_collided = position[2] > -2
 		return has_collided 
 
 	# resets on episode
@@ -31,6 +36,19 @@ class AirSimDrone(Drone):
 		# for w/e reason it is more stable to send command to fly up rather than using takeoff
 		#self._airsim._client.takeoffAsync().join()
 		self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
+		'''
+		self._airsim._client.setVelocityControllerGains(
+			velocity_gains=airsim.VelocityControllerGains(
+				airsim.PIDGains(0.2,0,0),
+				airsim.PIDGains(0.2,0,0),
+				airsim.PIDGains(2,2,0),
+				)
+			)
+		default gains are:
+		airsim.PIDGains(0.2,0,0),
+		airsim.PIDGains(0.2,0,0),
+		airsim.PIDGains(2,2,0),
+		'''
 
 	# returns state from client
 	def get_state(self):
@@ -49,19 +67,28 @@ class AirSimDrone(Drone):
 	
 	# move to relative position
 	def move(self, x_speed, y_speed, z_speed, duration):
+		# this is a crazy no-good high-overhead stop gap
+		# to temp-fix an issue with AirSim that adds drift when drone is facing y-axis
+		yaw_deg = math.degrees(self.get_yaw())
+		safe_yaw = 0 if abs(yaw_deg) < 90 else 180
+		self._airsim._client.rotateToYawAsync(safe_yaw, margin = 1).join()
 		self._airsim._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
+		has_collided = self.check_collision()
+		if not has_collided:
+			self._airsim._client.rotateToYawAsync(yaw_deg, margin = 1).join()
+		return has_collided
 	
 	# move to absolute position
 	def move_to(self, x, y, z, speed):
 		self._airsim._client.moveToPositionAsync(x, y, z, speed).join()
 	
 	# teleports to position (ignores collisions), yaw in radians
-	def teleport(self, x, y, z, yaw):
+	def teleport(self, x, y, z, yaw, ignore_collision=True):
 		pose = airsim.Pose(
 			airsim.Vector3r(x, y, z), 
 			airsim.to_quaternion(0, 0, yaw)
 		)
-		self._airsim._client.simSetVehiclePose(pose, ignore_collision=True)
+		self._airsim._client.simSetVehiclePose(pose, ignore_collision=ignore_collision)
 
 	# rotates along z-axis, yaw_rate in deg/sec duration in sec
 	def rotate(self, yaw_rate, duration):

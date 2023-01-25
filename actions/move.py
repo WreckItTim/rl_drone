@@ -19,8 +19,8 @@ class Move(Action):
 			  ):
 		# set these values for continuous actions
 		# they determine the possible ranges of output from rl algorithm
-		self._min_val = -1
-		self._max_val = 1
+		self._min_space = -1
+		self._max_space = 1
 		
 	# move at input rate
 	def step(self, state):
@@ -35,4 +35,5 @@ class Move(Action):
 		adjusted_y_speed = float(rl_output * self.base_y_speed * math.cos(yaw) + rl_output * self.base_x_speed * math.sin(yaw))
 		adjusted_z_speed = float(rl_output * self.base_z_speed)
 		# move calculated rate
-		self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
+		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
+		state['has_collided'] = has_collided

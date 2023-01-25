@@ -1,4 +1,3 @@
-# abstract class used to handle abstract components
 from modifiers.modifier import Modifier
 from component import _init_wrapper
 import utils
@@ -17,11 +16,11 @@ class Spawner(Modifier):
 			  spawns_components, # list of spawn objects
 			  order, # modify 'pre' or 'post'?
 			  random = False, # set true to select randomly from spawn objects
-			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
+			  frequency = 1, # use modifiation after how many calls to parent method?
+			  counter = -1 , # keepts track of number of calls to parent method
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			 ):
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self._rotating_index = 0

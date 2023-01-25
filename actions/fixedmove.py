@@ -26,4 +26,5 @@ class FixedMove(Action):
 		adjusted_y_speed = float(self.y_speed * math.cos(yaw) + self.x_speed * math.sin(yaw))
 		adjusted_z_speed = float(self.z_speed)
 		# take movement
-		self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
+		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
+		state['has_collided'] = has_collided

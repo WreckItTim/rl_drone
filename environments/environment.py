@@ -33,17 +33,6 @@ class Environment(gym.Env, Component):
 		self.observation_space = self._observer.get_space()
 		self.action_space = self._actor.get_space()
 
-	# when using the debug controller
-	def debug(self):
-		# reset environment
-		self.reset()
-		# get first observation
-		observation_numpy = self._observer.observe().to_numpy()
-		# sample rl output
-		rl_output = self.action_space.sample()
-		# take a step
-		observation_numpy, reward, done, state = self._evaluate_environment.step(rl_output)
-
 	## methods that are expected to be defined and called from OpenAI Gym and Stable_Baselines3
 
 	# step called after observation and input action to take
@@ -57,7 +46,12 @@ class Environment(gym.Env, Component):
 	def step(self, rl_output):
 		raise NotImplementedError
 
-	# called at end of episode to prepare for next, when step() returns done=True
+	# called at begin of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
 	def reset(self):
+		raise NotImplementedError
+
+	# called at end of episode to prepare for next, when step() returns done=True
+	# returns first observation for new episode
+	def end(self):
 		raise NotImplementedError

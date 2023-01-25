@@ -13,13 +13,14 @@ class ContinuousActor(Actor):
 			  actions_components=[],
 			  ):
 		super().__init__()
+		self._type = 'continuous'
 		
 	# interpret action from RL
 	def step(self, state):
 		for idx, action in enumerate(self._actions):
 			action._idx = idx # tell action which index it is
 			action.step(state) # take action
-		state['transcribed_action'] = str(round(state['rl_output'], 2))
+		state['transcribed_action'] = str(np.around(state['rl_output'], decimals=4))
 		
 	# randomly sample RL output from action space unless specified
 	def debug(self, state=None):

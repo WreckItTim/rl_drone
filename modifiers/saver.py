@@ -11,12 +11,14 @@ class Saver(Modifier):
 			  parent_method, # name of parent method to modify
 			  track_vars, # which class specific variables to save [str]
 			  order, # modify 'pre' or 'post'?
-			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
+			  save_config = False, # saves config file with every activate
+			  save_benchmarks = False, # saves timer/mem benchmarks with every activate
 			  write_folder = None, # will default to working_directory/component_name/
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
+			  frequency = 1, # use modifiation after how many calls to parent method?
+			  counter = -1 , # keepts track of number of calls to parent method
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 
@@ -36,3 +38,7 @@ class Saver(Modifier):
 				state = {}
 			state['write_folder'] = _write_folder
 			self._base.save(state)
+			if self.save_config:
+				self._configuration.save()
+			if self.save_benchmarks:
+				self._configuration.save_benchmarks()

@@ -11,7 +11,7 @@ class Normalize(Transformer):
 	def __init__(self, 
 				 min_input=0, 
 				 max_input=255,
-				 min_output=0.1, # reserver 0 for offline sensors
+				 min_output=0.1, # reserve 0 for no-data
 				 max_output=1,
 				 ):
 		super().__init__()

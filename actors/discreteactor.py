@@ -13,6 +13,7 @@ class DiscreteActor(Actor):
 			  actions_components=[],
 			  ):
 		super().__init__()
+		self._type = 'discrete'
 
 	# interpret action from RL
 	def step(self, state):
@@ -22,15 +23,36 @@ class DiscreteActor(Actor):
 		
 	# take random action from list unless specified
 	def debug(self, state=None):
-		if state is None:
-			sampled_output = random.randint(0, len(self._actions)-1)
+		while True:
+			index = utils.prompt(f'Enter \'b\' to go back to parent debug menu. Enter a valid index of action to activate. Enter \'r\' to randomly sample action...')
+			if index == 'b':
+				break
+			if index == 'r':
+				index = random.randint(0, len(self._actions)-1)
+			else:
+				try:
+					index = int(index)
+					if index < 0 or index >= len(self._actions):
+						print('invalid entry')
+						continue
+				except ValueError:
+					print('invalid entry')
+					continue
 			state = {
-				'rl_output': sampled_output,
+				'rl_output': index,
 			}
-		else:
-			sampled_output = state['rl_output']
-		utils.speak(f'taking discrete action at index {sampled_output}...')
-		self.step(state)
+			_drone = self._configuration.get_component('Drone')
+			position_before = _drone.get_position()
+			yaw_before = _drone.get_yaw()
+			collision_before = _drone.check_collision()
+			utils.speak(f'before action... position={position_before} yaw={yaw_before} collision={collision_before}')
+			action_name = self._actions[index]._name
+			utils.speak(f'taking discrete action {action_name} at index {index}...')
+			self.step(state)
+			position_after = _drone.get_position()
+			yaw_after = _drone.get_yaw()
+			collision_after = _drone.check_collision()
+			utils.speak(f'after action... position={position_after} yaw={yaw_after} collision={collision_after}')
 
 
 	# returns dioscrete action space of type Discrete

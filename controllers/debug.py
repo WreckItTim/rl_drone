@@ -33,9 +33,14 @@ class Debug(Controller):
 			else:
 				if user_input in component_names: 
 					print(configuration.get_component(user_input).debug())
-				elif int(user_input) > 0 and int(user_input) < len(component_names):
-					idx = int(user_input)
-					component_name = component_names[idx]
-					print(configuration.get_component(component_name).debug())
 				else:
-					print('invalid entry')
+					try:
+						index = int(user_input)
+						if index <= 0 or index >= len(component_names):
+							print('invalid entry')
+							continue
+					except ValueError:
+						print('invalid entry')
+						continue
+					component_name = component_names[index]
+					configuration.get_component(component_name).debug()

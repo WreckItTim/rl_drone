@@ -35,7 +35,12 @@ meta = {
 	'absolute_path' : utils.get_global_parameter('absolute_path'),
 	'working_directory' : utils.get_global_parameter('working_directory'),
 	}
-configuration = Configuration(meta, controller)
+configuration = Configuration(
+	meta, 
+	controller, 
+	add_timers=False, 
+	add_memories=False,
+	)
 
 
 # **** CREATE COMPONENTS ****
@@ -49,7 +54,7 @@ GoalEnv(
 	observer_component='Observer', 
 	rewarder_component='Rewarder', 
 	goal_component='Goal',
-	#overide_timer=True, # time benchmark on
+	overide_timer=True, # time benchmark on
 	name='TrainEnvironment',
 )
 # CREATE EVALUATE ENVIRONMENT
@@ -74,7 +79,7 @@ AirSimMap(
 	setting_files = [
 		'lightweight', 
 		],
-	release_path = 'local/airsim_maps/Blocks/Blocks',
+	release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks',
 	console_flags = [
 		'-Windowed',
 	],
@@ -140,16 +145,17 @@ FixedRotate(
 	name = 'RotateRight2',
 )
 # ACTOR
+actions=[
+	'MoveForward',
+	'MoveForward2',
+	'RotateLeft',
+	'RotateLeft2',
+	'RotateRight',
+	'RotateRight2',
+	]
 from actors.discreteactor import DiscreteActor
 DiscreteActor(
-	actions_components=[
-		'MoveForward',
-		'MoveForward2',
-		'RotateLeft',
-		'RotateLeft2',
-		'RotateRight',
-		'RotateRight2',
-		],
+	actions_components = actions,
 	name='Actor',
 )
 
@@ -164,6 +170,7 @@ DQN(
 	learning_starts = 100,
 	target_update_interval = 100,
 	tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+	overide_memory = True, # memory benchmark on
 	name='Model',
 )
 
@@ -180,8 +187,8 @@ RelativeGoal(
 	xyz_point = [6, 0, 0],
 	random_point_on_train = True,
 	random_point_on_evaluate = False,
-	random_dim_min = 6,
-	random_dim_max = 10,
+	random_dim_min = 4,
+	random_dim_max = 8,
 	x_bounds = x_bounds,
 	y_bounds = y_bounds,
 	z_bounds = z_bounds,
@@ -198,8 +205,8 @@ flat_cols = [16, 32, 52, 68, 84]
 # OBSERVER
 from observers.single import Single
 Single(
-	sensors_components = ['GoalDistance', 'GoalOrientation', 'FlattenedDepth'], 
-	vector_length = 2 + len(flat_cols),
+	sensors_components = ['GoalDistance', 'GoalOrientation', 'FlattenedDepth', 'Moves'], 
+	vector_length = 1 + 1 + len(flat_cols) + 1,
 	nTimesteps = 4,
 	name = 'Observer',
 )
@@ -237,6 +244,11 @@ AirSimCamera(
 		'ResizeFlat',
 		],
 	name = 'FlattenedDepth',
+	)
+from sensors.moves import Moves
+Moves(
+	actor_component = 'Actor',
+	name = 'Moves',
 	)
 # TRANSFORMERS
 from transformers.gaussiannoise import GaussianNoise
@@ -376,30 +388,54 @@ from modifiers.evaluatorcharlie import EvaluatorCharlie
 EvaluatorCharlie(
 	base_component = 'TrainEnvironment',
 	parent_method = 'reset',
-	order='pre',
+	order = 'pre',
 	evaluate_environment_component = 'EvaluateEnvironment',
 	model_component = 'Model',
 	nEpisodes = nEvalEpisodes,
 	frequency = checkpoint,
+	verbose = 1,
+	name = 'Evaluator',
+)
+# ALTITUDE ADJUSTER (for horizontal motion, since moving forward adds drift up)
+from modifiers.altadjust import AltAdjust
+AltAdjust(
+	base_component = 'Actor',
+	parent_method = 'step',
+	drone_component = 'Drone',
+	order = 'post',
 	name = 'Evaluator',
 )
 # SAVER
 from modifiers.saver import Saver
 Saver(
 	base_component = 'TrainEnvironment',
-	parent_method = 'reset',
+	parent_method = 'end',
 	track_vars = [
 				  'observations', 
 				  'states',
 				  ],
 	order = 'post',
+	save_config = True,
+	save_benchmarks = True,
 	frequency = checkpoint,
 	activate_on_first = False,
 	name='TrainEnvSaver',
 )
 Saver(
+	base_component = 'TrainEnvironment',
+	parent_method = 'disconnect',
+	track_vars = [
+				  'observations', 
+				  'states',
+				  ],
+	order = 'pre',
+	save_config = True,
+	save_benchmarks = True,
+	name='TrainEnvSaver2',
+)
+Saver(
 	base_component = 'Model',
-	parent_method = 'reset',
+	parent_method = 'end',
 	track_vars = [
 				  'model', 
 				  'replay_buffer',
@@ -411,8 +447,19 @@ Saver(
 	name='ModelSaver',
 )
 Saver(
+	base_component = 'Model',
+	parent_method = 'disconnect',
+	track_vars = [
+				  'model', 
+				  'replay_buffer',
+				  ],
+	order = 'pre',
+	on_evaluate = False,
+	name='ModelSaver2',
+)
+Saver(
 	base_component = 'EvaluateEnvironment',
-	parent_method = 'reset',
+	parent_method = 'end',
 	track_vars = [
 				  'observations', 
 				  'states',

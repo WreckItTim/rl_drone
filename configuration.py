@@ -52,8 +52,9 @@ class Configuration():
 				self.benchmarks['memory'][component._name] = nKiloBytes
 
 	# saves benchmarks
-	def log_benchmarks(self, write_path=None):
-		self.benchmark_memory()
+	def save_benchmarks(self, write_path=None):
+		if self.add_memories:
+			self.benchmark_memory()
 		if write_path is None:
 			write_path = utils.get_global_parameter('working_directory') + 'benchmarks.json'
 		utils.write_json(self.benchmarks, write_path)

@@ -1,4 +1,5 @@
 from component import Component
+from environments.environment import Environment
 import inspect
 
 # wrapper method to modify a base method
@@ -26,34 +27,38 @@ class Modifier(Component):
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = -1, # keepts track of number of calls to parent method
+			  counter = -1 , # keepts track of number of calls to parent method
 			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
 		self.connect_priority = -999 # connects after everything else
 
 	# increments counter and checks if we activate
-	def check_counter(self, state):
-		# check if we do not activate on eval environ
-		if state['is_evaluation_env']:
-			if not self.on_evaluate:
-				return False
-		# check if we do not activate on train environ
-		else:
-			if not self.on_train:
-				return False
+	def check_counter(self, state=None):
+		if isinstance(self._base, Environment):
+			if state is None:
+				state = {}
+			state['is_evaluation_env'] = self._base.is_evaluation_env
+		if state is not None and 'is_evaluation_env' in state:
+			# check if we do not activate on eval environ
+			if state['is_evaluation_env']:
+				if not self.on_evaluate:
+					return False
+			# check if we do not activate on train environ
+			else:
+				if not self.on_train:
+					return False
 		# we now know that we are in proper environment...
 		self.counter += 1
 		# check if we do not activate on first call
 		if self.counter == 0: 
-			if not self.activate_on_first:
-				return False
-			else:
+			if self.activate_on_first:
 				return True
-		# check if we are off frequency
-		if not self.counter % self.frequency == 0:
-			return False
-		# cleared all checks
-		return True
+			else:
+				return False
+		# check if we are on frequency
+		if self.counter % self.frequency == 0:
+			return True
+		return False
 
 	# define this from child - this is whatever the modifier does
 	def activate(self, state=None):
@@ -63,12 +68,15 @@ class Modifier(Component):
 	def step(self, state=None):
 		if self.parent_method == 'step':
 			self.activate(state)
-
-	# resets and end of episode to prepare for next
+			
+	# resets at the beginning of an episode to prepare for next
 	def reset(self, state=None):
-		if state is None: # then must be an environment object
-			state = {'is_evaluation_env' : self._base.is_evaluation_env}
 		if self.parent_method == 'reset':
+			self.activate(state)
+
+	# called at the end of an episode to clean up
+	def end(self, state=None):
+		if self.parent_method == 'end':
 			self.activate(state)
 
 	# use to reset learning loop attributes

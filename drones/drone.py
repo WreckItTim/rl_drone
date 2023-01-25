@@ -33,7 +33,7 @@ class Drone(Component):
 		raise NotImplementedError
 
 	# teleports to exact position (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)
-	def teleport(self, point):
+	def teleport(self, x, y, z, yaw, ignore_collision=True):
 		raise NotImplementedError
 
 	# sets exact yaw (not this should only be defined in simulation drones, however you can define in real world drones if you have an alternative solution)

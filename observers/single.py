@@ -31,7 +31,7 @@ class Single(Observer):
 			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
 		else:
 			self._output_shape = (vector_length * nTimesteps,)
-			self._history = np.full(self._output_shape, 0, dtype=np.float64)
+			self._history = np.full(self._output_shape, 0, dtype=float)
 		self._old_names = []
 
 	# gets observations
@@ -46,7 +46,7 @@ class Single(Observer):
 					empty_array = np.full((self.image_bands, self.image_height, self.image_width), 0, dtype=np.uint8)
 					empty_name = 'I0'
 				else:
-					empty_array = np.full((self.vector_length,), 0, dtype=np.float64)
+					empty_array = np.full((self.vector_length,), 0, dtype=float)
 					empty_name = 'V0'
 				next_array.append(empty_array)
 				new_names.append(empty_name)
@@ -92,11 +92,11 @@ class Single(Observer):
 		if self.is_image:
 			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
 		else:
-			self._history = np.full(self._output_shape, 0, dtype=np.float64)
+			self._history = np.full(self._output_shape, 0, dtype=float)
 		self._old_names = []
 
 	# returns box space with proper dimensions
 	def get_space(self):
 		if self.is_image:
 			return spaces.Box(low=0, high=255, shape=self._output_shape, dtype=np.uint8)
-		return spaces.Box(0, 1, shape=self._output_shape, dtype=np.float64)
+		return spaces.Box(0, 1, shape=self._output_shape, dtype=float)

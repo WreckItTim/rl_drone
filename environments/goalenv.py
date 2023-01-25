@@ -66,7 +66,10 @@ class GoalEnv(Environment):
 		if not self._track_save:
 			utils.warning('called VanillaEnv.save() without setting _track_save=True, nothing to save')
 			return
-		part_name = 'episodes_' + str(self._last_episode) + '_' + str(self.episode_counter)
+		# check if there is something to save
+		if self.episode_counter == self._last_episode:
+			return
+		part_name = 'episodes_' + str(self._last_episode) + '_' + str(self.episode_counter-1)
 		if 'states' in self._track_vars:
 			path = write_folder + 'states__' + part_name + '.json'
 			utils.write_json(self._all_states, path)
@@ -89,9 +92,10 @@ class GoalEnv(Environment):
 		# next step
 		self._nSteps += 1 # total number of steps
 		self.step_counter += 1 # total number of steps
-		this_step = 'step_'+str(self._nSteps)
+		this_step = 'step_' + str(self._nSteps)
 		self._states[this_step] = {}
 		self._states[this_step]['nSteps'] = self._nSteps
+		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
 		# take action
@@ -118,15 +122,16 @@ class GoalEnv(Environment):
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.episode_counter += 1
+			self.end(self._states[this_step])
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, self._states[this_step].copy()
 
-	# called at end of episode to prepare for next, when step() returns done=True
+	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	def reset(self):
 		# init state(s)
 		self._nSteps = 0 # steps this episode
-		this_step = 'step_'+str(self._nSteps)
+		this_step = 'step_' + str(self._nSteps)
 		self._states = {this_step:{}}
 		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
@@ -157,3 +162,18 @@ class GoalEnv(Environment):
 			self._observations[observation_name] = observation_data.copy()
 
 		return observation_data
+
+	# called at the end of each episode for any clean up, when done=True
+	# normally only reset() is used in OpenAI Gym environments
+	# but end() is much easier/clear/necessary for modifiers and multiple envs
+	# off-by-one errors aggregate when switching between multiple envs
+	def end(self, state=None):
+		# end all components
+		self._drone.end(state)
+		self._goal.end(state)
+		if self._others is not None:
+			for other in self._others:
+				other.end(state)
+		self._actor.end(state)
+		self._observer.end(state)
+		self._rewarder.end(state)

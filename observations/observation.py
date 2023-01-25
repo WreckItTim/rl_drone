@@ -18,7 +18,7 @@ class Observation:
 	# converts observation into an nd numpy array 
 	# some observation types are already numpy arrays
 	def to_numpy(self):
-		return self._data.copy()
+		return np.array(self._data.copy(), dtype=float)
 
 	# sets numpy array data
 	def set_data(self, data):
