@@ -69,7 +69,7 @@ class GoalEnv(Environment):
 		# check if there is something to save
 		if self.episode_counter == self._last_episode:
 			return
-		part_name = 'episodes_' + str(self._last_episode) + '_' + str(self.episode_counter-1)
+		part_name = 'episodes_' + str(self._last_episode+1) + '_' + str(self.episode_counter)
 		if 'states' in self._track_vars:
 			path = write_folder + 'states__' + part_name + '.json'
 			utils.write_json(self._all_states, path)
@@ -121,7 +121,6 @@ class GoalEnv(Environment):
 		if self._track_save and 'states' in self._track_vars and done: 
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
-			self.episode_counter += 1
 			self.end(self._states[this_step])
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, self._states[this_step].copy()
@@ -129,6 +128,7 @@ class GoalEnv(Environment):
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	def reset(self):
+		self.episode_counter += 1
 		# init state(s)
 		self._nSteps = 0 # steps this episode
 		this_step = 'step_' + str(self._nSteps)
@@ -161,6 +161,7 @@ class GoalEnv(Environment):
 		if self._track_save and 'observations' in self._track_vars:
 			self._observations[observation_name] = observation_data.copy()
 
+		print(self._name, self.episode_counter, self._states[this_step])
 		return observation_data
 
 	# called at the end of each episode for any clean up, when done=True

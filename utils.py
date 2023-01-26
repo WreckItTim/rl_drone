@@ -19,8 +19,9 @@ def get_timestamp():
 	return timestamp
 
 def setup(working_directory):
-	set_operating_system()
 	set_read_write_paths(working_directory = working_directory)
+	read_global_log()
+	set_operating_system()
 
 def set_operating_system():
 	import platform
@@ -119,13 +120,19 @@ def get_global_parameter(key):
 # COMMUNICATE WITH USER
 global_log = []
 def add_to_log(msg):
-	global_log.append(msg)
+	global_log.append(get_timestamp() + ': ' + msg)
 	print_global_log()
 def print_global_log():
-	file = open('log.txt', 'w')
+	file = open(get_global_parameter('working_directory') + 'log.txt', 'w')
 	for item in global_log:
 		file.write(item + "\n")
 	file.close()
+def read_global_log():
+	path = get_global_parameter('working_directory') + 'log.txt'
+	if os.path.exists(path):
+		with open() as file:
+			for line in file:
+				global_log.append(line.rstrip())
 
 def speak(msg):
 	add_to_log(msg)

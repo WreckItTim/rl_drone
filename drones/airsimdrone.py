@@ -71,11 +71,11 @@ class AirSimDrone(Drone):
 		# to temp-fix an issue with AirSim that adds drift when drone is facing y-axis
 		yaw_deg = math.degrees(self.get_yaw())
 		safe_yaw = 0 if abs(yaw_deg) < 90 else 180
-		self._airsim._client.rotateToYawAsync(safe_yaw, margin = 1).join()
+		self._airsim._client.rotateToYawAsync(safe_yaw, timeout_sec=4, margin=1).join()
 		self._airsim._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
 		has_collided = self.check_collision()
 		if not has_collided:
-			self._airsim._client.rotateToYawAsync(yaw_deg, margin = 1).join()
+			self._airsim._client.rotateToYawAsync(yaw_deg, timeout_sec=4, margin=1).join()
 		return has_collided
 	
 	# move to absolute position

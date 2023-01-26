@@ -368,12 +368,13 @@ nEvalEpisodes = 6
 from modifiers.evaluatorcharlie import EvaluatorCharlie
 EvaluatorCharlie(
 	base_component = 'TrainEnvironment',
-	parent_method = 'reset',
-	order = 'pre',
+	parent_method = 'end',
+	order = 'post',
 	evaluate_environment_component = 'EvaluateEnvironment',
 	model_component = 'Model',
 	nEpisodes = nEvalEpisodes,
 	frequency = checkpoint,
+	activate_on_first = False,
 	verbose = 1,
 	name = 'Evaluator',
 )
@@ -395,7 +396,7 @@ Saver(
 				  'observations', 
 				  'states',
 				  ],
-	order = 'post',
+	order = 'pre',
 	save_config = True,
 	save_benchmarks = True,
 	frequency = checkpoint,
@@ -421,7 +422,7 @@ Saver(
 				  'model', 
 				  'replay_buffer',
 				  ],
-	order = 'post',
+	order = 'pre',
 	frequency = checkpoint,
 	on_evaluate = False,
 	activate_on_first = False,
@@ -445,11 +446,12 @@ Saver(
 				  'observations', 
 				  'states',
 				  ],
-	order = 'post',
+	order = 'pre',
 	frequency = nEvalEpisodes,
 	activate_on_first = False,
 	name='EvalEnvSaver',
 )
+
 
 
 utils.speak('configuration created!')
