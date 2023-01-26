@@ -388,7 +388,7 @@ Spawner(
 	name='EvaluateSpawner',
 )
 # EVALUATOR
-checkpoint = 10
+checkpoint = 100
 nEvalEpisodes = 6
 from modifiers.evaluatorcharlie import EvaluatorCharlie
 EvaluatorCharlie(
