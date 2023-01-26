@@ -92,7 +92,7 @@ class AirSimMap(Map):
 			if self.console_flags is not None:
 				flags = ' '.join(self.console_flags)
 			# launch map from OS
-			if OS == 'Windows':
+			if OS == 'windows':
 				_release_path = self.release_path
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
@@ -103,7 +103,7 @@ class AirSimMap(Map):
 					self._pid = process.pid
 				else:
 					utils.speak('Please manually launch Airsim.')
-			elif OS == 'Linux':
+			elif OS == 'linux':
 				_release_path = self.release_path
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
