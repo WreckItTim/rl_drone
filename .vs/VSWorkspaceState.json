@@ -1,11 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\actions",
-    "\\drones",
-    "\\environments",
-    "\\rewards"
+    "\\modifiers"
   ],
-  "SelectedNode": "\\run_alpha0.py",
+  "SelectedNode": "\\modifiers\\evaluatorcharlie.py",
   "PreviewInSolutionExplorer": false
 }

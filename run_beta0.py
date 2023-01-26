@@ -14,7 +14,7 @@ OS = utils.setup(
 # CREATE CONTROLLER
 controller = utils.get_controller(
 	controller_type = 'train',
-	total_timesteps = 300, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -106,66 +106,120 @@ move_speed = 1
 yaw_rate = 11.25
 step_duration = 2 
 # ACTIONS
+from actions.donothing import DoNothing 
+DoNothing(
+	name = 'DoNothing',
+)
 from actions.fixedmove import FixedMove 
 FixedMove(
 	drone_component = 'Drone', 
-	x_speed = move_speed, 
+	x_speed = 1, 
 	duration = step_duration,
-	name = 'MoveForward',
+	name = 'MoveForward1',
 )
 FixedMove(
 	drone_component = 'Drone', 
-	x_speed = move_speed * 2, 
+	x_speed = 2, 
 	duration = step_duration,
 	name = 'MoveForward2',
 )
 FixedMove(
 	drone_component = 'Drone', 
-	z_speed = -1 * move_speed, 
+	x_speed = 4, 
 	duration = step_duration,
-	name = 'MoveUp',
+	name = 'MoveForward3',
 )
 FixedMove(
 	drone_component = 'Drone', 
-	z_speed = -1 * move_speed * 2, 
+	z_speed = -1, 
+	duration = step_duration,
+	name = 'MoveUp1',
+)
+FixedMove(
+	drone_component = 'Drone', 
+	z_speed = -2, 
 	duration = step_duration,
 	name = 'MoveUp2',
+)
+FixedMove(
+	drone_component = 'Drone', 
+	z_speed = -4, 
+	duration = step_duration,
+	name = 'MoveUp3',
+)
+FixedMove(
+	drone_component = 'Drone', 
+	z_speed = 1, 
+	duration = step_duration,
+	name = 'MoveDown1',
+)
+FixedMove(
+	drone_component = 'Drone', 
+	z_speed = 2, 
+	duration = step_duration,
+	name = 'MoveDown2',
+)
+FixedMove(
+	drone_component = 'Drone', 
+	z_speed = 4, 
+	duration = step_duration,
+	name = 'MoveDown3',
 )
 from actions.fixedrotate import FixedRotate 
 FixedRotate(
 	drone_component = 'Drone',  
-	yaw_rate = -1 * yaw_rate,
+	yaw_rate = -15,
 	duration = step_duration,
-	name = 'RotateLeft',
+	name = 'RotateLeft1',
 )
 FixedRotate(
 	drone_component = 'Drone',  
-	yaw_rate = -1 * yaw_rate * 2,
+	yaw_rate = -45,
 	duration = step_duration,
 	name = 'RotateLeft2',
 )
 FixedRotate(
 	drone_component = 'Drone',  
-	yaw_rate = yaw_rate,
+	yaw_rate = -90,
 	duration = step_duration,
-	name = 'RotateRight',
+	name = 'RotateLeft3',
 )
 FixedRotate(
 	drone_component = 'Drone',  
-	yaw_rate = yaw_rate * 2,
+	yaw_rate = 15,
+	duration = step_duration,
+	name = 'RotateRight1',
+)
+FixedRotate(
+	drone_component = 'Drone',  
+	yaw_rate = 45,
 	duration = step_duration,
 	name = 'RotateRight2',
 )
+FixedRotate(
+	drone_component = 'Drone',  
+	yaw_rate = 90,
+	duration = step_duration,
+	name = 'RotateRight3',
+)
 # ACTOR
 actions=[
-	'MoveForward',
+	'DoNothing',
+	'MoveForward1',
 	'MoveForward2',
-	'MoveUp',
+	'MoveForward3',
+	'MoveUp1',
 	'MoveUp2',
-	'RotateLeft',
+	'MoveUp3',
+	'MoveDown1',
+	'MoveDown2',
+	'MoveDown3',
+	'RotateLeft1',
 	'RotateLeft2',
-	'RotateRight',
+	'RotateLeft3',
+	'RotateRight1',
 	'RotateRight2',
+	'RotateRight3',
 	]
 from actors.discreteactor import DiscreteActor
 DiscreteActor(

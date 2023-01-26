@@ -14,7 +14,7 @@ OS = utils.setup(
 # CREATE CONTROLLER
 controller = utils.get_controller(
 	controller_type = 'train',
-	total_timesteps = 300, # optional if using train - all other hypers set from model instance
+	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
@@ -112,15 +112,15 @@ Move(
 	base_x_speed = base_move_speed, 
 	duration = step_duration,
 	zero_min_threshold=-10,
-	zero_max_threshold=0.1,
+	zero_max_threshold=1/4,
 	name = 'MoveForward',
 )
 Move(
 	drone_component = 'Drone', 
 	base_z_speed = base_move_speed, 
 	duration = step_duration,
-	zero_min_threshold=-0.1,
-	zero_max_threshold=0.1,
+	zero_min_threshold=-1/4,
+	zero_max_threshold=1/4,
 	name = 'MoveVertical',
 )
 from actions.rotate import Rotate 
@@ -128,15 +128,15 @@ Rotate(
 	drone_component = 'Drone',  
 	base_yaw_rate = base_yaw_rate,
 	duration = step_duration,
-	zero_min_threshold=-0.1,
-	zero_max_threshold=0.1,
+	zero_min_threshold=-1/6,
+	zero_max_threshold=1/6,
 	name = 'Rotate',
 )
 # ACTOR
 actions=[
-	#'MoveForward',
+	'MoveForward',
 	'MoveVertical',
-	#'Rotate',
+	'Rotate',
 	]
 from actors.continuousactor import ContinuousActor
 ContinuousActor(
