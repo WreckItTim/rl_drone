@@ -1,5 +1,3 @@
-conda create --name airsim python=3.10
-conda activate airsim
 pip install --force-reinstall -v "cloudpickle==2.2.0"
 pip install --force-reinstall -v "pip install colorama==0.4.6"
 pip install --force-reinstall -v "contourpy==1.0.7"
