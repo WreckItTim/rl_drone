@@ -50,7 +50,7 @@ class Modifier(Component):
 		# we now know that we are in proper environment...
 		self.counter += 1
 		# check if we do not activate on first call
-		if self.counter == 0: 
+		if self.counter == 1: 
 			if self.activate_on_first:
 				return True
 			else:
