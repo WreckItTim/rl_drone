@@ -1,3 +1,4 @@
+pip install --upgrade pip
 pip install --force-reinstall -v "cloudpickle==2.2.0"
 pip install --force-reinstall -v "pip install colorama==0.4.6"
 pip install --force-reinstall -v "contourpy==1.0.7"
