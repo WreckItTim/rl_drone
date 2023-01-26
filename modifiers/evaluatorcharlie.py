@@ -37,7 +37,7 @@ class EvaluatorCharlie(Modifier):
 			  on_evaluate = True, # toggle to run modifier on evaluation environ
 			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = -1 , # keepts track of number of calls to parent method
+			  counter = 0, # keepts track of number of calls to parent method
 			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ): 
 		self.connect_priority = -1 # needs other components to connect first
