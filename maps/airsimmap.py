@@ -16,7 +16,7 @@ class AirSimMap(Map):
 	def __init__(self,
 				 # voxels for 2d/3d numpy array represtation of objects
 				 voxels_component=None,
-				 # path to release .sh/.exe file to be launched (exlude .sh/.exe)
+				 # path to release (.sh/.exe) file to be launched
 				 # if this is not None, will launch airsim map automatically
 				 # otherwise it is up to the user to launch on their own
 				 release_path:str = None,
@@ -37,7 +37,6 @@ class AirSimMap(Map):
 		self._client = None
 		# get path to release executable file to launch
 		if release_path is not None:
-			self.release_path = release_path.replace('.exe', '').replace('.sh', '')
 			# create setting dictionary
 			self.settings = {}
 			if settings is not None:
@@ -94,7 +93,7 @@ class AirSimMap(Map):
 				flags = ' '.join(self.console_flags)
 			# launch map from OS
 			if OS == 'Windows':
-				_release_path = self.release_path + '.exe'
+				_release_path = self.release_path
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
 					utils.speak(f'Launching AirSim at {_release_path}')
@@ -105,7 +104,7 @@ class AirSimMap(Map):
 				else:
 					utils.speak('Please manually launch Airsim.')
 			elif OS == 'Linux':
-				_release_path = self.release_path + '.sh'
+				_release_path = self.release_path
 				# send command to terminal to launch the relase executable, if can
 				if os.path.exists(_release_path):
 					utils.speak(f'Launching AirSim at {_release_path}')

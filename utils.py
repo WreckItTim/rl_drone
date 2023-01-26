@@ -24,7 +24,7 @@ def setup(working_directory):
 
 def set_operating_system():
 	import platform
-	OS = platform.system()
+	OS = platform.system().lower()
 	set_global_parameter('OS', OS)
 	speak(f'detected operating system:{OS}')
 	

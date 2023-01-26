@@ -71,17 +71,24 @@ GoalEnv(
 
 # CREATE MAP
 from maps.airsimmap import AirSimMap
+release_path = None
+if utils.get_global_parameter('OS') == 'windows':
+	release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
+if utils.get_global_parameter('OS') == 'linux':
+	release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 AirSimMap(
 	voxels_component='Voxels',
+	release_path = release_path,
 	settings = {
 		'ClockSpeed': 8,
 		},
 	setting_files = [
 		'lightweight', 
 		],
-	release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks',
 	console_flags = [
-		'-Windowed',
+		#'-Windowed',
+		'-RenderOffscreen',
+
 	],
 	name = 'Map',
 )
