@@ -130,7 +130,7 @@ def print_global_log():
 def read_global_log():
 	path = get_global_parameter('working_directory') + 'log.txt'
 	if os.path.exists(path):
-		with open() as file:
+		with open(path) as file:
 			for line in file:
 				global_log.append(line.rstrip())
 
