@@ -86,8 +86,8 @@ AirSimMap(
 		'lightweight', 
 		],
 	console_flags = [
-		'-Windowed',
-		#'-RenderOffscreen',
+		#'-Windowed',
+		'-RenderOffscreen',
 
 	],
 	name = 'Map',
