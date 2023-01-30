@@ -86,8 +86,8 @@ AirSimMap(
 		'lightweight', 
 		],
 	console_flags = [
-		#'-Windowed',
-		'-RenderOffscreen',
+		'-Windowed',
+		#'-RenderOffscreen',
 
 	],
 	name = 'Map',
@@ -151,6 +151,8 @@ TD3(
 	buffer_size = 1000,
 	learning_starts = 100,
 	tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+	#read_model_path = utils.get_global_parameter('working_directory') + 'Evaluator/best_model.zip', 
+	#read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'Evaluator/best_read_replay_buffer.zip', 
 	overide_memory = True, # memory benchmark on
 	name='Model',
 )
@@ -423,8 +425,7 @@ Saver(
 				  'replay_buffer',
 				  ],
 	order = 'pre',
-	frequency = checkpoint,
-	on_evaluate = False,
+	frequency = nEvalEpisodes,
 	activate_on_first = False,
 	name='ModelSaver',
 )
@@ -436,7 +437,6 @@ Saver(
 				  'replay_buffer',
 				  ],
 	order = 'pre',
-	on_evaluate = False,
 	name='ModelSaver2',
 )
 Saver(

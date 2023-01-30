@@ -82,6 +82,8 @@ class EvaluatorCharlie(Modifier):
 			rl_output = self._model.predict(observation_data)
 			# take next step
 			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
+		# call end for modifiers
+		self._model.end()
 		# end of episode
 		return state['termination_result'] == 'success'
 

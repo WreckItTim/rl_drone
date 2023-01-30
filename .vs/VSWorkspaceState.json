@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\environments"
   ],
-  "SelectedNode": "\\run_delta0.py",
+  "SelectedNode": "\\run_gamma0.py",
   "PreviewInSolutionExplorer": false
 }
