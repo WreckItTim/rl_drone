@@ -27,7 +27,7 @@ class EvaluatorCharlie(Modifier):
 			  amp_up_random = 4, # increases random goal distance
 			  nEpisodes = 1, # number of episodes to evaluate each set
 			  success = -1, # number of successfull episodes for set success, -1=all
-			  patience = 100, # number of sets to wait to improve best_score
+			  patience = 999999, # number of sets to wait to improve best_score
 			  wait = 0, # number of sets have been waiting to improve score
 			  set_counter = 0, # count number of eval sets
 			  random = False, # set true to select randomly from spawn objects

@@ -6,7 +6,7 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma_alpha0' # subcategory of test type
+run_name = 'gamma1_alpha0_testbed1_run2' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)

@@ -6,7 +6,7 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma_delta0' # subcategory of test type
+run_name = 'gamma1_delta0_hackfest4_run2' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
@@ -86,8 +86,8 @@ AirSimMap(
 		'lightweight', 
 		],
 	console_flags = [
-		#'-Windowed',
-		'-RenderOffscreen',
+		'-Windowed',
+		#'-RenderOffscreen',
 
 	],
 	name = 'Map',

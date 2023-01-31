@@ -19,7 +19,7 @@ class AirSimDrone(Drone):
 		# collisions with floor are sometimes not registered
 		if not has_collided:
 			position = self.get_position()
-			has_collided = position[2] > -2
+			has_collided = position[2] > -1
 		return has_collided 
 
 	# resets on episode

@@ -40,7 +40,7 @@ class Moves(Sensor):
 				epsilon = 1e-2
 				data = [0] * len(rl_output)
 				for i in range(len(rl_output)):
-					data[i] = (rl_output[i] - self._actor._actions[i]._min_space - epsilon) / (self._actor._actions[i]._max_space - self._actor._actions[i]._min_space - epsilon)
+					data[i] = (rl_output[i] - self._actor._actions[i]._min_space + epsilon) / (self._actor._actions[i]._max_space - self._actor._actions[i]._min_space + epsilon)
 
 		observation = self.create_obj(data)
 		transformed = self.transform(observation)
