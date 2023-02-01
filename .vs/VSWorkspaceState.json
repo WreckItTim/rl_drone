@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\actions"
   ],
-  "SelectedNode": "\\run_gamma0.py",
+  "SelectedNode": "\\run_beta0.py",
   "PreviewInSolutionExplorer": false
 }
