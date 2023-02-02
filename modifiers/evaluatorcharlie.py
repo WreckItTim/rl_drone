@@ -89,6 +89,8 @@ class EvaluatorCharlie(Modifier):
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
+		self.set_counter += 1
+
 		# keep track of episode results
 		nSuccess = 0
 		# loop through all episodes
@@ -105,7 +107,7 @@ class EvaluatorCharlie(Modifier):
 			self._evaluate_environment._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
 			# update best
 			self.best_score = self._evaluate_environment._goal.random_dim_min
-			self.best_eval = self.set_counter
+			self.best_counter = self.counter
 			# save best
 			if 'model' in self.track_vars:
 				self._model.save_model(self.write_folder + 'best_model.zip')
@@ -119,5 +121,4 @@ class EvaluatorCharlie(Modifier):
 			# update early stopping
 			self.wait += 1
 
-		self.set_counter += 1
 		return self.wait >= self.patience, total_success

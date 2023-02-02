@@ -30,6 +30,9 @@ class DDPG(Model):
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
 		):
+		if type(train_freq) == list or type(train_freq) == set:
+			train_freq = tuple(train_freq)
+
 		kwargs = locals()
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
 			'self', 

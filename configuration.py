@@ -7,7 +7,7 @@ class Configuration():
 
 	def __init__(self, 
 			  meta, 
-			  controller = None,
+			  controller,
 			  add_timers=False, 
 			  add_memories=False,
 			  ):
@@ -165,13 +165,12 @@ class Configuration():
 
 	# deserializes a json file into a configuration
 	@staticmethod
-	def deserialize(configuration_file):
+	def deserialize(configuration_file, controller):
 		meta = configuration_file['meta']
 		misc = configuration_file['misc']
 		from observations.observation import Observation
 		Observation.nObservations = misc['nObservations']
-		configuration = Configuration(meta)
-		Configuration.set_active(configuration)
+		configuration = Configuration(meta, controller)
 		for component_name in configuration_file['components']:
 			component_arguments = configuration_file['components'][component_name]
 			_ = Component.deserialize(component_name, component_arguments)
@@ -184,9 +183,9 @@ class Configuration():
 		utils.write_json(configuration_file, write_path)
 
 	@staticmethod
-	def load(read_path):
+	def load(read_path, controller):
 		configuration_file = utils.read_json(read_path)
-		configuration = Configuration.deserialize(configuration_file)
+		configuration = Configuration.deserialize(configuration_file, controller)
 		return configuration
 	
 	@staticmethod

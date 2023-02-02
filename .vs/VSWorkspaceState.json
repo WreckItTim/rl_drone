@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\actions"
+    "\\environments",
+    "\\modifiers"
   ],
-  "SelectedNode": "\\actions\\move.py",
+  "SelectedNode": "\\environments\\goalenv.py",
   "PreviewInSolutionExplorer": false
 }

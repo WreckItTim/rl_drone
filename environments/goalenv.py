@@ -162,7 +162,8 @@ class GoalEnv(Environment):
 			self._observations[observation_name] = observation_data.copy()
 
 		#print(self._name, self.episode_counter, self._states[this_step])
-		print(self.episode_counter, end=' ')
+		p = 'E' if self.is_evaluation_env else 'T'
+		print(p + str(self.episode_counter), end=' ')
 		return observation_data
 
 	# called at the end of each episode for any clean up, when done=True
