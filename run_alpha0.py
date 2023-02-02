@@ -2,7 +2,6 @@ import utils
 from configuration import Configuration
 import math
 
-
 # **** SETUP ****
 
 
@@ -13,7 +12,7 @@ OS = utils.setup(
 	)
 
 # CREATE CONTROLLER
-continue_training = True
+continue_training = False
 controller = utils.get_controller(
 	controller_type = 'train',
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
@@ -432,8 +431,8 @@ else:
 		name='EvaluateSpawner',
 	)
 	# EVALUATOR
-	checkpoint = 4
-	nEvalEpisodes = 2
+	checkpoint = 100
+	nEvalEpisodes = 6
 	from modifiers.evaluatorcharlie import EvaluatorCharlie
 	EvaluatorCharlie(
 		base_component = 'TrainEnvironment',
