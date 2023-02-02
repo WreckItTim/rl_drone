@@ -9,6 +9,10 @@ class AirSimDrone(Drone):
 	@_init_wrapper
 	def __init__(self,
 			  airsim_component,
+			  # the below boolean is to fix AirSim's y-drift problem
+			  # see this GitHub ticket, with youtube video showing problem:
+			  # https://github.com/microsoft/AirSim/issues/4780
+			  drift_stop_gap = True,
 			  ):
 		super().__init__()
 		
@@ -69,12 +73,13 @@ class AirSimDrone(Drone):
 	def move(self, x_speed, y_speed, z_speed, duration):
 		# this is a crazy no-good high-overhead stop gap
 		# to temp-fix an issue with AirSim that adds drift when drone is facing y-axis
-		yaw_deg = math.degrees(self.get_yaw())
-		safe_yaw = 0 if abs(yaw_deg) < 90 else 180
-		self._airsim._client.rotateToYawAsync(safe_yaw, timeout_sec=4, margin=1).join()
+		if drift_stop_gap:
+			yaw_deg = math.degrees(self.get_yaw())
+			safe_yaw = 0 if abs(yaw_deg) < 90 else 180
+			self._airsim._client.rotateToYawAsync(safe_yaw, timeout_sec=4, margin=1).join()
 		self._airsim._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
 		has_collided = self.check_collision()
-		if not has_collided:
+		if drift_stop_gap and not has_collided:
 			self._airsim._client.rotateToYawAsync(yaw_deg, timeout_sec=4, margin=1).join()
 		return has_collided
 	

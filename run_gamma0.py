@@ -6,19 +6,25 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma1_gamma0_mlserver2021_run2' # subcategory of test type
+run_name = 'gamma2_gamma0_mlserver2021_run3' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
 
 # CREATE CONTROLLER
+continue_training = False
+read_model_path = None
+read_replay_buffer_path = None
+if continue_training:
+	read_model_path = run_name + '/Model/model.zip'
+	read_replay_buffer_path = run_name + '/Model/replay_buffer.zip'
 controller = utils.get_controller(
 	controller_type = 'train',
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
-	continue_training = False, # if True will continue learning loop from last step saved, if False will reset learning loop
+	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
 	environment_component = 'TrainEnvironment', # if using train, set train environment
-	tb_log_name = 'run1', # logs tensor board to this directory
+	tb_log_name = 'tb_log', # logs tensor board to this directory
 	)
 
 # CREATE CONFIGURATION
@@ -150,9 +156,9 @@ TD3(
 	policy_kwargs = {'net_arch':[64,64]},
 	buffer_size = 1000,
 	learning_starts = 100,
+	read_model_path = read_model_path,
+	read_replay_buffer_path = read_replay_buffer_path,
 	tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
-	#read_model_path = utils.get_global_parameter('working_directory') + 'Evaluator/best_model.zip', 
-	#read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'Evaluator/best_read_replay_buffer.zip', 
 	overide_memory = True, # memory benchmark on
 	name='Model',
 )
@@ -167,11 +173,11 @@ from others.relativegoal import RelativeGoal
 RelativeGoal(
 	drone_component = 'Drone',
 	map_component = 'Map',
-	xyz_point = [6, 0, 0],
+	xyz_point = [6, 6, 0],
 	random_point_on_train = True,
 	random_point_on_evaluate = False,
-	random_dim_min = 4,
-	random_dim_max = 8,
+	random_dim_min = 6,
+	random_dim_max = 10,
 	x_bounds = x_bounds,
 	y_bounds = y_bounds,
 	z_bounds = z_bounds,
@@ -389,7 +395,7 @@ AltAdjust(
 	order = 'post',
 	name = 'Evaluator',
 )
-# SAVER
+# SAVERS
 from modifiers.saver import Saver
 Saver(
 	base_component = 'TrainEnvironment',
@@ -406,18 +412,6 @@ Saver(
 	name='TrainEnvSaver',
 )
 Saver(
-	base_component = 'TrainEnvironment',
-	parent_method = 'disconnect',
-	track_vars = [
-				  'observations', 
-				  'states',
-				  ],
-	order = 'pre',
-	save_config = True,
-	save_benchmarks = True,
-	name='TrainEnvSaver2',
-)
-Saver(
 	base_component = 'Model',
 	parent_method = 'end',
 	track_vars = [
@@ -428,16 +422,6 @@ Saver(
 	frequency = nEvalEpisodes,
 	activate_on_first = False,
 	name='ModelSaver',
-)
-Saver(
-	base_component = 'Model',
-	parent_method = 'disconnect',
-	track_vars = [
-				  'model', 
-				  'replay_buffer',
-				  ],
-	order = 'pre',
-	name='ModelSaver2',
 )
 Saver(
 	base_component = 'EvaluateEnvironment',
