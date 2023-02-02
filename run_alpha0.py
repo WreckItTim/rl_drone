@@ -2,7 +2,6 @@ import utils
 from configuration import Configuration
 import math
 
-
 # **** SETUP ****
 
 # get OS, set file IO paths
