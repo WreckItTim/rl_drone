@@ -8,9 +8,9 @@ class Steps(Reward):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			  max_steps=2,
+			  max_steps=4,
 			  update_steps=True, # if True, will add more steps for further distance to goal
-			  step_ratio=0, # steps added per meter of distance to goal (added to initial max_steps)
+			  step_ratio=1, # steps added per meter of distance to goal (added to initial max_steps)
 			  terminate=True, # =True will terminate episodes when steps reached
 			  ):
 		super().__init__()

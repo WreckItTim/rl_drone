@@ -6,13 +6,13 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma3_gamma0_mlserver2021_run1' # subcategory of test type
+run_name = 'gamma3_gamma0_testbed1_run1' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
 
 # CREATE CONTROLLER
-continue_training = True
+continue_training = False
 controller = utils.get_controller(
 	controller_type = 'train',
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
@@ -106,8 +106,8 @@ else:
 			'lightweight', 
 			],
 		console_flags = [
-			'-Windowed',
-			#'-RenderOffscreen',
+			#'-Windowed',
+			'-RenderOffscreen',
 
 		],
 		name = 'Map',
@@ -383,8 +383,8 @@ else:
 		name='EvaluateSpawner',
 	)
 	# EVALUATOR
-	checkpoint = 4
-	nEvalEpisodes = 2
+	checkpoint = 100
+	nEvalEpisodes = 6
 	from modifiers.evaluatorcharlie import EvaluatorCharlie
 	EvaluatorCharlie(
 		base_component = 'TrainEnvironment',

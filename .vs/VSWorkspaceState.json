@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\environments",
-    "\\modifiers"
+    "\\rewards"
   ],
-  "SelectedNode": "\\environments\\goalenv.py",
+  "SelectedNode": "\\run_gamma1.py",
   "PreviewInSolutionExplorer": false
 }
