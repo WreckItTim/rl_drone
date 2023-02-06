@@ -10,6 +10,8 @@ run_name = 'gamma4_delta0_hackfest4_run1' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
+working_directory = utils.get_global_parameter('working_directory')
+
 
 # CREATE CONTROLLER
 continue_training = True
@@ -30,12 +32,12 @@ meta = {
 	'timestamp': utils.get_timestamp(),
 	'run_OS': utils.get_global_parameter('OS'),
 	'absolute_path' : utils.get_global_parameter('absolute_path'),
-	'working_directory' : utils.get_global_parameter('working_directory'),
+	'working_directory' : working_directory,
 	}
 
 
 # READ CONFIGURATION
-read_configuration_path = utils.get_global_parameter('working_directory') + 'configuration.json'
+read_configuration_path = working_directory + 'configuration.json'
 update_meta = True
 if continue_training:
 	# load configuration file and create object to save and connect components
@@ -43,8 +45,8 @@ if continue_training:
 	if update_meta:
 		configuration.update_meta(meta)
 	# load model weights and replay buffer
-	read_model_path = utils.get_global_parameter('working_directory') + 'Model/model.zip'
-	read_replay_buffer_path = utils.get_global_parameter('working_directory') + 'Model/replay_buffer.zip'
+	read_model_path = working_directory + 'Model/model.zip'
+	read_replay_buffer_path = working_directory + 'Model/replay_buffer.zip'
 	_model = configuration.get_component('Model')
 	_model.read_model_path = read_model_path
 	_model.read_replay_buffer_path = read_replay_buffer_path
@@ -115,7 +117,7 @@ else:
 	)
 	from others.voxels import Voxels
 	Voxels(
-		relative_path = utils.get_global_parameter('working_directory') + 'map_voxels.binvox',
+		relative_path = working_directory + 'map_voxels.binvox',
 		map_component = 'Map',
 		name = 'Voxels',
 		)
@@ -180,7 +182,7 @@ else:
 		policy_kwargs = {'net_arch':[64,64]},
 		buffer_size = 1000,
 		learning_starts = 100,
-		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
+		tensorboard_log = working_directory + 'tensorboard/',
 		overide_memory = True, # memory benchmark on
 		name='Model',
 	)
@@ -464,6 +466,21 @@ else:
 		activate_on_first = False,
 		name='EvalEnvSaver',
 	)
+	from modifiers.tracker import Tracker
+	Tracker(
+		base_component = 'TrainEnvironment',
+		parent_method = 'end',
+		track_vars = [
+					  'gpu', 
+					  'ram',
+					  'cpu',
+					  ],
+		order = 'pre',
+		write_path = working_directory + 'track_log.json',
+		frequency = 10,
+		activate_on_first = True,
+		name='Tracker',
+	)
 
 
 utils.speak('configuration created!')
@@ -471,15 +488,16 @@ utils.speak('configuration created!')
 
 stopwatch = utils.StopWatch()
 # CONNECT COMPONENTS
-model = str(configuration.get_component('Model')._child())
 configuration.connect_all()
-if 'dqn' in model:
-	print(configuration.get_component('Model')._sb3model.q_net)
-	for name, param in configuration.get_component('Model')._sb3model.q_net.named_parameters():
+model_name = str(configuration.get_component('Model')._child())
+sb3_model = configuration.get_component('Model')._sb3model
+if 'dqn' in model_name:
+	print(sb3_model.q_net)
+	for name, param in sb3_model.q_net.named_parameters():
 		print(name, param)
-if 'ddpg' in model or 'td3'  in model:
-	print(configuration.get_component('Model')._sb3model.critic)
-	for name, param in configuration.get_component('Model')._sb3model.critic.named_parameters():
+if 'ddpg' in model_name or 'td3' in model_name:
+	print(sb3_model.critic)
+	for name, param in sb3_model.critic.named_parameters():
 		print(name, param)
 utils.speak('all components connected. Send any key to continue...')
 x = input()

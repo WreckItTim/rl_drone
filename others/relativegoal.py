@@ -90,7 +90,7 @@ class RelativeGoal(Other):
 			if alpha < 0.1:
 				self.reset(state)
 				break
-			print('PRE:', drone_position, relative_position, relative_yaw, alpha)
+			#print('PRE:', drone_position, relative_position, relative_yaw, alpha)
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_position, relative_yaw, alpha)
-			print('POST:', self._x, self._y, self._z, in_object)
+			#print('POST:', self._x, self._y, self._z, in_object)
 			alpha -= 0.1
