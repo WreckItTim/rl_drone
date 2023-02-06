@@ -22,8 +22,8 @@ class FixedMove(Action):
 	def step(self, state=None):
 		# must orient with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
-		adjusted_x_speed = float(self.x_speed * math.cos(yaw) + self.y_speed * math.sin(yaw))
-		adjusted_y_speed = float(self.y_speed * math.cos(yaw) + self.x_speed * math.sin(yaw))
+		adjusted_x_speed = float(self.x_speed * math.cos(yaw) - self.y_speed * math.sin(yaw))
+		adjusted_y_speed = float(self.x_speed * math.sin(yaw) + self.y_speed * math.cos(yaw))
 		adjusted_z_speed = float(self.z_speed)
 		# take movement
 		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)

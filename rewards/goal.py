@@ -34,7 +34,7 @@ class Goal(Reward):
 	
 	# get reward based on distance to point 
 	def step(self, state):
-		distance = self.get_distance()
+		distance = self.get_distance() + 1e-4
 		d = distance / self._last_distance
 
 		if not self.to_start:
@@ -58,4 +58,4 @@ class Goal(Reward):
 		return value, done and self.terminate
 
 	def reset(self, state):
-		self._last_distance = self.get_distance()
+		self._last_distance = self.get_distance() + 1e-4

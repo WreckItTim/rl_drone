@@ -6,7 +6,7 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma3_beta0_mlserver2019_run1' # subcategory of test type
+run_name = 'gamma4_beta0_mlserver2019_run1' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
@@ -25,7 +25,7 @@ controller = utils.get_controller(
 # SET META DATA (anything you want here, just writes to config file as a dict)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
-	'repo_version': 'gamma3',
+	'repo_version': 'gamma4',
 	'run_name': run_name,
 	'timestamp': utils.get_timestamp(),
 	'run_OS': utils.get_global_parameter('OS'),
@@ -93,8 +93,10 @@ else:
 	release_path = None
 	if utils.get_global_parameter('OS') == 'windows':
 		release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
+		#release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.sh'
 	if utils.get_global_parameter('OS') == 'linux':
 		release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
+		#release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
 	AirSimMap(
 		voxels_component='Voxels',
 		release_path = release_path,
@@ -273,7 +275,7 @@ else:
 	max_distance = 100
 	x_bounds = [-1*max_distance, max_distance]
 	y_bounds = [-1*max_distance, max_distance]
-	z_bounds = [-20, -4]
+	z_bounds = [-4, -4]
 	from others.relativegoal import RelativeGoal
 	RelativeGoal(
 		drone_component = 'Drone',
@@ -281,8 +283,8 @@ else:
 		xyz_point = [6, 6, 0],
 		random_point_on_train = True,
 		random_point_on_evaluate = False,
-		random_dim_min = 6,
-		random_dim_max = 10,
+		random_dim_min = 4,
+		random_dim_max = 8,
 		x_bounds = x_bounds,
 		y_bounds = y_bounds,
 		z_bounds = z_bounds,

@@ -31,8 +31,8 @@ class Move(Action):
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		# calculate rate from rl_output
-		adjusted_x_speed = float(rl_output * self.base_x_speed * math.cos(yaw) + rl_output * self.base_y_speed * math.sin(yaw))
-		adjusted_y_speed = float(rl_output * self.base_y_speed * math.cos(yaw) + rl_output * self.base_x_speed * math.sin(yaw))
+		adjusted_x_speed = float(rl_output * (self.base_x_speed * math.cos(yaw) - self.base_y_speed * math.sin(yaw)))
+		adjusted_y_speed = float(rl_output * (self.base_x_speed * math.sin(yaw) + self.base_y_speed * math.cos(yaw)))
 		adjusted_z_speed = float(rl_output * self.base_z_speed)
 		# move calculated rate
 		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)

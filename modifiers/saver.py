@@ -30,6 +30,7 @@ class Saver(Modifier):
 		self._base.set_save(True, self.track_vars)
 
 	def activate(self, state=None):
+		print('activate', self._name)
 		if self.check_counter(state):
 			_write_folder = self.write_folder + self._base.write_prefix()
 			if not os.path.exists(_write_folder):

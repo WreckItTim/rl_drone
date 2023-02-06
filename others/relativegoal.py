@@ -44,9 +44,12 @@ class RelativeGoal(Other):
 		self.random_dim_max += max_amp
 	
 	def calculate_xyz(self, drone_position, relative_position, yaw, alpha):
-		x = drone_position[0] + alpha * relative_position[0] * math.cos(yaw) + alpha * relative_position[1] * math.sin(yaw)
-		y = drone_position[1] + alpha * relative_position[1] * math.cos(yaw) + alpha * relative_position[0] * math.sin(yaw)
-		z = drone_position[2] + relative_position[2]
+		x0, y0, z0 = drone_position
+		x1, y1, z1 = relative_position
+		# rotate axis (alpha is a scalar length)
+		x = x0 + alpha * (x1 * math.cos(yaw) - y1 * math.sin(yaw))
+		y = y0 + alpha * (x1 * math.sin(yaw) + y1 * math.cos(yaw))
+		z = z0 + z1
 		# make in bounds
 		x = min(self.x_bounds[1], max(self.x_bounds[0], x))
 		y = min(self.y_bounds[1], max(self.y_bounds[0], y))
@@ -87,5 +90,7 @@ class RelativeGoal(Other):
 			if alpha < 0.1:
 				self.reset(state)
 				break
+			print('PRE:', drone_position, relative_position, relative_yaw, alpha)
 			self._x, self._y, self._z, in_object = self.calculate_xyz(drone_position, relative_position, relative_yaw, alpha)
+			print('POST:', self._x, self._y, self._z, in_object)
 			alpha -= 0.1
