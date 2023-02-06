@@ -6,7 +6,7 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma4_gamma0_mlserver2021_run1' # subcategory of test type
+run_name = 'gamma4_gamma0_hackfest4_run1' # subcategory of test type
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
