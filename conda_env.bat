@@ -39,3 +39,6 @@ python -m pip install gym==0.21.0
 python -m pip install gym-notices==0.0.8
 python -m pip install stable-baselines3==1.7.0
 python -m pip install tensorboard==2.11.2
+python -m pip install nvidia-smi
+python -m pip install nvidia-ml-py3
+python -m pip install nvitop
