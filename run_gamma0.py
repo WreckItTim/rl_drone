@@ -103,7 +103,7 @@ else:
 		voxels_component='Voxels',
 		release_path = release_path,
 		settings = {
-			'ClockSpeed': 4,
+			'ClockSpeed': 8,
 			},
 		setting_files = [
 			'lightweight', 
@@ -460,16 +460,16 @@ else:
 	from modifiers.tracker import Tracker
 	Tracker(
 		base_component = 'TrainEnvironment',
-		parent_method = 'end',
+		parent_method = 'reset',
 		track_vars = [
 					  'gpu', 
 					  'ram',
 					  'cpu',
+					  'proc',
 					  ],
-		order = 'pre',
-		write_path = working_directory + 'track_log.json',
-		frequency = 10,
-		activate_on_first = True,
+		order = 'post',
+		save_every = checkpoint,
+		frequency = 1,
 		name='Tracker',
 	)
 
