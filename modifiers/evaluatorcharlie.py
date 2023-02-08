@@ -23,6 +23,7 @@ class EvaluatorCharlie(Modifier):
 			  model_component, # used to make predictions, track best model
 			  best_score = 0, # metric to improve
 			  best_eval = 0, # evaluation set corresponding to best_score
+			  best_counter = 0, # counter corresponding to first evaluation that lead to best_score
 			  amp_up_static = [4, 0, 0], # increases static goal distance
 			  amp_up_random = 4, # increases random goal distance
 			  nEpisodes = 1, # number of episodes to evaluate each set
