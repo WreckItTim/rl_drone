@@ -24,16 +24,14 @@ class GoalEnv(Environment):
 				 others_components=None,
 				 step_counter=0, 
 				 episode_counter=0, 
+				 save_counter=0,
 				 is_evaluation_env=False,
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
 		self._all_states = {}
 		self._observations = {}
-		self._last_episode = self.episode_counter
 		self._track_save = False
-		self._all_states = {}
-		self._observations = {}
 		
 	# this will toggle if keep track of observations and states
 	# note this is expensive, so must dump using save() from time to time
@@ -53,7 +51,7 @@ class GoalEnv(Environment):
 	def reset_learning(self):
 		self.step_counter = 0 # total steps
 		self.episode_counter = 0
-		self._last_episode = self.episode_counter
+		self.save_counter = 0
 		self._all_states = {}
 		self._observations = {}
 
@@ -62,14 +60,12 @@ class GoalEnv(Environment):
 		# this saves memory, reduces zip time, and avoids clutter
 	# pass in write_folder to state
 	def save(self, state):
+		self.save_counter += 1
 		write_folder = state['write_folder']
 		if not self._track_save:
-			utils.warning('called VanillaEnv.save() without setting _track_save=True, nothing to save')
+			utils.warning('called GoalEnv.save() without setting _track_save=True, nothing to save')
 			return
-		# check if there is something to save
-		if self.episode_counter == self._last_episode:
-			return
-		part_name = 'episodes_' + str(self._last_episode+1) + '_' + str(self.episode_counter)
+		part_name = 'part_' + str(self.save_counter)
 		if 'states' in self._track_vars:
 			path = write_folder + 'states__' + part_name + '.json'
 			utils.write_json(self._all_states, path)
@@ -78,7 +74,6 @@ class GoalEnv(Environment):
 			path = write_folder + 'observations__' + part_name + '.npz'
 			np.savez(path, **self._observations)
 			self._observations = {}
-		self._last_episode = self.episode_counter
 	
 	# just makes the rl_output from SB3 more readible
 	def clean_rl_output(self, rl_output):

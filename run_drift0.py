@@ -6,16 +6,16 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma5_gamma0_hacknet4_run1'
+run_name = 'gamma6_drift0_hackfest4_run1'
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
 working_directory = utils.get_global_parameter('working_directory')
 
 # CREATE CONTROLLER
-continue_training = True
+continue_training = False
 controller = utils.get_controller(
-	controller_type = 'train',
+	controller_type = 'AirSimChecks',
 	total_timesteps = 1_000_000, # optional if using train - all other hypers set from model instance
 	continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 	model_component = 'Model', # if using train, set model
@@ -26,7 +26,7 @@ controller = utils.get_controller(
 # SET META DATA (anything you want here, just writes to config file as a dict)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
-	'repo_version': 'gamma5',
+	'repo_version': 'gamma6',
 	'run_name': run_name,
 	'timestamp': utils.get_timestamp(),
 	'run_OS': utils.get_global_parameter('OS'),
@@ -141,8 +141,8 @@ else:
 		drone_component = 'Drone', 
 		base_x_speed = base_move_speed, 
 		duration = step_duration,
-		zero_min_threshold=-10,
-		zero_max_threshold=1/4,
+		zero_min_threshold=0,
+		zero_max_threshold=0,
 		name = 'MoveForward',
 	)
 	from actions.rotate import Rotate 

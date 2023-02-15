@@ -8,8 +8,8 @@ class Rotate(Action):
 	def __init__(self, 
 			  drone_component, 
 			  base_yaw_rate, 
-			  zero_min_threshold=-0.1,
-			  zero_max_threshold=0.1,
+			  zero_min_threshold=0, # above this
+			  zero_max_threshold=0, # and below this will do nothing (true zero)
 			  duration=2,
 			  ):
 		self._min_space = -1
@@ -20,6 +20,8 @@ class Rotate(Action):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
 		if rl_output > self.zero_min_threshold and rl_output < self.zero_max_threshold:
-			return
+			return 'rotate(true_zero)'
 		# rotate calculated rate from rl_output
-		self._drone.rotate(rl_output*self.base_yaw_rate, self.duration)
+		adjusted_rate = rl_output*self.base_yaw_rate
+		self._drone.rotate(adjusted_rate, self.duration)
+		return f'rotate({adjusted_rate})'

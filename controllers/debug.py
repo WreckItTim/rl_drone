@@ -32,7 +32,7 @@ class Debug(Controller):
 				self._drone.teleport(x, y, z, yaw)
 			else:
 				if user_input in component_names: 
-					print(configuration.get_component(user_input).debug())
+					configuration.get_component(user_input).debug()
 				else:
 					try:
 						index = int(user_input)

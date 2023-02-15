@@ -89,6 +89,13 @@ def get_controller(controller_type,
 		controller = EvaluateRL(
 			evaluator_component = evaluator_component,
 			)
+	# checks will run drift checks
+	elif controller_type == 'AirSimChecks':
+		from controllers.airsimchecks import AirSimChecks
+		controller = AirSimChecks(
+			drone_component = 'Drone',
+			actor_component = 'Actor',
+			)
 	else:
 		from controllers.empty import Empty
 		controller = Empty()

@@ -13,8 +13,8 @@ class Move(Action):
 			  base_x_speed=0, 
 			  base_y_speed=0, 
 			  base_z_speed=0, 
-			  zero_min_threshold=-0.1,
-			  zero_max_threshold=0.1,
+			  zero_min_threshold=0, # above this
+			  zero_max_threshold=0, # and below this will do nothing (true zero)
 			  duration=2,
 			  ):
 		# set these values for continuous actions
@@ -27,7 +27,7 @@ class Move(Action):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
 		if rl_output > self.zero_min_threshold and rl_output < self.zero_max_threshold:
-			return
+			return 'move(true_zero)'
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		# calculate rate from rl_output
@@ -37,3 +37,4 @@ class Move(Action):
 		# move calculated rate
 		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
 		state['has_collided'] = has_collided
+		return f'move({adjusted_x_speed}, {adjusted_y_speed}, {adjusted_z_speed})'
