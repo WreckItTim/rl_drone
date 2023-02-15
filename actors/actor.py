@@ -7,6 +7,11 @@ class Actor(Component):
 			  ):
 		self.connect_priority = 1 # before environ to get_space
 	
+	def connect(self, state=None):
+		super().connect(state)
+		for idx, action in enumerate(self._actions):
+			action._idx = idx # tell action which index it is
+
 	# resets and end of episode to prepare for next
 	def reset(self, state=None):
 		for action in self._actions:

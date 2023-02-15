@@ -11,3 +11,15 @@ class Action(Component):
 	# WARNING: if you overwrite this make sure to call super()
 	def connect(self, state=None):
 		super().connect()
+
+	def debug(self, state=None):
+		print('enter rl_output:')
+		user_input = input().lower()
+		try:
+			rl_out = float(user_input)
+			state = {
+				'rl_output' : [rl_out] * (self._idx + 1)
+			}
+			self.step(state)
+		except ValueError:
+			print('invalid entry')

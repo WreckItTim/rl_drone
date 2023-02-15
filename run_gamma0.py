@@ -6,7 +6,7 @@ import math
 # **** SETUP ****
 
 # get OS, set file IO paths
-run_name = 'gamma4_gamma0_hackfest4_run1' # subcategory of test type
+run_name = 'gamma5_gamma0_hacknet4_run1'
 OS = utils.setup(
 	working_directory = 'local/runs/' + run_name + '/',
 	)
@@ -26,7 +26,7 @@ controller = utils.get_controller(
 # SET META DATA (anything you want here, just writes to config file as a dict)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
-	'repo_version': 'gamma4',
+	'repo_version': 'gamma5',
 	'run_name': run_name,
 	'timestamp': utils.get_timestamp(),
 	'run_OS': utils.get_global_parameter('OS'),
@@ -150,8 +150,8 @@ else:
 		drone_component = 'Drone',  
 		base_yaw_rate = base_yaw_rate,
 		duration = step_duration,
-		zero_min_threshold=-1/6,
-		zero_max_threshold=1/6,
+		zero_min_threshold=0,
+		zero_max_threshold=0,
 		name = 'Rotate',
 	)
 	# ACTOR
