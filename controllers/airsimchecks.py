@@ -50,4 +50,4 @@ class AirSimChecks(Controller):
 					'pos_after':pos_after,
 					'yaw_after':yaw_after,
 				}
-			pickle.dump(results, open(utils.get_global_parameter('working_directory') + 'results_part' + str(part) + '.json', 'wb'))
+			pickle.dump(results, open(utils.get_global_parameter('working_directory') + 'results_part' + str(part) + '.p', 'wb'))
