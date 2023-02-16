@@ -3,6 +3,7 @@ from component import _init_wrapper
 from configuration import Configuration
 import random
 import utils
+import pickle
 
 # will load at a list of all components
 # allows user to view and debug each component independently 
@@ -15,10 +16,14 @@ class AirSimChecks(Controller):
 
 	# runs control on components
 	def run(self):
-		nRuns = 1000
+		nRuns = 1_000_000
 		nIters = 100
 		results = {}
+		part = 1
 		for r in range(nRuns):
+			if r % 1000 == 0:
+				results = {}
+				part += 1
 			utils.speak(f'on run {r} ...')
 			results[r] = {}
 			self._drone._airsim._client.reset()
@@ -45,4 +50,4 @@ class AirSimChecks(Controller):
 					'pos_after':pos_after,
 					'yaw_after':yaw_after,
 				}
-			utils.write_json(results, utils.get_global_parameter('working_directory') + 'results.json')
+			pickle.dump(results, open(utils.get_global_parameter('working_directory') + 'results_part' + str(part) + '.json', 'wb'))
