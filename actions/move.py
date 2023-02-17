@@ -18,14 +18,14 @@ class Move(Action):
 			  ):
 		# set these values for continuous actions
 		# they determine the possible ranges of output from rl algorithm
-		self._min_space = 0
+		self._min_space = -1
 		self._max_space = 1
 		
 	# move at input rate
 	def step(self, state):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if rl_output < self.zero_threshold:
+		if abs(rl_output) < self.zero_threshold:
 			return 'move(true_zero)'
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis

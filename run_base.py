@@ -103,12 +103,17 @@ flat_rows = [42],
 		# CREATE MAP
 		from maps.airsimmap import AirSimMap
 		release_path = None
+		airsim_release = utils.get_global_parameter('airsim_release')
 		if utils.get_global_parameter('OS') == 'windows':
-			release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
-			#release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.sh'
+			if airsim_release == 'Blocks':
+				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
+			if airsim_release == 'Hood':
+				release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.sh'
 		if utils.get_global_parameter('OS') == 'linux':
-			release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
-			#release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
+			if airsim_release == 'Blocks':
+				release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
+			if airsim_release == 'Hood':
+				release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
 		console_flags = []
 		render_screen = utils.get_global_parameter('render_screen')
 		if render_screen:
