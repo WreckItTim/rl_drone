@@ -4,41 +4,22 @@ import math
 
 # create base components
 continue_training = False
+flat_cols = [16, 32, 52, 68, 84]
+flat_rows = [42]
 configuration = create_base_components(
-	run_type = 'drift', 
+	run_type = 'gamma', 
 	run_extra = '',
-	drift_stop_gap = False,
+	drift_stop_gap = True,
 	continue_training = continue_training,
 	controller_type = 'AirSimChecks',
 	include_z = False,
-	flat_cols = [16, 32, 52, 68, 84],
-	flat_rows = [42],
+	flat_cols = flat_cols,
+	flat_rows = flat_rows,
 )
 
 # create other components
 if not continue_training:
-	# CREATE ACTION SPACE
-	base_move_speed = 8 # meters/sec
-	drift_xyz_std = 0.25 # meters, emperically measured
-	base_yaw_rate = 360 # degrees/sec
-	drift_yaw_std = 0.5 # degrees, emperically measured
-	step_duration = 2 
-	from actions.move import Move 
-	Move(
-		drone_component = 'Drone', 
-		base_x_speed = base_move_speed, 
-		duration = step_duration,
-		zero_threshold = drift_xyz_std/base_move_speed,
-		name = 'MoveForward',
-	)
-	from actions.rotate import Rotate 
-	Rotate(
-		drone_component = 'Drone',  
-		base_yaw_rate = base_yaw_rate,
-		duration = step_duration,
-		zero_threshold = drift_yaw_std/base_yaw_rate,
-		name = 'Rotate',
-	)
+	
 	# ACTOR
 	actions=[
 		'MoveForward',
@@ -48,6 +29,15 @@ if not continue_training:
 	ContinuousActor(
 		actions_components = actions,
 		name='Actor',
+	)
+
+	# OBSERVER
+	from observers.single import Single
+	Single(
+		sensors_components = ['GoalDistance', 'GoalOrientation', 'FlattenedDepth', 'Moves'], 
+		vector_length = 1 + 1 + len(flat_cols)*len(flat_rows) + len(actions),
+		nTimesteps = 4,
+		name = 'Observer',
 	)
 
 	# CREATE MODEL
