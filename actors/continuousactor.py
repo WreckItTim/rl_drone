@@ -28,7 +28,7 @@ class ContinuousActor(Actor):
 		if state is None:
 			sampled_output = np.zeros(len(self._actions), dtype=float)
 			for idx, action in enumerate(self._actions):
-				sampled_output[idx] = np.random.uniform(action._min_space, action._max_space, size=None)
+				sampled_output[idx] = np.random.uniform(action.min_space, action.max_space, size=None)
 			state = {
 				'rl_output': sampled_output,
 			}
@@ -45,6 +45,6 @@ class ContinuousActor(Actor):
 		min_space = np.zeros(nActions)
 		max_space = np.zeros(nActions)
 		for idx in range(nActions):
-			min_space[idx] = self._actions[idx]._min_space
-			max_space[idx] = self._actions[idx]._max_space
+			min_space[idx] = self._actions[idx].min_space
+			max_space[idx] = self._actions[idx].max_space
 		return spaces.Box(min_space, max_space)

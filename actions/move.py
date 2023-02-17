@@ -9,17 +9,19 @@ class Move(Action):
 	# zero threshold determines when to not move forward - sets a real 0 value
 	@_init_wrapper
 	def __init__(self, 
-			  drone_component,
-			  base_x_speed=0, 
-			  base_y_speed=0, 
-			  base_z_speed=0, 
-			  zero_threshold=0, # below this will do nothing (true zero)
-			  duration=2,
-			  ):
-		# set these values for continuous actions
-		# they determine the possible ranges of output from rl algorithm
-		self._min_space = -1
-		self._max_space = 1
+				drone_component,
+				base_x_speed=0, 
+				base_y_speed=0, 
+				base_z_speed=0, 
+				zero_threshold=0, # below this will do nothing (true zero)
+				duration=2,
+				# set these values for continuous actions
+				# # they determine the possible ranges of output from rl algorithm
+				min_space = 0,
+				max_space = 1,
+			):
+				self.min_space = min_space
+				self.max_space = max_space
 		
 	# move at input rate
 	def step(self, state):

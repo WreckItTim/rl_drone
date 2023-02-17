@@ -313,6 +313,7 @@ flat_rows = [42],
 			base_z_speed = base_move_speed, 
 			duration = step_duration,
 			zero_threshold = drift_xyz_std/base_move_speed,
+			min_space = -1,
 			name = 'MoveVertical',
 		)
 		from actions.rotate import Rotate 
