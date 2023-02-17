@@ -21,7 +21,7 @@ class AirSimChecks(Controller):
 		results = {}
 		part = 1
 		for r in range(nRuns):
-			if r % 1000 == 0:
+			if r > 0 and r % 1000 == 0:
 				results = {}
 				part += 1
 			utils.speak(f'on run {r} ...')

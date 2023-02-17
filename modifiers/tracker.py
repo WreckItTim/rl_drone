@@ -53,7 +53,7 @@ class Tracker(Modifier):
 		self.reset_log()
 
 	def disconnect(self, state=None):
-		super().disconnec(state)
+		super().disconnect(state)
 		if 'gpu' in self._log:
 			nvidia_smi.nvmlShutdown()
 

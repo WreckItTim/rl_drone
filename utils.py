@@ -18,7 +18,11 @@ def get_timestamp():
 	)
 	return timestamp
 
-def setup(working_directory):
+def setup(write_parent, run_prefix):
+	read_global_parameters()
+	run_name = run_prefix + '_' + get_global_parameter('instance_name')
+	set_global_parameter('run_name',  run_name)
+	working_directory = write_parent + run_name + '/'
 	set_read_write_paths(working_directory = working_directory)
 	read_global_log()
 	set_operating_system()
@@ -64,7 +68,7 @@ def get_controller(controller_type,
 	controller = None
 	speak(f'CONTROLLER = {controller_type}')
 	# debug mode will prompt user input for which component(s) to debug
-	if controller_type == 'debug':
+	if controller_type == 'Debug':
 		from controllers.debug import Debug
 		controller = Debug(
 			drone_component='Drone',
@@ -72,7 +76,7 @@ def get_controller(controller_type,
 	# train will create a new or read in a previously trained model
 	# set continue_training=True to pick up where learning loop last saved
 	# or set continue_training=False to keep weights but start new learning loop
-	elif controller_type == 'train':
+	elif controller_type == 'TrainRL':
 		from controllers.trainrl import TrainRL
 		controller = TrainRL(
 			model_component = model_component,
@@ -84,7 +88,7 @@ def get_controller(controller_type,
 			continue_training = continue_training,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
-	elif controller_type == 'evaluate':
+	elif controller_type == 'EvaluateRL':
 		from controllers.evaluaterl import EvaluateRL
 		controller = EvaluateRL(
 			evaluator_component = evaluator_component,

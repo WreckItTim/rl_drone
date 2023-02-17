@@ -37,8 +37,9 @@ python -m pip install scikit-image==0.19.3
 python -m pip install matplotlib==3.6.3
 python -m pip install gym==0.21.0
 python -m pip install gym-notices==0.0.8
+python -m pip install setuptools==65.5.0
 python -m pip install stable-baselines3==1.7.0
 python -m pip install tensorboard==2.11.2
-python -m pip install nvidia-smi
-python -m pip install nvidia-ml-py3
-python -m pip install nvitop
+python -m pip install nvidia-smi==0.1.3
+python -m pip install nvidia-ml-py3==7.352.0
+python -m pip install nvitop==1.0.0
