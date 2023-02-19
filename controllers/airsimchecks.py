@@ -32,7 +32,7 @@ class AirSimChecks(Controller):
 			self._drone._airsim._client.moveByVelocityAsync(0, 0, -20, 6).join()
 			for i in range(nIters):
 				action = random.choice(self._actor._actions)
-				rl_output = random.uniform(-1, 1)
+				rl_output = random.uniform(action.min_space, action.max_space)
 				state = {
 					'rl_output' : [rl_output] * (action._idx + 1)
 				}
