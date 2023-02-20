@@ -6,7 +6,7 @@ step 2: download and install anaconda, then run from anaconda terminal:
 conda create --name airsim python=3.10
 conda activate airsim
 
-step 3: with the new conda environment is active, run the conda_env.bat file to install all dependecies. Note it is important to do it this way over a requirements.txt file because the syntax matters.
+step 3: with the new conda environment active, run the conda_env.bat file to install all dependecies. Note a requirements.txt file is not used because the syntax matters.
 
 step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (without the extra level parent folder).
 
