@@ -5,12 +5,12 @@ import math
 
 # runs some overarching base things
 def create_base_components(run_type, run_extra,
-drift_stop_gap=True,
+drift_stop_gap=False,
 continue_training=False,
 controller_type='Train',
 include_z=True,
 flat_cols = [16, 32, 52, 68, 84],
-flat_rows = [42],
+flat_rows = [21, 42, 63, 84],
 ):
 
 	# **** SETUP ****

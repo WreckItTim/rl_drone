@@ -5,9 +5,8 @@ import random
 import utils
 import pickle
 
-# will load at a list of all components
-# allows user to view and debug each component independently 
-# or move drone around
+# takes series of random actions
+# measures position and orientation before and after each action
 class AirSimChecks(Controller):
 	# constructor
 	@_init_wrapper

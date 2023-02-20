@@ -7,11 +7,11 @@ continue_training = False
 flat_cols = [16, 32, 52, 68, 84]
 flat_rows = [21, 42, 63, 84]
 configuration = create_base_components(
-	run_type = 'delta', 
+	run_type = 'debug', 
 	run_extra = '',
 	drift_stop_gap = False,
 	continue_training = continue_training,
-	controller_type = 'TrainRL',
+	controller_type = 'Debug',
 	include_z = True,
 	flat_cols = flat_cols,
 	flat_rows = flat_rows,
@@ -19,11 +19,12 @@ configuration = create_base_components(
 
 # create other components
 if not continue_training:
+	
 	# ACTOR
 	actions=[
 		'MoveForward',
 		'Rotate',
-		'MoveVertical'
+		'MoveVertical',
 		]
 	from actors.continuousactor import ContinuousActor
 	ContinuousActor(
@@ -34,8 +35,8 @@ if not continue_training:
 	# OBSERVER
 	from observers.single import Single
 	Single(
-		sensors_components = ['GoalDistance', 'GoalOrientation', 'GoalAltitude', 'FlattenedDepth', 'Moves'], 
-		vector_length = 1 + 1 + 1 + len(flat_cols)*len(flat_rows) + len(actions),
+		sensors_components = ['GoalDistance', 'GoalOrientation', 'FlattenedDepth', 'Moves'], 
+		vector_length = 1 + 1 + len(flat_cols)*len(flat_rows) + len(actions),
 		nTimesteps = 4,
 		name = 'Observer',
 	)
@@ -51,6 +52,17 @@ if not continue_training:
 		tensorboard_log = utils.get_global_parameter('working_directory') + 'tensorboard/',
 		overide_memory = True, # memory benchmark on
 		name='Model',
+	)
+
+	# ALTITUDE ADJUSTER (for horizontal motion, 
+		# since moving forward adds drift up)
+	from modifiers.altadjust import AltAdjust
+	AltAdjust(
+		base_component = 'Actor',
+		parent_method = 'step',
+		drone_component = 'Drone',
+		order = 'post',
+		name = 'Evaluator',
 	)
 
 
