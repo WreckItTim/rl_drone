@@ -315,9 +315,9 @@ def create_base_components(
 		)
 
 		# ACTIONS
-		base_move_distance = 8 # meters, will multiple rl_output by this value
+		base_move_distance = 4 # meters, will multiple rl_output by this value
 		min_move_distance = 1 # meters, will not issue a command below this value (true zero)
-		base_yaw_deg = 180 # degrees, will multiple rl_output by this value
+		base_yaw_deg = 90 # degrees, will multiple rl_output by this value
 		min_yaw_deg = 10 # degrees, will not issue a command below this value (true zero)
 		speed = 2 # meters/second (2 is a brisk walking speed)
 		from actions.move import Move 
