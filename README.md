@@ -1,6 +1,18 @@
-**SETUP**
+**AIRSIM SETUP**
 
-step 1: 
+step 1: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here). It will also create a  global_parameters.json file, edit this as appropriate (optionally name your pc for tracking purposes and enable/disable rendering graphics to screen). 
+
+step 2: download and install anaconda, then run from anaconda terminal:
+conda create --name airsim python=3.10
+conda activate airsim
+
+step 3: with the new conda environment is active, run the conda_env.bat file to install all dependecies. Note it is important to do it this way over a requirements.txt file because the syntax matters.
+
+step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (without the extra level parent folder).
+
+step 5: run the python file run_drift.py to check your configuration. If setup properly, this should launch Blocks map and make random moves with a quadcopter. This is collecting data related to drone drifts and collision detection accuracy. Let this run for a while. You can run the drift_eval.py notebook at any time to evaluate. The drone_eval file will show how much rotational and translational drift the drone is having after issuing commands. You may need to change your setup, such as clock_speed and drone speed to imporve this. See issues below that address mitigating this.
+
+
 
 
 **COMMON ERRORS**
@@ -15,3 +27,5 @@ pip install msgpack-rpc-python --upgrade
 3. If using moveToPositionAsync() or rotateToPositionAsync(), then AirSim will occassionally freeze and constantly output lookahead errors when colliding with an object. I have tried lowering the timeout (to a few seconds) and setting a lower limit for the distance to both 0.5 and 1 - all to no avail. This is why the current release of rl_drone uses moveByVelocityAsync() rotateByYawRateAsync().
 
 4. Occassionaly, AirSim will crash with an RPCError. This just happens some times when running for a long time (hours to a day or two). Because of this, you will need to occasionally check that the simulation is running. After a crash, rerun the py file with continue_training=True - this will pick up training from the last checkpoint. See issue here: https://github.com/microsoft/AirSim/issues/1757
+
+5. Jupyter notebooks do not work from the conda environment due to the tornado issue.
