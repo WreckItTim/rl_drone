@@ -8,7 +8,7 @@ conda activate airsim
 
 step 3: with the new conda environment active, run the conda_env.bat file to install all dependecies. Note a requirements.txt file is not used because the syntax matters.
 
-step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (without the extra level parent folder).
+step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (i.e. after unzipping, the release should have the following strucutre: local/airsim_maps/{release_name}/{os_name}/files).
 
 step 5: run the python file run_drift.py to check your configuration. This should launch Blocks map and make random moves with a quadcopter. This is collecting data related to drone drifts and collision detection accuracy. Let this run for a while. You can copy-paste the drift_eval.py file to the newly created run folder in local/runs then run the notebook at any time to evaluate the data. The drone_eval file will show how much rotational and translational drift the drone is having after issuing commands. You may need to change your setup, such as clock_speed and drone speed to imporve this - to fit your needs. See issues below that address mitigating this.
 
