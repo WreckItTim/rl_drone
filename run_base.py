@@ -315,24 +315,24 @@ def create_base_components(
 		)
 
 		# ACTIONS
-		base_move_distance = 8 # maximum move of 8 meters
-		drift_xyz_std = 0.1 # meters, emperically measured (run_drift)
-		base_yaw_deg = 180 # degrees (180 gives full motion)
-		drift_yaw_std = 0.3 # degrees, emperically measured (run_drift)
+		base_move_distance = 8 # meters, will multiple rl_output by this value
+		min_move_distance = 0.5 # meters, will not issue a command below this value (true zero)
+		base_yaw_deg = 180 # degrees, will multiple rl_output by this value
+		min_yaw_deg = 5 # degrees, will not issue a command below this value (true zero)
 		speed = 2 # meters/second (2 is a brisk walking speed)
 		from actions.move import Move 
 		Move(
 			drone_component = 'Drone', 
 			base_x_rel = base_move_distance, 
 			speed = speed,
-			zero_threshold = drift_xyz_std/base_move_distance,
+			zero_threshold = min_move_distance/base_move_distance,
 			name = 'MoveForward',
 		)
 		Move(
 			drone_component = 'Drone', 
 			base_z_rel = base_move_distance, 
 			speed = speed,
-			zero_threshold = drift_xyz_std/base_move_distance,
+			zero_threshold = min_move_distance/base_move_distance,
 			min_space = -1, # allows up and down movements
 			name = 'MoveVertical',
 		)
@@ -340,7 +340,7 @@ def create_base_components(
 		Rotate(
 			drone_component = 'Drone',  
 			base_yaw_deg = base_yaw_deg,
-			zero_threshold = drift_yaw_std/base_yaw_deg,
+			zero_threshold = min_yaw_deg/base_yaw_deg,
 			name = 'Rotate',
 		)
 

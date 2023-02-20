@@ -6,6 +6,7 @@ import math
 configuration = create_base_components(
 	run_name = 'debug', 
 	controller_type = 'Debug',
+	clock_speed = 16,
 )
 	
 # ACTOR
