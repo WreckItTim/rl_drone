@@ -9,6 +9,7 @@ def create_base_components(
 		run_name, # string value for output 
 		continue_training=False, # set to true if continuing training from checkpoint
 		controller_type='Debug', # Train, Debug, Drift, Evaluate
+		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		include_z=True, # includes z-axis in calculations (such as distance to goal)
 		clock_speed=1, # speed to run simulation (increased speed can lead to collision errors)
 		flat=None, # flatten depth map to input into MLP
@@ -107,7 +108,6 @@ def create_base_components(
 		# CREATE MAP
 		from maps.airsimmap import AirSimMap
 		release_path = None
-		airsim_release = utils.get_global_parameter('airsim_release')
 		if utils.get_global_parameter('OS') == 'windows':
 			if airsim_release == 'Blocks':
 				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
@@ -249,6 +249,16 @@ def create_base_components(
 			name = 'GoalAltitude',
 		)
 		from sensors.airsimcamera import AirSimCamera
+		# images are 256 x 144 (width x height)
+		AirSimCamera(
+			airsim_component = 'Map',
+			transformers_components = [
+				'ResizeImage',
+				'DepthNoise',
+				'NormalizeDepth',
+				],
+			name = 'DepthMap',
+			)
 		AirSimCamera(
 			airsim_component = 'Map',
 			transformers_components = [
@@ -279,6 +289,13 @@ def create_base_components(
 		)
 		from transformers.normalize import Normalize
 		Normalize(
+			min_input = 0, # min depth
+			max_input = max_distance, # max depth
+			min_output = 1, # SB3 uses 0-255 pixel values
+			max_output = 255, # SB3 uses 0-255 pixel values
+			name = 'NormalizeDepth',
+		)
+		Normalize(
 			max_input = 2*math.pi, # max angle
 			name = 'NormalizeOrientation',
 		)
@@ -293,7 +310,7 @@ def create_base_components(
 		from transformers.resizeflat import ResizeFlat
 		ResizeFlat(
 			max_cols = flat[0] if flat is not None else [],
-			max_rows = flat[0] if flat is not None else [],
+			max_rows = flat[1] if flat is not None else [],
 			name = 'ResizeFlat',
 		)
 
