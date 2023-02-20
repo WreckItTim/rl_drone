@@ -466,6 +466,7 @@ def create_base_components(
 			name='EvalEnvSaver',
 		)
 		# TRACKER - tracks resources on local computer
+		'''
 		from modifiers.tracker import Tracker
 		Tracker(
 			base_component = 'TrainEnvironment',
@@ -481,4 +482,5 @@ def create_base_components(
 			frequency = 1,
 			name='Tracker',
 		)
+		'''
 	return configuration
