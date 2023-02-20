@@ -4,6 +4,7 @@ import airsim
 from drones.drone import Drone
 from component import _init_wrapper
 import math
+import numpy as np
 
 class AirSimDrone(Drone):
 	@_init_wrapper
@@ -15,6 +16,7 @@ class AirSimDrone(Drone):
 			  drift_stop_gap = True,
 			  ):
 		super().__init__()
+		self._speed = 2
 		
 	# check if has collided
 	def check_collision(self):
@@ -69,7 +71,8 @@ class AirSimDrone(Drone):
 	def land(self):
 		self._airsim._client.landAsync().join()
 	
-	# move to relative position
+	'''
+	# OLD: move with speed for duration (unstable)
 	def move(self, x_speed, y_speed, z_speed, duration):
 		# this if statement is for a crazy no-good high-overhead stop gap
 		# to temp-fix an issue with AirSim that adds drift when drone is facing y-axis
@@ -80,6 +83,27 @@ class AirSimDrone(Drone):
 
 		# make actual movement
 		self._airsim._client.moveByVelocityAsync(x_speed, y_speed, z_speed, duration).join()
+		has_collided = self.check_collision()
+
+		# undo stop_gap
+		if self.drift_stop_gap and not has_collided:
+			self._airsim._client.rotateToYawAsync(yaw_deg, timeout_sec=4, margin=1).join()
+			
+		return has_collided
+	'''	
+	# NEW: move to relative position with static speed
+	def move(self, x_rel, y_rel, z_rel, duration=None):
+		# this if statement is for a crazy no-good high-overhead stop gap
+		# to temp-fix an issue with AirSim that adds drift when drone is facing y-axis
+		if self.drift_stop_gap:
+			yaw_deg = math.degrees(self.get_yaw())
+			safe_yaw = 0 if abs(yaw_deg) < 90 else 180
+			self._airsim._client.rotateToYawAsync(safe_yaw, timeout_sec=4, margin=1).join()
+
+		# make actual movement
+		current_position = self.get_position()
+		target_position = np.array(current_position) + np.array([x_rel, y_rel, z_rel])
+		self._airsim._client.moveToPositionAsync(target_position[0], target_position[1], target_position[2], self._speed, timeout_sec=4).join()
 		has_collided = self.check_collision()
 
 		# undo stop_gap
@@ -100,9 +124,16 @@ class AirSimDrone(Drone):
 		)
 		self._airsim._client.simSetVehiclePose(pose, ignore_collision=ignore_collision)
 
-	# rotates along z-axis, yaw_rate in deg/sec duration in sec
-	def rotate(self, yaw_rate, duration):
-		self._airsim._client.rotateByYawRateAsync(yaw_rate, duration).join()
+	# OLD: rotates along z-axis, yaw_rate in deg/sec duration in sec  (unstable)
+	#def rotate(self, yaw_rate, duration):
+		#self._airsim._client.rotateByYawRateAsync(yaw_rate, duration).join()
+	# NEW: rotates along z-axis, yaw_rate in deg offset from current yaw
+	def rotate(self, yaw_deg, duration=None):
+		current_yaw = math.degrees(self.get_yaw())
+		target_yaw = current_yaw + yaw_deg
+		self._airsim._client.rotateToYawAsync(target_yaw, timeout_sec=4, margin=1).join()
+		has_collided = self.check_collision()
+		return has_collided
 
 	# get (x, y, z) positon, z is negative for up, x is positive for forward, y is positive for right (from origin)
 	def get_position(self):
