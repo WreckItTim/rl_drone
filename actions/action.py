@@ -23,3 +23,4 @@ class Action(Component):
 			self.step(state)
 		except ValueError:
 			print('invalid entry')
+		print('collided?', self._drone.check_collision())
