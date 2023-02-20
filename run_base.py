@@ -20,6 +20,7 @@ def create_base_components(
 ):
 
 	# **** SETUP ****
+	clock_speed = 8
 
 	# get OS, set file IO paths
 	OS = utils.setup(
