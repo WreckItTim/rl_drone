@@ -31,4 +31,4 @@ pip install msgpack-rpc-python --upgrade
 
 4. Occassionaly, AirSim will crash with an RPCError. This just happens some times when running for a long time (hours to a day or two). Because of this, you will need to occasionally check that the simulation is running. After a crash, rerun the py file with continue_training=True - this will pick up training from the last checkpoint. See issue here: https://github.com/microsoft/AirSim/issues/1757
 
-5. Jupyter notebooks do not work from the conda environment due to the tornado issue.
+5. Jupyter notebooks do not work from the conda environment due to the tornado dependency.
