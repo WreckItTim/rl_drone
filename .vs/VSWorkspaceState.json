@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\rewards"
+    "\\maps"
   ],
-  "SelectedNode": "\\run_gamma1.py",
+  "SelectedNode": "\\maps\\airsimmap.py",
   "PreviewInSolutionExplorer": false
 }

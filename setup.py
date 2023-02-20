@@ -4,7 +4,7 @@ import os
 if not os.path.exists('local'):
     os.mkdir('local')
 if not os.path.exists('local/airsim_maps'):
-    os.mkdir('local/arisim_maps')
+    os.mkdir('local/airsim_maps')
 if not os.path.exists('local/runs'):
     os.mkdir('local/runs')
 
