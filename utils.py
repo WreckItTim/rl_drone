@@ -76,9 +76,9 @@ def get_controller(controller_type,
 	# train will create a new or read in a previously trained model
 	# set continue_training=True to pick up where learning loop last saved
 	# or set continue_training=False to keep weights but start new learning loop
-	elif controller_type == 'TrainRL':
-		from controllers.trainrl import TrainRL
-		controller = TrainRL(
+	elif controller_type == 'Train':
+		from controllers.trainrl import Train
+		controller = Train(
 			model_component = model_component,
 			environment_component = environment_component,
 			total_timesteps = total_timesteps,
@@ -88,9 +88,9 @@ def get_controller(controller_type,
 			continue_training = continue_training,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
-	elif controller_type == 'EvaluateRL':
-		from controllers.evaluaterl import EvaluateRL
-		controller = EvaluateRL(
+	elif controller_type == 'Evaluate':
+		from controllers.evaluaterl import Evaluate
+		controller = Evaluate(
 			evaluator_component = evaluator_component,
 			)
 	# checks will run drift checks

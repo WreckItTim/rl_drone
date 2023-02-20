@@ -2,14 +2,21 @@ from run_base import create_base_components
 import utils
 import math
 
+
+run_name, # string value for output 
+continue_training=False, # set to true if continuing training from checkpoint
+controller_type='Debug', # Train, Debug, Drift, Evaluate
+include_z=True, # includes z-axis in calculations (such as distance to goal)
+clock_speed=1, # speed to run simulation (increased speed can lead to collision errors)
+flat=None, # flatten depth map to input into MLP
+
 # create base components
 continue_training = False
 flat_cols = [16, 32, 52, 68, 84]
-flat_rows = [21, 42, 63, 84]
+flat_rows = [42]
 configuration = create_base_components(
-	run_type = 'delta', 
-	run_extra = '',
-	drift_stop_gap = False,
+	run_name = '',
+	drift_stop_gap = True,
 	continue_training = continue_training,
 	controller_type = 'TrainRL',
 	include_z = True,
@@ -52,6 +59,19 @@ if not continue_training:
 		overide_memory = True, # memory benchmark on
 		name='Model',
 	)
+
+
+
+# ALTITUDE ADJUSTER (for horizontal motion, 
+	# since moving forward adds drift up)
+from modifiers.altadjust import AltAdjust
+AltAdjust(
+	base_component = 'Actor',
+	parent_method = 'step',
+	drone_component = 'Drone',
+	order = 'post',
+	name = 'Evaluator',
+)
 
 
 utils.speak('configuration created!')

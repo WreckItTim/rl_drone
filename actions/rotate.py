@@ -7,12 +7,11 @@ class Rotate(Action):
 	@_init_wrapper
 	def __init__(self, 
 				drone_component, 
-				base_yaw_rate, 
-				zero_threshold=0, # below this will do nothing (true zero)
-				duration=2,
+				base_yaw_deg, # degrees to rotate in range [-180, 180]
+				zero_threshold=0, # absolute value below this will do nothing (true zero)
 				# set these values for continuous actions
 				# # they determine the possible ranges of output from rl algorithm
-				min_space = 0,
+				min_space = -1,
 				max_space = 1,
 			):
 				self.min_space = min_space
@@ -25,6 +24,6 @@ class Rotate(Action):
 		if abs(rl_output) < self.zero_threshold:
 			return 'rotate(true_zero)'
 		# rotate calculated rate from rl_output
-		adjusted_rate = rl_output*self.base_yaw_rate
-		self._drone.rotate(adjusted_rate, self.duration)
-		return f'rotate({adjusted_rate})'
+		adjusted_yaw_deg = rl_output*self.base_yaw_deg
+		self._drone.rotate(adjusted_yaw_deg)
+		return f'rotate({adjusted_yaw_deg})'

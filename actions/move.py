@@ -10,15 +10,15 @@ class Move(Action):
 	@_init_wrapper
 	def __init__(self, 
 				drone_component,
-				base_x_speed=0, 
-				base_y_speed=0, 
-				base_z_speed=0, 
-				zero_threshold=0, # below this will do nothing (true zero)
-				duration=2,
+				base_x_rel=0, # relative x,y,z to drone
+				base_y_rel=0, 
+				base_z_rel=0, 
+				zero_threshold=0, # absolute value of rl_output below this will do nothing (true zero)
+				speed=2, # m/s
 				# set these values for continuous actions
 				# # they determine the possible ranges of output from rl algorithm
-				min_space = 0,
-				max_space = 1,
+				min_space = 0, # will scale base values by this range from rl_output
+				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 			):
 				self.min_space = min_space
 				self.max_space = max_space
@@ -32,10 +32,9 @@ class Move(Action):
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		# calculate rate from rl_output
-		adjusted_x_speed = float(rl_output * (self.base_x_speed * math.cos(yaw) - self.base_y_speed * math.sin(yaw)))
-		adjusted_y_speed = float(rl_output * (self.base_x_speed * math.sin(yaw) + self.base_y_speed * math.cos(yaw)))
-		adjusted_z_speed = float(rl_output * self.base_z_speed)
+		adjusted_x_rel = float(rl_output * (self.base_x_rel * math.cos(yaw) - self.base_y_rel * math.sin(yaw)))
+		adjusted_y_rel = float(rl_output * (self.base_x_rel * math.sin(yaw) + self.base_y_rel * math.cos(yaw)))
+		adjusted_z_rel = float(rl_output * self.base_z_rel)
 		# move calculated rate
-		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
-		state['has_collided'] = has_collided
-		return f'move({adjusted_x_speed}, {adjusted_y_speed}, {adjusted_z_speed})'
+		self._drone.move(adjusted_x_rel, adjusted_y_rel, adjusted_z_rel, self.speed)
+		return f'move({adjusted_x_rel}, {adjusted_y_rel}, {adjusted_z_rel})'

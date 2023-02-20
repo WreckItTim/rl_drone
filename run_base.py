@@ -1,25 +1,29 @@
 import utils
 from configuration import Configuration
 import math
+repo_version = 'gamma8'
 
 
 # runs some overarching base things
-def create_base_components(run_type, run_extra,
-drift_stop_gap=False,
-continue_training=False,
-controller_type='Train',
-include_z=True,
-flat_cols = [16, 32, 52, 68, 84],
-flat_rows = [21, 42, 63, 84],
+def create_base_components(
+		run_name, # string value for output 
+		continue_training=False, # set to true if continuing training from checkpoint
+		controller_type='Debug', # Train, Debug, Drift, Evaluate
+		include_z=True, # includes z-axis in calculations (such as distance to goal)
+		clock_speed=1, # speed to run simulation (increased speed can lead to collision errors)
+		flat=None, # flatten depth map to input into MLP
+			# if flat is not None then it should be a 2-d array such as:
+			# [[16, 32, 52, 68, 84], [21, 42, 63, 84]]
+			# where first array is flat_rows and second is flat_cols
+			# see transformers.resizeflat
 ):
 
 	# **** SETUP ****
 
 	# get OS, set file IO paths
-	repo_version = 'gamma7'
 	OS = utils.setup(
 		write_parent = 'local/runs/',
-		run_prefix = repo_version + '_' + run_type + run_extra,
+		run_prefix = repo_version + '_' + run_name,
 		)
 	working_directory = utils.get_global_parameter('working_directory')
 
@@ -124,7 +128,7 @@ flat_rows = [21, 42, 63, 84],
 			voxels_component='Voxels',
 			release_path = release_path,
 			settings = {
-				'ClockSpeed': 8,
+				'ClockSpeed': clock_speed,
 				},
 			setting_files = [
 				'lightweight', 
@@ -144,7 +148,6 @@ flat_rows = [21, 42, 63, 84],
 		from drones.airsimdrone import AirSimDrone
 		AirSimDrone(
 			airsim_component = 'Map',
-			drift_stop_gap = drift_stop_gap,
 			name='Drone',
 		)
 
@@ -289,40 +292,38 @@ flat_rows = [21, 42, 63, 84],
 		)
 		from transformers.resizeflat import ResizeFlat
 		ResizeFlat(
-			max_cols = flat_cols,
-			max_rows = flat_rows,
+			max_cols = flat[0] if flat is not None else [],
+			max_rows = flat[0] if flat is not None else [],
 			name = 'ResizeFlat',
 		)
 
 		# ACTIONS
-		base_move_speed = 8 # meters/sec
-		drift_xyz_std = 0#0.3 # meters, emperically measured
-		base_yaw_rate = 180 # degrees/sec
-		drift_yaw_std = 0#0.15 # degrees, emperically measured
-		step_duration = 2 # seconds
+		base_move_distance = 8 # maximum move of 8 meters
+		drift_xyz_std = 0.1 # meters, emperically measured (run_drift)
+		base_yaw_deg = 180 # degrees (180 gives full motion)
+		drift_yaw_std = 0.3 # degrees, emperically measured (run_drift)
+		speed = 2 # meters/second (2 is a brisk walking speed)
 		from actions.move import Move 
 		Move(
 			drone_component = 'Drone', 
-			base_x_speed = base_move_speed, 
-			duration = step_duration,
-			zero_threshold = drift_xyz_std/base_move_speed,
+			base_x_rel = base_move_distance, 
+			speed = speed,
+			zero_threshold = drift_xyz_std/base_move_distance,
 			name = 'MoveForward',
 		)
 		Move(
 			drone_component = 'Drone', 
-			base_z_speed = base_move_speed, 
-			duration = step_duration,
-			zero_threshold = drift_xyz_std/base_move_speed,
+			base_z_rel = base_move_distance, 
+			speed = speed,
+			zero_threshold = drift_xyz_std/base_move_distance,
 			min_space = -1, # allows up and down movements
 			name = 'MoveVertical',
 		)
 		from actions.rotate import Rotate 
 		Rotate(
 			drone_component = 'Drone',  
-			base_yaw_rate = base_yaw_rate,
-			duration = step_duration,
-			zero_threshold = drift_yaw_std/base_yaw_rate,
-			min_space = -1, # allows left and right rotations 
+			base_yaw_deg = base_yaw_deg,
+			zero_threshold = drift_yaw_std/base_yaw_deg,
 			name = 'Rotate',
 		)
 
@@ -444,6 +445,7 @@ flat_rows = [21, 42, 63, 84],
 			activate_on_first = False,
 			name='EvalEnvSaver',
 		)
+		# TRACKER - tracks resources on local computer
 		from modifiers.tracker import Tracker
 		Tracker(
 			base_component = 'TrainEnvironment',
