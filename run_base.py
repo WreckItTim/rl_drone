@@ -114,6 +114,8 @@ def create_base_components(
 				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
 			if airsim_release == 'AirSimNH':
 				release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.sh'
+			if airsim_release == 'CityEnviron':
+				release_path = 'local/airsim_maps/CityEnviron/WindowsNoEditor/CityEnviron.sh'
 		if utils.get_global_parameter('OS') == 'linux':
 			if airsim_release == 'Blocks':
 				release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
