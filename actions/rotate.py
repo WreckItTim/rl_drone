@@ -22,7 +22,7 @@ class Rotate(Action):
 	def step(self, state):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if rl_output < self.zero_threshold:
+		if abs(rl_output) < self.zero_threshold:
 			return 'rotate(true_zero)'
 		# rotate calculated rate from rl_output
 		adjusted_rate = rl_output*self.base_yaw_rate

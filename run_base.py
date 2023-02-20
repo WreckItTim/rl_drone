@@ -296,9 +296,9 @@ flat_rows = [21, 42, 63, 84],
 
 		# ACTIONS
 		base_move_speed = 8 # meters/sec
-		drift_xyz_std = 0.25 # meters, emperically measured
-		base_yaw_rate = 360 # degrees/sec
-		drift_yaw_std = 0.5 # degrees, emperically measured
+		drift_xyz_std = 0#0.3 # meters, emperically measured
+		base_yaw_rate = 180 # degrees/sec
+		drift_yaw_std = 0#0.15 # degrees, emperically measured
 		step_duration = 2 # seconds
 		from actions.move import Move 
 		Move(
@@ -313,7 +313,7 @@ flat_rows = [21, 42, 63, 84],
 			base_z_speed = base_move_speed, 
 			duration = step_duration,
 			zero_threshold = drift_xyz_std/base_move_speed,
-			min_space = -1,
+			min_space = -1, # allows up and down movements
 			name = 'MoveVertical',
 		)
 		from actions.rotate import Rotate 
@@ -322,6 +322,7 @@ flat_rows = [21, 42, 63, 84],
 			base_yaw_rate = base_yaw_rate,
 			duration = step_duration,
 			zero_threshold = drift_yaw_std/base_yaw_rate,
+			min_space = -1, # allows left and right rotations 
 			name = 'Rotate',
 		)
 
