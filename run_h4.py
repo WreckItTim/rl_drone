@@ -5,12 +5,12 @@ import math
 # create base components
 continue_training = False
 configuration = create_base_components(
-	run_name = 'hood_horiz_cnn',
+	run_name = 'asnhHorizCnn',
 	continue_training = continue_training,
 	controller_type = 'Train',
-	airsim_release = 'Hood',
+	airsim_release = 'AirSimNH',
+	clock_speed = 16,
 	include_z = False,
-	clock_speed = 100,
 	flat = None,
 )
 
@@ -55,7 +55,7 @@ if not continue_training:
 	from models.td3 import TD3
 	TD3(
 		environment_component = 'TrainEnvironment',
-		policy = 'CnnPolicy',
+		policy = 'MultiInputPolicy',
 		policy_kwargs = {'net_arch':[64,64]},
 		buffer_size = 1000,
 		learning_starts = 100,

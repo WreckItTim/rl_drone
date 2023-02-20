@@ -4,8 +4,8 @@ import math
 
 # create base components
 configuration = create_base_components(
-	run_name = 'drift', 
-	controller_type = 'Drift',
+	run_name = 'airsim_checks', 
+	controller_type = 'AirSimChecks',
 )
 	
 # ACTOR

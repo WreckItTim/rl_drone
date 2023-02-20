@@ -4,15 +4,14 @@ import math
 
 # create base components
 continue_training = False
-flat = [[16, 32, 52, 68, 84], [21, 42, 63, 84]]
 configuration = create_base_components(
-	run_name = 'blocksVertMlp',
+	run_name = 'blocksHorizCnn',
 	continue_training = continue_training,
 	controller_type = 'Train',
 	airsim_release = 'Blocks',
 	clock_speed = 16,
-	include_z = True,
-	flat = flat,
+	include_z = False,
+	flat = None,
 )
 
 # create other components
@@ -20,7 +19,6 @@ if not continue_training:
 	# ACTOR
 	actions=[
 		'MoveForward',
-		'MoveVertical',
 		'Rotate',
 		]
 	from actors.continuousactor import ContinuousActor
@@ -32,17 +30,32 @@ if not continue_training:
 	# OBSERVER
 	from observers.single import Single
 	Single(
-		sensors_components = ['GoalDistance', 'GoalOrientation', 'GoalAltitude', 'FlattenedDepth', 'Moves'], 
-		vector_length = 1 + 1 + 1 + len(flat[0])*len(flat[1]) + len(actions),
+		sensors_components = ['GoalDistance', 'GoalOrientation', 'Moves'], 
+		vector_length = 1 + 1 + len(actions),
 		nTimesteps = 4,
-		name = 'Observer',
+		name = 'ObserverVector',
 	)
+	Single(
+		sensors_components = ['DepthMap'], 
+		is_image = True,
+		image_height = 84, 
+		image_width = 84,
+		image_bands = 1,
+		nTimesteps = 4,
+		name = 'ObserverImage',
+	)
+	from observers.multi import Multi
+	Multi(
+		vector_observer_component = 'ObserverVector',
+		image_observer_component = 'ObserverImage',
+		name = 'Observer',
+		)
 
 	# CREATE MODEL
 	from models.td3 import TD3
 	TD3(
 		environment_component = 'TrainEnvironment',
-		policy = 'MlpPolicy',
+		policy = 'MultiInputPolicy',
 		policy_kwargs = {'net_arch':[64,64]},
 		buffer_size = 1000,
 		learning_starts = 100,
@@ -50,6 +63,16 @@ if not continue_training:
 		name='Model',
 	)
 
+	# ALTITUDE ADJUSTER (for horizontal motion, 
+		# since moving forward adds drift up)
+	from modifiers.altadjust import AltAdjust
+	AltAdjust(
+		base_component = 'Actor',
+		parent_method = 'step',
+		drone_component = 'Drone',
+		order = 'post',
+		name = 'Evaluator',
+	)
 
 utils.speak('configuration created!')
 

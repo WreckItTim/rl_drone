@@ -11,7 +11,7 @@ def create_base_components(
 		controller_type='Debug', # Train, Debug, Drift, Evaluate
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		include_z=True, # includes z-axis in calculations (such as distance to goal)
-		clock_speed=1, # speed to run simulation (increased speed can lead to collision errors)
+		clock_speed=1, # speed to run simulation (warning: speed correlates to sim quality)
 		flat=None, # flatten depth map to input into MLP
 			# if flat is not None then it should be a 2-d array such as:
 			# [[16, 32, 52, 68, 84], [21, 42, 63, 84]]
@@ -111,12 +111,12 @@ def create_base_components(
 		if utils.get_global_parameter('OS') == 'windows':
 			if airsim_release == 'Blocks':
 				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
-			if airsim_release == 'Hood':
+			if airsim_release == 'AirSimNH':
 				release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.sh'
 		if utils.get_global_parameter('OS') == 'linux':
 			if airsim_release == 'Blocks':
 				release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
-			if airsim_release == 'Hood':
+			if airsim_release == 'AirSimNH':
 				release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
 		console_flags = []
 		render_screen = utils.get_global_parameter('render_screen')

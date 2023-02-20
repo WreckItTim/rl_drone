@@ -6,12 +6,12 @@ import math
 continue_training = False
 flat = [[16, 32, 52, 68, 84], [21, 42, 63, 84]]
 configuration = create_base_components(
-	run_name = 'blocksVertMlp',
+	run_name = 'blocksHorizMlp',
 	continue_training = continue_training,
 	controller_type = 'Train',
 	airsim_release = 'Blocks',
 	clock_speed = 16,
-	include_z = True,
+	include_z = False,
 	flat = flat,
 )
 
@@ -20,7 +20,6 @@ if not continue_training:
 	# ACTOR
 	actions=[
 		'MoveForward',
-		'MoveVertical',
 		'Rotate',
 		]
 	from actors.continuousactor import ContinuousActor
@@ -50,6 +49,16 @@ if not continue_training:
 		name='Model',
 	)
 
+	# ALTITUDE ADJUSTER (for horizontal motion, 
+		# since moving forward adds drift up)
+	from modifiers.altadjust import AltAdjust
+	AltAdjust(
+		base_component = 'Actor',
+		parent_method = 'step',
+		drone_component = 'Drone',
+		order = 'post',
+		name = 'Evaluator',
+	)
 
 utils.speak('configuration created!')
 

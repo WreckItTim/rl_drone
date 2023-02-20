@@ -19,7 +19,7 @@ class Multi(Observer):
 		super().__init__()
 		
 	# gets observations
-	def observe(self, state=None):
+	def step(self, state=None):
 		# get observations
 		vector_data, vector_name = self._vector_observer.step(state)
 		# cleanup after getting last data fetches
@@ -30,7 +30,7 @@ class Multi(Observer):
 			}
 		return data_dict, vector_name + '__' + image_name
 
-	def reset(self):
+	def reset(self, state=None):
 		self._vector_observer.reset()
 		self._image_observer.reset()
 
