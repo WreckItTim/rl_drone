@@ -14,7 +14,7 @@
   "Vehicles": {
     "SimpleFlight": {
       "VehicleType": "SimpleFlight",
-      "EnableCollisionPassthrogh": true
+      "EnableCollisionPassthrogh": false
     }
   }
 }

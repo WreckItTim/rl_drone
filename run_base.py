@@ -1,7 +1,7 @@
 import utils
 from configuration import Configuration
 import math
-repo_version = 'gamma8'
+repo_version = 'gamma9'
 
 
 # runs some overarching base things
@@ -20,7 +20,7 @@ def create_base_components(
 ):
 
 	# **** SETUP ****
-	clock_speed = 8
+	clock_speed = 10
 
 	# get OS, set file IO paths
 	OS = utils.setup(
