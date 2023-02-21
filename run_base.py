@@ -318,20 +318,17 @@ def create_base_components(
 		)
 
 		# ACTIONS
-		base_distance = 4 # meters, will multiple rl_output by this value
-		base_yaw = 90 # degrees, will multiple rl_output by this value
-		speed = 2 # meters/second (2 is a brisk walking speed)
+		base_distance = 10 # meters, will multiple rl_output by this value
+		base_yaw = math.pi # degrees, will multiple rl_output by this value
 		from actions.move import Move 
 		Move(
 			drone_component = 'Drone', 
 			base_x_rel = base_distance, 
-			speed = speed,
 			name = 'MoveForward',
 		)
 		Move(
 			drone_component = 'Drone', 
 			base_z_rel = base_distance, 
-			speed = speed,
 			min_space = -1, # allows up and down movements
 			name = 'MoveVertical',
 		)
@@ -339,6 +336,7 @@ def create_base_components(
 		Rotate(
 			drone_component = 'Drone',  
 			base_yaw = base_yaw,
+			min_space = -1, # allows left and right rotations
 			name = 'Rotate',
 		)
 
