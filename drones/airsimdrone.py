@@ -5,6 +5,7 @@ from drones.drone import Drone
 from component import _init_wrapper
 import math
 import numpy as np
+import time
 
 class AirSimDrone(Drone):
 	@_init_wrapper
@@ -68,34 +69,40 @@ class AirSimDrone(Drone):
 		self._airsim._client.landAsync().join()
 	
 	# NEW: move to relative position with given speed
-	def move(self, x_rel, y_rel, z_rel, speed):
+	def move(self, x_rel, y_rel, z_rel, speed=2):
 
 		# get current position then move relative
-		#current_position = self.get_position()
-		#target_position = np.array(current_position) + np.array([x_rel, y_rel, z_rel])
-		#self._airsim._client.moveToPositionAsync(target_position[0], target_position[1], target_position[2], speed, timeout_sec = self._timeout ).join()
-		self._airsim._client.moveByVelocityAsync(x_rel, y_rel, z_rel, 4).join()
+		current_position = self.get_position()
+		target_position = np.array(current_position) + np.array([x_rel, y_rel, z_rel])
+		self._airsim._client.moveToPositionAsync(target_position[0], target_position[1], target_position[2], speed, timeout_sec = self._timeout ).join()
+
+		#self._airsim._client.moveByVelocityAsync(x_rel, y_rel, z_rel, 4).join()
 
 		# the below lines are a stop_gap to fix AirSim's y-drift problem
 		# see this GitHub ticket, with youtube video showing problem:
 		# https://github.com/microsoft/AirSim/issues/4780
+		#time.sleep(.1)
 		#current_yaw = math.degrees(self.get_yaw())
-		#self._airsim._client.rotateToYawAsync(current_yaw + 0.1).join()
+		#self._airsim._client.rotateToYawAsync(current_yaw + 0.1, timeout=1).join()
 	
-	# teleports to position (ignores collisions), yaw in radians
-	def teleport(self, x, y, z, yaw, ignore_collision=True):
+	# teleports to position, yaw in radians
+	def teleport(self, x, y, z, yaw, ignore_collision=True, stabelize=True):
 		pose = airsim.Pose(
 			airsim.Vector3r(x, y, z), 
 			airsim.to_quaternion(0, 0, yaw)
 		)
 		self._airsim._client.simSetVehiclePose(pose, ignore_collision=ignore_collision)
+		# stabalize drone
+		if stabelize:
+			self._airsim._client.rotateByYawRateAsync(0, 0.1)
+			self._airsim._client.moveByVelocityAsync(0, 0, 0, 0.1).join()
 		
-	# NEW: rotates along z-axis, yaw_rate in deg offset from current yaw
-	def rotate(self, yaw_deg):
-		#current_yaw = math.degrees(self.get_yaw())
-		#target_yaw = current_yaw + yaw_deg
-		#self._airsim._client.rotateToYawAsync(target_yaw, timeout_sec = self._timeout).join()
-		self._airsim._client.rotateByYawRateAsync(yaw_deg, 4).join()
+	# NEW: rotates along z-axis, yaw in radians offset from current yaw
+	def rotate(self, yaw):
+		current_yaw = self.get_yaw()
+		target_yaw = current_yaw + yaw
+		self._airsim._client.rotateToYawAsync(math.degrees(target_yaw), timeout_sec = self._timeout).join()
+		#self._airsim._client.rotateByYawRateAsync(yaw_deg, 4).join()
 
 	# get (x, y, z) positon, z is negative for up, x is positive for forward, y is positive for right (from origin)
 	def get_position(self):

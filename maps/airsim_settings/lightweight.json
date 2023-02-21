@@ -5,7 +5,16 @@
   "SimMode": "Multirotor",
 
   "ViewMode": "SpringArmChase",
+  
+  "EngineSound": false,
 
   "SubWindows": [
-  ]
+  ],
+  
+  "Vehicles": {
+    "SimpleFlight": {
+      "VehicleType": "SimpleFlight",
+      "EnableCollisionPassthrogh": true
+    }
+  }
 }

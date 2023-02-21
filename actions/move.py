@@ -24,11 +24,11 @@ class Move(Action):
 				self.max_space = max_space
 		
 	# move at input rate
-	def step(self, state):
+	def step(self, state, execute=True):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
 		if abs(rl_output) < self.zero_threshold:
-			return 'move(true_zero)'
+			return {}
 		# must orient self with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		# calculate rate from rl_output
@@ -36,5 +36,6 @@ class Move(Action):
 		adjusted_y_rel = float(rl_output * (self.base_x_rel * math.sin(yaw) + self.base_y_rel * math.cos(yaw)))
 		adjusted_z_rel = float(rl_output * self.base_z_rel)
 		# move calculated rate
-		self._drone.move(adjusted_x_rel, adjusted_y_rel, adjusted_z_rel, self.speed)
-		return f'move({adjusted_x_rel}, {adjusted_y_rel}, {adjusted_z_rel})'
+		if execute:
+			self._drone.move(adjusted_x_rel, adjusted_y_rel, adjusted_z_rel, self.speed)
+		return {'x':adjusted_x_rel, 'y':adjusted_y_rel, 'z':adjusted_z_rel}

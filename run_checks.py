@@ -13,8 +13,9 @@ actions=[
 	'MoveForward',
 	'Rotate',
 	]
-from actors.continuousactor import ContinuousActor
-ContinuousActor(
+from actors.teleporter import Teleporter
+Teleporter(
+	drone_component = 'Drone',
 	actions_components = actions,
 	name='Actor',
 )
