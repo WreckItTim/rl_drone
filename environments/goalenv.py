@@ -117,6 +117,8 @@ class GoalEnv(Environment):
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.end(self._states[this_step])
+			print('TERMINATION STATE', self._states[this_step])
+			input()
 		# state is passed to stable-baselines3 callbacks
 		return observation_data, total_reward, done, self._states[this_step].copy()
 

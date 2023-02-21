@@ -223,7 +223,7 @@ def create_base_components(
 			include_z = False,
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				'PositionNoise',
+				#'PositionNoise',
 				'NormalizeDistance',
 				], 
 			name = 'GoalDistance',
@@ -234,7 +234,7 @@ def create_base_components(
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				'OrientationNoise',
+				#'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'GoalOrientation',
@@ -246,7 +246,7 @@ def create_base_components(
 			include_y = False,
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				'PositionNoise',
+				#'PositionNoise',
 				'NormalizeDistance',
 				],
 			name = 'GoalAltitude',
@@ -257,7 +257,7 @@ def create_base_components(
 			airsim_component = 'Map',
 			transformers_components = [
 				'ResizeImage',
-				'DepthNoise',
+				#'DepthNoise',
 				'NormalizeDepth',
 				],
 			name = 'DepthMap',
@@ -266,7 +266,7 @@ def create_base_components(
 			airsim_component = 'Map',
 			transformers_components = [
 				'ResizeImage',
-				'DepthNoise',
+				#'DepthNoise',
 				'NormalizeDistance',
 				'ResizeFlat',
 				],
