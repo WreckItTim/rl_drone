@@ -9,8 +9,8 @@ class GaussianNoise(Transformer):
 	# deviation is the scale of distribution (std)
 	@_init_wrapper
 	def __init__(self, 
+					deviation,
 					mean = 0,
-					deviation = 0.5,
 				 ):
 		super().__init__()
 

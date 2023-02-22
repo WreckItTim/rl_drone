@@ -84,7 +84,11 @@ class AirSimMap(Map):
 	# launch airsim map
 	def connect(self):
 		super().connect()
-		if self.release_path is not None:
+		# prompt user to confirm when launch is successful (can launch manually if needs be)
+		auto_key = 'y'
+		self_key = 'n'
+		key = utils.prompt(f'Enter {auto_key} to automatically launch airsim or {self_key} to launch manually. After AirSim launches, press any key to continue...')
+		if key == auto_key and self.release_path is not None:
 			# check OS to determine how to launch map
 			OS = utils.get_global_parameter('OS')
 			# set flags
@@ -118,8 +122,7 @@ class AirSimMap(Map):
 				utils.speak('Please manually launch Airsim.')
 		else:
 			utils.speak('Please manually launch Airsim.')
-		# prompt user to confirm when launch is successful (can launch manually if needs be)
-		utils.prompt(f'Send any key when AirSim is fully launched, this make take several minutes....')
+		utils.prompt(f'After AirSim launches, press any key to continue...')
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_global_parameter('LocalHostIp'),

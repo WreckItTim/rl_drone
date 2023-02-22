@@ -3,9 +3,9 @@ from observations.vector import Vector
 from component import _init_wrapper
 import numpy as np
 
-# keeps track of previous move
-# self normalizes
-class Moves(Sensor):
+# keeps track of previous action
+# self normalizes to [0,1]
+class Actions(Sensor):
 	
 	@_init_wrapper
 	def __init__(self,

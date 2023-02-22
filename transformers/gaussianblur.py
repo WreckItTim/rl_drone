@@ -9,7 +9,7 @@ class GaussianBlur(Transformer):
 	# sigma is scale (std) of blur
 	@_init_wrapper
 	def __init__(self, 
-					sigma = 2,
+					sigma,
 				 ):
 		super().__init__()
 

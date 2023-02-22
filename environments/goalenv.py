@@ -60,7 +60,6 @@ class GoalEnv(Environment):
 		# this saves memory, reduces zip time, and avoids clutter
 	# pass in write_folder to state
 	def save(self, state):
-		self.save_counter += 1
 		write_folder = state['write_folder']
 		if not self._track_save:
 			utils.warning('called GoalEnv.save() without setting _track_save=True, nothing to save')
@@ -74,6 +73,7 @@ class GoalEnv(Environment):
 			path = write_folder + 'observations__' + part_name + '.npz'
 			np.savez(path, **self._observations)
 			self._observations = {}
+		self.save_counter += 1
 	
 	# just makes the rl_output from SB3 more readible
 	def clean_rl_output(self, rl_output):

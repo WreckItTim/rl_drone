@@ -12,7 +12,6 @@ class Goal(Reward):
 				 drone_component, 
 				 goal_component, 
 				 tolerance=4, # min distance from goal for success 
-				 max_distance=100, # max distance from goal for failure
 				 include_z=True,
 				 to_start=True,
 				 # if to_start=True will calculate rewards relative to start position
@@ -49,11 +48,6 @@ class Goal(Reward):
 			done = True
 			state['termination_reason'] = 'goal'
 			state['termination_result'] = 'success'
-		if distance >= self.max_distance:
-			value = -10
-			done = True
-			state['termination_reason'] = 'distance'
-			state['termination_result'] = 'failure'
 
 		return value, done and self.terminate
 

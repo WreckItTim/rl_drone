@@ -10,7 +10,7 @@ class Bounds(Reward):
                  x_bounds,
                  y_bounds,
                  z_bounds,
-				 terminate=False, # =True will terminate episodes when oob
+				 terminate=True, # =True will terminate episodes when oob
 	):
 		super().__init__()
 
