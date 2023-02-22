@@ -4,11 +4,13 @@ import math
 import sys
 repo_version = 'gamma10'
 
+# ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
+
 # grab arguments input from terminal
 args = sys.argv
 # first sys argument is test_case to run (see options below)
-	# if no arguments will default to test_case 'M9' - blocks, horizontal motion, with an MLP
-test_case = 'M9'
+	# if no arguments will default to test_case 'H4' - blocks, horizontal motion, with an MLP
+test_case = 'H4'
 if len(args) > 1:
 	test_case = args[1].upper()
 # second sys argument is optionally to continue training from last checkpoint (True) or not (False)
@@ -16,23 +18,27 @@ if len(args) > 1:
 continue_training = False
 if len(args) > 2:
 	continue_training = bool(sys.argv[2])
-
+	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['H3', 'H4']:
+if test_case in ['M9', 'CS']:
 	airsim_release = 'AirSimNH'
-if test_case in ['PC', 'SP']:
+if test_case in ['PC']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['TB', 'H3', 'PC', 'CS']:
+if test_case in ['H3', 'M9']:
 	vert_motion = True
 
 # MLP or CNN?
 policy = 'MultiInputPolicy' # CNN (2d depth map)
-if test_case in ['TB', 'M9']:
+if test_case in ['H3', 'H4']:
 	policy = 'MlpPolicy' # MLP (flattened depth map)
+
+replay_buffer_size = 1_000_000 # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
+if airsim_release == 'Blocks': # generally run blocks map on lower tier computers with less RAM
+	replay_buffer_size /= 2
 
 # see bottom of this file which calls functions to create components and run controller
 
@@ -41,6 +47,7 @@ def create_base_components(
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = 'MlpPolicy', # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
+		replay_buffer_size = 1_000_000,
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
 		actor = 'Teleporter', # Teleporter Continuous
@@ -463,6 +470,7 @@ def create_base_components(
 		TD3(
 			environment_component = 'TrainEnvironment',
 			policy = policy,
+			buffer_size = replay_buffer_size,
 			name='Model',
 		)
 
@@ -625,14 +633,14 @@ def run_controller(configuration):
 	# view neural net archetecture
 	model_name = str(configuration.get_component('Model')._child())
 	sb3_model = configuration.get_component('Model')._sb3model
-	if 'dqn' in model_name:
+	if model_name in ['dqn']:
 		print(sb3_model.q_net)
-		for name, param in sb3_model.q_net.named_parameters():
-			print(name, param)
-	if 'ddpg' in model_name or 'td3' in model_name:
+		#for name, param in sb3_model.q_net.named_parameters():
+		#	print(name, param)
+	if model_name in ['ddpg', 'td3']:
 		print(sb3_model.critic)
-		for name, param in sb3_model.critic.named_parameters():
-			print(name, param)
+		#for name, param in sb3_model.critic.named_parameters():
+		#	print(name, param)
 	utils.speak('all components connected. Send any key to continue...')
 	x = input()
 
