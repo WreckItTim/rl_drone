@@ -36,9 +36,8 @@ policy = 'MultiInputPolicy' # CNN (2d depth map)
 if test_case in ['H3', 'H4']:
 	policy = 'MlpPolicy' # MLP (flattened depth map)
 
-replay_buffer_size = 1_000_000 # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
-if airsim_release == 'Blocks': # generally run blocks map on lower tier computers with less RAM
-	replay_buffer_size /= 2
+replay_buffer_size = 500_000 # 500_000 requires 28.46 GB of RAM if using MultiInputPolicy
+							 # if using a flattened depth map (MlpPolicy) this will use drastically less
 
 # see bottom of this file which calls functions to create components and run controller
 
@@ -47,12 +46,12 @@ def create_base_components(
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = 'MlpPolicy', # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
-		replay_buffer_size = 1_000_000,
+		replay_buffer_size = 1_000_000, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
 		actor = 'Teleporter', # Teleporter Continuous
 		clock_speed = 10, # airsim clock speed (increasing this will also decerase sim-quality)
-		training_steps = 1_000_000, # max number of training steps 
+		training_steps = 50_000_000, # max number of training steps 
 		max_distance = 100, # distance contraint used for several calculations (see below)
 		nTimesteps = 4, # number of timesteps to use in observation space
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
@@ -659,6 +658,7 @@ configuration = create_base_components(
 		vert_motion = vert_motion, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = policy, # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
 		continue_training = continue_training, # set to true if continuing training from checkpoint
+		replay_buffer_size = replay_buffer_size,
 )
 
 # create any other components
