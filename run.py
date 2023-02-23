@@ -592,6 +592,7 @@ def create_base_components(
 				environment_component = 'TrainEnvironment',
 				policy = policy,
 				buffer_size = replay_buffer_size,
+				tensorboard_log = working_directory + 'tensorboard_log/',
 				name='Model',
 			)
 		if rl_model == 'DQN':
@@ -600,6 +601,7 @@ def create_base_components(
 				environment_component = 'TrainEnvironment',
 				policy = policy,
 				buffer_size = replay_buffer_size,
+				tensorboard_log = working_directory + 'tensorboard_log/',
 				name='Model',
 			)
 
@@ -762,14 +764,19 @@ def run_controller(configuration):
 	# view neural net archetecture
 	model_name = str(configuration.get_component('Model')._child())
 	sb3_model = configuration.get_component('Model')._sb3model
-	if model_name in ['dqn']:
+	print('MODEL NAME', model_name)
+	if 'dqn' in model_name:
 		print(sb3_model.q_net)
-		#for name, param in sb3_model.q_net.named_parameters():
-		#	print(name, param)
-	if model_name in ['ddpg', 'td3']:
+		for name, param in sb3_model.q_net.named_parameters():
+			msg = str(name) + ' ____ ' + str(param[0,0])
+			utils.speak(msg)
+			break
+	if 'td3' in model_name:
 		print(sb3_model.critic)
-		#for name, param in sb3_model.critic.named_parameters():
-		#	print(name, param)
+		for name, param in sb3_model.critic.named_parameters():
+			msg = str(name) + ' ____ ' + str(param[0,0,0,0])
+			utils.speak(msg)
+			break
 	utils.speak('all components connected. Send any key to continue...')
 	x = input()
 

@@ -62,6 +62,19 @@ class EvaluatorCharlie(Modifier):
 
 	def activate(self, state=None):
 		if self.check_counter(state):
+			# print first weight (just to check if training)
+			model_name = str(self._model._child())
+			sb3_model = self._model._sb3model
+			if 'dqn' in model_name:
+				for name, param in sb3_model.q_net.named_parameters():
+					msg = str(name) + ' ____ ' + str(param[0,0])
+					utils.speak(msg)
+					break
+			if 'td3' in model_name:
+				for name, param in sb3_model.critic.named_parameters():
+					msg = str(name) + ' ____ ' + str(param[0,0,0,0])
+					utils.speak(msg)
+					break
 			# evaluate for a set of episodes, until failure
 			while(True):
 				stop, another_set = self.evaluate_set()
