@@ -66,7 +66,7 @@ def create_base_components(
 		training_steps = 50_000_000, # max number of training steps 
 		max_distance = 100, # distance contraint used for several calculations (see below)
 		nTimesteps = 4, # number of timesteps to use in observation space
-		checkpoint = 2, # evaluate model and save checkpoint every # of episodes
+		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 ):
 
@@ -310,17 +310,17 @@ def create_base_components(
 			from actions.fixedmove import FixedMove 
 			FixedMove(
 				drone_component = 'Drone', 
-				base_x_rel = 1, 
+				x_speed = 1, 
 				name = 'FixedForward1',
 			)
 			FixedMove(
 				drone_component = 'Drone', 
-				base_x_rel = 5, 
+				x_speed = 5, 
 				name = 'FixedForward2',
 			)
 			FixedMove(
 				drone_component = 'Drone', 
-				base_x_rel = 10, 
+				x_speed = 10, 
 				name = 'FixedForward3',
 			)
 			from actions.fixedrotate import FixedRotate 
@@ -549,13 +549,18 @@ def create_base_components(
 
 		# OBSERVER
 		vector_sensors = ['ActionsSensor', 'StepsSensor', 'GoalDistance', 'GoalOrientation']
-		vector_length = len(actions) + 1 + 1 + 1
+		if rl_model in ['DQN']:
+			vector_length = 1 + 1 + 1 + 1
+		if rl_model in ['TD3']:
+			vector_length = len(actions) + 1 + 1 + 1
 		if vert_motion:
 			vector_sensors.append('GoalAltitude')
 			vector_length += 1
 		if policy == 'MlpPolicy':
 			vector_sensors.append('FlattenedDepth')
 			vector_length += len(max_cols) * len(max_rows)
+		print('ACTIONS', actions)
+		print('VECTOR_LENGTH', vector_length)
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
