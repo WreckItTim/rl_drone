@@ -77,7 +77,7 @@ class EvaluatorCharlie(Modifier):
 		self.best_eval = 0
 		self.set_counter = 0
 		self.wait = 0
-		self.amping_phase = amping_phase
+		self.amping_phase = True
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
