@@ -67,12 +67,12 @@ class EvaluatorCharlie(Modifier):
 			sb3_model = self._model._sb3model
 			if 'dqn' in model_name:
 				for name, param in sb3_model.q_net.named_parameters():
-					msg = str(name) + ' ____ ' + str(param[0,0])
+					msg = str(name) + ' ____ ' + str(param[0])
 					utils.speak(msg)
 					break
 			if 'td3' in model_name:
 				for name, param in sb3_model.critic.named_parameters():
-					msg = str(name) + ' ____ ' + str(param[0,0,0,0])
+					msg = str(name) + ' ____ ' + str(param[0])
 					utils.speak(msg)
 					break
 			# evaluate for a set of episodes, until failure

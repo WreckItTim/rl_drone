@@ -768,13 +768,13 @@ def run_controller(configuration):
 	if 'dqn' in model_name:
 		print(sb3_model.q_net)
 		for name, param in sb3_model.q_net.named_parameters():
-			msg = str(name) + ' ____ ' + str(param[0,0])
+			msg = str(name) + ' ____ ' + str(param[0])
 			utils.speak(msg)
 			break
 	if 'td3' in model_name:
 		print(sb3_model.critic)
 		for name, param in sb3_model.critic.named_parameters():
-			msg = str(name) + ' ____ ' + str(param[0,0,0,0])
+			msg = str(name) + ' ____ ' + str(param[0])
 			utils.speak(msg)
 			break
 	utils.speak('all components connected. Send any key to continue...')
