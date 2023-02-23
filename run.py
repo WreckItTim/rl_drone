@@ -2,7 +2,7 @@ import utils
 from configuration import Configuration
 import math
 import sys
-repo_version = 'gamma10'
+repo_version = 'gamma11'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -13,31 +13,42 @@ args = sys.argv
 test_case = 'H4'
 if len(args) > 1:
 	test_case = args[1].upper()
-# second sys argument is optionally to continue training from last checkpoint (True) or not (False)
-	# will assume False if no additional input
-continue_training = False
+# third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
+	# will assume no text to concat if no additional input
+run_post = ''
 if len(args) > 2:
-	continue_training = bool(sys.argv[2])
+	run_post = args[2]
+# second sys argument is to continue training from last checkpoint (True) or not (False)
+	# will assume False if no additional input
+	# must pass in run_post var
+continue_training = False
+if len(args) > 3:
+	continue_training = args[3] in ['true', 'True']
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['M9', 'CS']:
+if test_case in ['M9', 'S1']:
 	airsim_release = 'AirSimNH'
 if test_case in ['PC']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['H3', 'M9']:
+if test_case in ['H3', 'M9', 'TB']:
 	vert_motion = True
 
 # MLP or CNN?
 policy = 'MultiInputPolicy' # CNN (2d depth map)
-if test_case in ['H3', 'H4']:
+if test_case in ['H3', 'H4', 'S2']:
 	policy = 'MlpPolicy' # MLP (flattened depth map)
 
-replay_buffer_size = 500_000 # 500_000 requires 28.46 GB of RAM if using MultiInputPolicy
-							 # if using a flattened depth map (MlpPolicy) this will use drastically less
+# TD3 or DQN?
+rl_model = 'TD3'
+if test_case in ['S2']:
+	rl_model = 'DQN'
+
+replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
+							 # if using an MlpPolicy this will use drastically less memory
 
 # see bottom of this file which calls functions to create components and run controller
 
@@ -46,6 +57,7 @@ def create_base_components(
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = 'MlpPolicy', # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
+		rl_model = 'TD3', # which SB3 RL model to use - TD3 DQN (see models folder for others)
 		replay_buffer_size = 1_000_000, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
@@ -54,7 +66,7 @@ def create_base_components(
 		training_steps = 50_000_000, # max number of training steps 
 		max_distance = 100, # distance contraint used for several calculations (see below)
 		nTimesteps = 4, # number of timesteps to use in observation space
-		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
+		checkpoint = 2, # evaluate model and save checkpoint every # of episodes
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 ):
 
@@ -247,7 +259,7 @@ def create_base_components(
 		from rewards.steps import Steps
 		Steps(
 			name = 'StepsReward',
-			max_steps = 4**(1+vert_motion) # base number of steps, will scale with further goal
+			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
 		# REWARDER
 		from rewarders.schema import Schema
@@ -266,46 +278,150 @@ def create_base_components(
 		)
 
 		# ACTIONS
-		base_distance = 10 # meters, will multiply rl_output by this value
-		base_yaw = math.pi # degrees, will multiply rl_output by this value
-		from actions.move import Move 
-		Move(
-			drone_component = 'Drone', 
-			base_x_rel = base_distance, 
-			name = 'MoveForward',
-		)
-		from actions.rotate import Rotate 
-		Rotate(
-			drone_component = 'Drone',  
-			base_yaw = base_yaw,
-			min_space = -1, # allows left and right rotations
-			name = 'Rotate',
-		)
-		actions = [
-			'MoveForward',
-			'Rotate'
-		]
-		if vert_motion:
+		if rl_model in ['TD3']:
+			base_distance = 10 # meters, will multiply rl_output by this value
+			base_yaw = math.pi # degrees, will multiply rl_output by this value
+			from actions.move import Move 
 			Move(
 				drone_component = 'Drone', 
-				base_z_rel = base_distance, 
-				min_space = -1, # allows up and down movements
-				name = 'MoveVertical',
+				base_x_rel = base_distance, 
+				name = 'MoveForward',
 			)
-			actions.append('MoveVertical')
+			from actions.rotate import Rotate 
+			Rotate(
+				drone_component = 'Drone',  
+				base_yaw = base_yaw,
+				min_space = -1, # allows left and right rotations
+				name = 'Rotate',
+			)
+			actions = [
+				'MoveForward',
+				'Rotate'
+			]
+			if vert_motion:
+				Move(
+					drone_component = 'Drone', 
+					base_z_rel = base_distance, 
+					min_space = -1, # allows up and down movements
+					name = 'MoveVertical',
+				)
+				actions.append('MoveVertical')
+		if rl_model in ['DQN']:
+			from actions.fixedmove import FixedMove 
+			FixedMove(
+				drone_component = 'Drone', 
+				base_x_rel = 1, 
+				name = 'FixedForward1',
+			)
+			FixedMove(
+				drone_component = 'Drone', 
+				base_x_rel = 5, 
+				name = 'FixedForward2',
+			)
+			FixedMove(
+				drone_component = 'Drone', 
+				base_x_rel = 10, 
+				name = 'FixedForward3',
+			)
+			from actions.fixedrotate import FixedRotate 
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = math.pi / 16,
+				name = 'FixedRotate1',
+			)
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = math.pi / 8,
+				name = 'FixedRotate2',
+			)
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = math.pi / 2,
+				name = 'FixedRotate3',
+			)
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = -1 * math.pi / 16,
+				name = 'FixedRotate4',
+			)
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = -1 * math.pi / 8,
+				name = 'FixedRotate5',
+			)
+			FixedRotate(
+				drone_component = 'Drone',  
+				yaw_rate = -1 * math.pi / 2,
+				name = 'FixedRotate6',
+			)
+			actions = [
+				'FixedForward1',
+				'FixedForward2',
+				'FixedForward3',
+				'FixedRotate1',
+				'FixedRotate2',
+				'FixedRotate3',
+				'FixedRotate4',
+				'FixedRotate5',
+				'FixedRotate6',
+			]
+			if vert_motion:
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = -1, 
+					name = 'FixedUp1',
+				)
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = -5, 
+					name = 'FixedUp2',
+				)
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = -10, 
+					name = 'FixedUp3',
+				)
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = 1, 
+					name = 'FixedDown1',
+				)
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = 5, 
+					name = 'FixedDown2',
+				)
+				FixedMove(
+					drone_component = 'Drone', 
+					z_speed = 10, 
+					name = 'FixedDown3',
+				)
+				actions.append('FixedUp1')
+				actions.append('FixedUp2')
+				actions.append('FixedUp3')
+				actions.append('FixedDown1')
+				actions.append('FixedDown2')
+				actions.append('FixedDown3')
 
 		# ACTOR
-		if actor == 'Continuous':
-			from actors.continuousactor import ContinuousActor
-			ContinuousActor(
-				actions_components = actions,
-				name='Actor',
-			)
-		if actor == 'Teleporter':
-			print('teleporter ACTIVE')
-			from actors.teleporter import Teleporter
-			Teleporter(
-				drone_component = 'Drone',
+		if rl_model in ['TD3']:
+			if actor == 'Continuous':
+				from actors.continuousactor import ContinuousActor
+				ContinuousActor(
+					actions_components = actions,
+					name='Actor',
+				)
+			if actor == 'Teleporter':
+				print('teleporter ACTIVE')
+				from actors.teleporter import Teleporter
+				Teleporter(
+					drone_component = 'Drone',
+					actions_components = actions,
+					name='Actor',
+				)
+		if rl_model in ['DQN']:
+			from actors.discreteactor import DiscreteActor
+			DiscreteActor(
 				actions_components = actions,
 				name='Actor',
 			)
@@ -465,13 +581,22 @@ def create_base_components(
 				)
 
 		# MODEL
-		from models.td3 import TD3
-		TD3(
-			environment_component = 'TrainEnvironment',
-			policy = policy,
-			buffer_size = replay_buffer_size,
-			name='Model',
-		)
+		if rl_model == 'TD3':
+			from models.td3 import TD3
+			TD3(
+				environment_component = 'TrainEnvironment',
+				policy = policy,
+				buffer_size = replay_buffer_size,
+				name='Model',
+			)
+		if rl_model == 'DQN':
+			from models.dqn import DQN
+			DQN(
+				environment_component = 'TrainEnvironment',
+				policy = policy,
+				buffer_size = replay_buffer_size,
+				name='Model',
+			)
 
 
 		# CREATE MODIFIERS
@@ -657,8 +782,10 @@ configuration = create_base_components(
 		airsim_release = airsim_release, # name of airsim release to use, see maps.arisimmap
 		vert_motion = vert_motion, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = policy, # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
+		rl_model = rl_model, # which SB3 RL model to use - TD3 DQN (see models folder for others)
 		continue_training = continue_training, # set to true if continuing training from checkpoint
 		replay_buffer_size = replay_buffer_size,
+		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
 )
 
 # create any other components

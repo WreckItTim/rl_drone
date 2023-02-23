@@ -13,4 +13,8 @@ class FixedRotate(Action):
 
 	# rotate yaw at fixed rate
 	def step(self, state=None):
-		self._drone.rotate(self.yaw_rate, self.duration)
+		#self._drone.rotate(self.yaw_rate, self.duration)
+		current_position = self._drone.get_position() # meters
+		current_yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
+		target_yaw = current_yaw + self.yaw_rate
+		self._drone.teleport(current_position[0], current_position[1], current_position[2], target_yaw, ignore_collision=False)

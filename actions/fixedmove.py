@@ -3,6 +3,7 @@ from actions.action import Action
 from component import _init_wrapper
 import math
 import utils
+import numpy as np
 
 # translates forward at given rate (meters/second) for given duration (seconds)
 class FixedMove(Action):
@@ -26,5 +27,7 @@ class FixedMove(Action):
 		adjusted_y_speed = float(self.x_speed * math.sin(yaw) + self.y_speed * math.cos(yaw))
 		adjusted_z_speed = float(self.z_speed)
 		# take movement
-		has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
-		state['has_collided'] = has_collided
+		#has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
+		current_position = self._drone.get_position() # meters
+		target_position = current_position + np.array([adjusted_x_speed, adjusted_y_speed, adjusted_z_speed], dtype=float)
+		self._drone.teleport(target_position[0], target_position[1], target_position[2], yaw, ignore_collision=False)
