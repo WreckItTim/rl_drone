@@ -2,7 +2,7 @@ import utils
 from configuration import Configuration
 import math
 import sys
-repo_version = 'gamma11'
+repo_version = 'gamma10'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
