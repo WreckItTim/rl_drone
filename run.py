@@ -55,27 +55,27 @@ if hyper:
 	run_post += '_hyper'
 
 hyper_params = []
-if test_case in ['tp']:
+if test_case in ['pc', 'tp']:
 	hyper_params.append('learning_rate')
-if test_case in ['s1']:
+if test_case in ['pc', 's1']:
 	hyper_params.append('learning_starts')
-if test_case in ['pc']:
-	hyper_params.append('tau')
-if test_case in ['s2']:
+if test_case in ['pc', 's2']:
 	hyper_params.append('buffer_size')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
+	hyper_params.append('tau')
+if test_case in ['pc', 'tb']:
 	hyper_params.append('batch_size')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('train_freq')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('policy_delay')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('target_policy_noise')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('target_noise_clip')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('policy_layers')
-if test_case in ['tb']:
+if test_case in ['pc', 'tb']:
 	hyper_params.append('policy_nodes')
 
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy

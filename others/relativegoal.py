@@ -41,7 +41,7 @@ class RelativeGoal(Other):
 	# resets any amps (start of new training loop)
 	def reset_learning(self):
 		# undo amps
-		self.xyz_point = np.array(self.original_xyz)
+		self.xyz_point = np.array(self.original_xyz, dtype=float)
 		self.random_dim_min = self.original_dim_min
 		self.random_dim_max = self.original_dim_max
 
