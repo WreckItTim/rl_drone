@@ -40,7 +40,8 @@ class Goal(Reward):
 			self._last_distance = distance
 
 		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
-		
+		#distance_reward = 1 - d
+
 		done = False
 		value = distance_reward
 		if distance <= self.tolerance:

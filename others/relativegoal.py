@@ -24,11 +24,26 @@ class RelativeGoal(Other):
 				 random_yaw_on_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
 				 random_yaw_max = math.pi,
+				 # these values are stored for amps
+				 original_xyz = None,
+				 original_dim_min = None,
+				 original_dim_max = None,
 			 ):
+		self.original_xyz = xyz_point.copy()
+		self.original_dim_min = random_dim_min
+		self.original_dim_max = random_dim_max
+
 		self.xyz_point = np.array(xyz_point, dtype=float)
 		self._x = self.xyz_point[0]
 		self._y = self.xyz_point[1]
 		self._z = self.xyz_point[2]
+
+	# resets any amps (start of new training loop)
+	def reset_learning(self):
+		# undo amps
+		self.xyz_point = np.array(self.original_xyz)
+		self.random_dim_min = self.original_dim_min
+		self.random_dim_max = self.original_dim_max
 
 	def get_position(self):
 		return [self._x, self._y, self._z]

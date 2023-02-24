@@ -20,7 +20,8 @@ class Steps(Reward):
 	def step(self, state):
 		nSteps = state['nSteps']
 		s = nSteps / self._max_steps
-		value = 1-1/math.exp(math.log(0.5)*s**2)
+		#value = 1-1/math.exp(math.log(0.5)*s**2)
+		value = -1
 		done = False
 		if nSteps >= self._max_steps:
 			done = True

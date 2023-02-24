@@ -54,26 +54,50 @@ class Hyper(Model):
 		prefix = 'iter' + str(self._iter_count) + '_'
 		prefix += 'run' + str(self._n) + '_'
 		return prefix
-	
+		
 	# hyperopt objective to minimize
 	def objective(self, params):
 		scores = []
 		self._iter_count += 1
 		for n in range(self.nRuns):
 			self._n = n
-			utils.speak('HYPER iter:{self._iter_count} run:{n}')
+			utils.speak(f'HYPER iter:{self._iter_count} run:{n}')
 			
 			# reset components and vars for new learning loop
 			self._configuration.reset_all()
 
 			# set model hyper parameters
 			model_arguments = self.default_params.copy()
-			model_arguments.update(params)
 			if 'learning_rate' in params:
 				model_arguments['learning_rate'] = 10**int(-1*params['learning_rate'])
+			if 'learning_starts' in params:
+				model_arguments['learning_starts'] = int(params['learning_starts'])
+			if 'tau' in params:
+				model_arguments['tau'] = float(params['tau'])
+			if 'buffer_size' in params:
+				model_arguments['buffer_size'] = int(params['buffer_size'])
 			if 'gamma' in params:
 				model_arguments['gamma'] = float('.' + ''.join(['9' for _ in range(int(params['gamma']))]))
+			if 'batch_size' in params:
+				model_arguments['batch_size'] = int(params['batch_size'])
+			if 'train_freq' in params:
+				model_arguments['train_freq'] = (int(params['train_freq']), 'episode')
+			if 'policy_delay' in params:
+				model_arguments['policy_delay'] = int(params['policy_delay'])
+			if 'target_policy_noise' in params:
+				model_arguments['target_policy_noise'] = float(params['target_policy_noise'])
+			if 'target_noise_clip' in params:
+				model_arguments['target_noise_clip'] = float(params['target_noise_clip'])
+			if 'policy_layers' in params and 'policy_nodes' not in params:
+				model_arguments['policy_kwargs'] = {'net_arch':[64 for _ in range(int(params['policy_layers']))]}
+			if 'policy_nodes' in params and 'policy_layers' not in params:
+				model_arguments['policy_kwargs'] = {'net_arch':[int(params['policy_nodes']), int(params['policy_nodes'])]}
+			if 'policy_layers' in params and 'policy_nodes' in params:
+				model_arguments['policy_kwargs'] = {'net_arch':[int(params['policy_nodes']) for _ in range(int(params['policy_layers']))]}
+
 			for param in model_arguments:
+				if param == 'tensorboard_log':
+					continue
 				if param not in self._results_table:
 					self._results_table[param] = []
 				self._results_table[param].append(model_arguments[param])
@@ -92,9 +116,9 @@ class Hyper(Model):
 			)
 
 			# update table
-			bset_score = self._environment._goal.random_dim_min
-			self._results_table['run' + str(n)].append(bset_score)
-			scores.append(bset_score)
+			best_score = self._environment._goal.random_dim_min
+			self._results_table['run' + str(n)].append(best_score)
+			scores.append(best_score)
 
 		# print table
 		results_path = self.write_folder + '/hyper_results.csv'
@@ -108,11 +132,11 @@ class Hyper(Model):
 
 	# hyperopt
 	def learn(self, 
-		total_timesteps = 10_000,
+		total_timesteps = 100_000,
 		callback = None,
 		log_interval = -1,
 		tb_log_name = None,
-		reset_num_timesteps = False,
+		reset_num_timesteps = True,
 		):
 		
 		# set params

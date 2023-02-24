@@ -2,7 +2,8 @@ import utils
 from configuration import Configuration
 import math
 import sys
-repo_version = 'gamma10'
+from hyperopt import hp
+repo_version = 'gamma11'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -10,9 +11,9 @@ repo_version = 'gamma10'
 args = sys.argv
 # first sys argument is test_case to run (see options below)
 	# if no arguments will default to test_case 'H4' - blocks, horizontal motion, with an MLP
-test_case = 'H4'
+test_case = 'h4'
 if len(args) > 1:
-	test_case = args[1].upper()
+	test_case = args[1].lower()
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
 	# will assume no text to concat if no additional input
 run_post = ''
@@ -27,30 +28,70 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['M9', 'S1']:
+if test_case in ['m9']:
 	airsim_release = 'AirSimNH'
-if test_case in ['PC']:
+if test_case in []:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['H3', 'M9', 'TB']:
+if test_case in ['h3']:
 	vert_motion = True
 
 # MLP or CNN?
 policy = 'MultiInputPolicy' # CNN (2d depth map)
-if test_case in ['H3', 'H4', 'S2']:
+if test_case in ['h3', 'h4', 'm9']:
 	policy = 'MlpPolicy' # MLP (flattened depth map)
 
 # TD3 or DQN?
 rl_model = 'TD3'
-if test_case in ['S2']:
+if test_case in []:
 	rl_model = 'DQN'
+
+hyper = True
+if test_case in ['h3', 'h4', 'm9']:
+	hyper = False
+if hyper:
+	run_post += '_hyper'
+
+hyper_params = []
+if test_case in ['tp']:
+	hyper_params.append('learning_rate')
+if test_case in ['s1']:
+	hyper_params.append('learning_starts')
+if test_case in ['pc']:
+	hyper_params.append('tau')
+if test_case in ['s2']:
+	hyper_params.append('buffer_size')
+if test_case in ['tb']:
+	hyper_params.append('batch_size')
+if test_case in ['tb']:
+	hyper_params.append('train_freq')
+if test_case in ['tb']:
+	hyper_params.append('policy_delay')
+if test_case in ['tb']:
+	hyper_params.append('target_policy_noise')
+if test_case in ['tb']:
+	hyper_params.append('target_noise_clip')
+if test_case in ['tb']:
+	hyper_params.append('policy_layers')
+if test_case in ['tb']:
+	hyper_params.append('policy_nodes')
 
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
 							 # if using an MlpPolicy this will use drastically less memory
 
+training_steps = 40_000 # hyper surrogate model size
+if test_case in ['h3', 'h4', 'm9']:
+	training_steps = 1_000_000 # roughly 250k steps a day
+
 # see bottom of this file which calls functions to create components and run controller
+controller_type = 'Train' # Train, Debug, Drift, Evaluate
+actor = 'Teleporter' # Teleporter Continuous
+clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
+max_distance = 100 # distance contraint used for several calculations (see below)
+nTimesteps = 4 # number of timesteps to use in observation space
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -58,6 +99,7 @@ def create_base_components(
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = 'MlpPolicy', # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
 		rl_model = 'TD3', # which SB3 RL model to use - TD3 DQN (see models folder for others)
+		hyper = False,
 		replay_buffer_size = 1_000_000, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
@@ -68,6 +110,7 @@ def create_base_components(
 		nTimesteps = 4, # number of timesteps to use in observation space
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
+		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
 ):
 
 	# **** SETUP ****
@@ -531,6 +574,9 @@ def create_base_components(
 			from transformers.resizeflat import ResizeFlat
 			max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
 			max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
+			if airsim_release in ['AirSimNH', 'CityEnviron']: # need higher resolution in denser maps
+				max_cols = [4 + 8*i for i in range(11)] # splits depth map by columns
+				max_rows = [4 + 8*i for i in range(11)] # splits depth map by rows
 			ResizeFlat(
 				max_cols = max_cols,
 				max_rows = max_rows,
@@ -549,6 +595,7 @@ def create_base_components(
 
 		# OBSERVER
 		vector_sensors = ['ActionsSensor', 'StepsSensor', 'GoalDistance', 'GoalOrientation']
+		vector_length = len(actions) + 1 + 1 + 1
 		if rl_model in ['DQN']:
 			vector_length = 1 + 1 + 1 + 1
 		if rl_model in ['TD3']:
@@ -559,8 +606,6 @@ def create_base_components(
 		if policy == 'MlpPolicy':
 			vector_sensors.append('FlattenedDepth')
 			vector_length += len(max_cols) * len(max_rows)
-		print('ACTIONS', actions)
-		print('VECTOR_LENGTH', vector_length)
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
@@ -586,24 +631,63 @@ def create_base_components(
 				)
 
 		# MODEL
-		if rl_model == 'TD3':
-			from models.td3 import TD3
-			TD3(
+		if hyper:
+			_space = {}
+			if 'learning_rate' in hyper_params:
+				_space['learning_rate'] = hp.quniform('learning_rate', 1, 8, 1)
+			if 'learning_starts'in hyper_params:
+				_space['learning_starts'] = hp.quniform('learning_starts', 100, 5_000, 100)
+			if 'tau'in hyper_params:
+				_space['tau'] = hp.uniform('tau', 0, 1)
+			if 'buffer_size'in hyper_params:
+				_space['buffer_size'] = hp.quniform('buffer_size', 1_000, replay_buffer_size, 1_000)
+			if 'gamma' in hyper_params:
+				_space['gamma'] = hp.quniform('gamma', 1, 8, 1)
+			if 'batch_size'in hyper_params:
+				_space['batch_size'] = hp.quniform('batch_size', 10, 400, 10)
+			if 'train_freq'in hyper_params:
+				_space['train_freq'] = hp.quniform('train_freq', 1, 6, 1)
+			if 'policy_delay'in hyper_params:
+				_space['policy_delay'] = hp.quniform('policy_delay', 1, 8, 1)
+			if 'target_policy_noise'in hyper_params:
+				_space['target_policy_noise'] = hp.uniform('target_policy_noise', 0, 1)
+			if 'target_noise_clip'in hyper_params:
+				_space['target_noise_clip'] = hp.uniform('target_noise_clip', 0, 1)
+			if 'policy_layers'in hyper_params:
+				_space['policy_layers'] = hp.quniform('policy_layers', 1, 4, 1)
+			if 'policy_nodes'in hyper_params:
+				_space['policy_nodes'] = hp.quniform('policy_nodes', 10, 400, 10)
+			from models.hyper import Hyper
+			Hyper(
 				environment_component = 'TrainEnvironment',
-				policy = policy,
-				buffer_size = replay_buffer_size,
-				tensorboard_log = working_directory + 'tensorboard_log/',
+				_space = _space,
+				model_type = rl_model,
+				default_params= {
+					'policy': policy,
+					'buffer_size': replay_buffer_size,
+					'tensorboard_log': working_directory + 'tensorboard_log/',
+				},
 				name='Model',
 			)
-		if rl_model == 'DQN':
-			from models.dqn import DQN
-			DQN(
-				environment_component = 'TrainEnvironment',
-				policy = policy,
-				buffer_size = replay_buffer_size,
-				tensorboard_log = working_directory + 'tensorboard_log/',
-				name='Model',
-			)
+		else:
+			if rl_model == 'TD3':
+				from models.td3 import TD3
+				TD3(
+					environment_component = 'TrainEnvironment',
+					policy = policy,
+					buffer_size = replay_buffer_size,
+					tensorboard_log = working_directory + 'tensorboard_log/',
+					name='Model',
+				)
+			if rl_model == 'DQN':
+				from models.dqn import DQN
+				DQN(
+					environment_component = 'TrainEnvironment',
+					policy = policy,
+					buffer_size = replay_buffer_size,
+					tensorboard_log = working_directory + 'tensorboard_log/',
+					name='Model',
+				)
 
 
 		# CREATE MODIFIERS
@@ -682,46 +766,47 @@ def create_base_components(
 			verbose = 1,
 			name = 'Evaluator',
 		)
-		# SAVERS
-		from modifiers.saver import Saver
-		Saver(
-			base_component = 'TrainEnvironment',
-			parent_method = 'end',
-			track_vars = [
-						'observations', 
-						'states',
-						],
-			order = 'pre',
-			save_config = True,
-			save_benchmarks = True,
-			frequency = checkpoint,
-			activate_on_first = False,
-			name='TrainEnvSaver',
-		)
-		Saver(
-			base_component = 'Model',
-			parent_method = 'end',
-			track_vars = [
-						'model', 
-						'replay_buffer',
-						],
-			order = 'pre',
-			frequency = nEvalEpisodes,
-			activate_on_first = False,
-			name='ModelSaver',
-		)
-		Saver(
-			base_component = 'EvaluateEnvironment',
-			parent_method = 'end',
-			track_vars = [
-						'observations', 
-						'states',
-						],
-			order = 'pre',
-			frequency = nEvalEpisodes,
-			activate_on_first = False,
-			name='EvalEnvSaver',
-		)
+		if not hyper:
+			# SAVERS
+			from modifiers.saver import Saver
+			Saver(
+				base_component = 'TrainEnvironment',
+				parent_method = 'end',
+				track_vars = [
+							'observations', 
+							'states',
+							],
+				order = 'pre',
+				save_config = True,
+				save_benchmarks = True,
+				frequency = checkpoint,
+				activate_on_first = False,
+				name='TrainEnvSaver',
+			)
+			Saver(
+				base_component = 'Model',
+				parent_method = 'end',
+				track_vars = [
+							'model', 
+							'replay_buffer',
+							],
+				order = 'pre',
+				frequency = nEvalEpisodes,
+				activate_on_first = False,
+				name='ModelSaver',
+			)
+			Saver(
+				base_component = 'EvaluateEnvironment',
+				parent_method = 'end',
+				track_vars = [
+							'observations', 
+							'states',
+							],
+				order = 'pre',
+				frequency = nEvalEpisodes,
+				activate_on_first = False,
+				name='EvalEnvSaver',
+			)
 		# TRACKER - tracks resources on local computer
 		'''
 		from modifiers.tracker import Tracker
@@ -795,9 +880,18 @@ configuration = create_base_components(
 		vert_motion = vert_motion, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		policy = policy, # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
 		rl_model = rl_model, # which SB3 RL model to use - TD3 DQN (see models folder for others)
+		replay_buffer_size = replay_buffer_size, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = continue_training, # set to true if continuing training from checkpoint
-		replay_buffer_size = replay_buffer_size,
+		controller_type = controller_type, # Train, Debug, Drift, Evaluate
+		actor = actor, # Teleporter Continuous
+		clock_speed = clock_speed, # airsim clock speed (increasing this will also decerase sim-quality)
+		training_steps = training_steps, # max number of training steps 
+		max_distance = max_distance, # distance contraint used for several calculations (see below)
+		nTimesteps = nTimesteps, # number of timesteps to use in observation space
+		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
 		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
+		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process
+		hyper_params = hyper_params, # which hyper parameters to hyper tune if model is type hyper
 )
 
 # create any other components
