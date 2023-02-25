@@ -9,6 +9,7 @@ class Steps(Reward):
 	@_init_wrapper
 	def __init__(self,
 			  max_steps=4, # initial number of max steps before episode termination (use update_steps to scale)
+			  value_type='constant', # constant scale
 			  update_steps=True, # if True, will add more steps for further distance to goal
 			  step_ratio=1, # steps added per meter of distance to goal (added to initial max_steps)
 			  terminate=True, # if True will terminate episodes when steps reached
@@ -19,9 +20,13 @@ class Steps(Reward):
 	# calculates rewards from agent's current state (call to when taking a step)
 	def step(self, state):
 		nSteps = state['nSteps']
-		s = nSteps / self._max_steps
+
 		#value = 1-1/math.exp(math.log(0.5)*s**2)
-		value = -1
+		if self.value_type == 'constant':
+			value = -1
+		if self.value_type == 'scale':
+			value = -1 * nSteps
+
 		done = False
 		if nSteps >= self._max_steps:
 			done = True

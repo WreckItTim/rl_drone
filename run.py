@@ -3,7 +3,7 @@ from configuration import Configuration
 import math
 import sys
 from hyperopt import hp
-repo_version = 'gamma11'
+repo_version = 'gamma12'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -28,62 +28,74 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['m9']:
+if test_case in ['tp', 's2', 'tb']:
 	airsim_release = 'AirSimNH'
-if test_case in []:
+if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h3']:
+if test_case in ['h4', 's2', 'tb']:
 	vert_motion = True
 
 # MLP or CNN?
-policy = 'MultiInputPolicy' # CNN (2d depth map)
-if test_case in ['h3', 'h4', 'm9']:
-	policy = 'MlpPolicy' # MLP (flattened depth map)
+policy = 'MlpPolicy' # MLP (flattened depth map)
+if test_case in []:
+	policy = 'MultiInputPolicy' # CNN (2d depth map)
 
 # TD3 or DQN?
 rl_model = 'TD3'
 if test_case in []:
 	rl_model = 'DQN'
 
-hyper = True
-if test_case in ['h3', 'h4', 'm9']:
-	hyper = False
+# hyper parameter search?
+hyper = False
+if test_case in []:
+	hyper = True
 if hyper:
 	run_post += '_hyper'
 
+# which hypers to explore?
 hyper_params = []
-if test_case in ['pc', 'tp']:
+if test_case in []:
 	hyper_params.append('learning_rate')
-if test_case in ['pc', 's1']:
+if test_case in []:
 	hyper_params.append('learning_starts')
-if test_case in ['pc', 's2']:
+if test_case in []:
 	hyper_params.append('buffer_size')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('tau')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('batch_size')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('train_freq')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('policy_delay')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('target_policy_noise')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('target_noise_clip')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('policy_layers')
-if test_case in ['pc', 'tb']:
+if test_case in []:
 	hyper_params.append('policy_nodes')
 
+# how may previous steps to train on
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
 							 # if using an MlpPolicy this will use drastically less memory
 
-training_steps = 40_000 # hyper surrogate model size
-if test_case in ['h3', 'h4', 'm9']:
-	training_steps = 1_000_000 # roughly 250k steps a day
+# after how many steps to stop training
+training_steps = 1_000_000 # roughly 250k steps a day
+if test_case in []:
+	training_steps = 40_000 # hyper surrogate model size
+
+flat = 'big'
+if test_case in ['s1', 'm9']:
+	flat = 'small'
+
+step_reward = 'constant'
+if test_case in ['s1', 'm9']:
+	step_reward = 'scale'
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
@@ -91,7 +103,7 @@ actor = 'Teleporter' # Teleporter Continuous
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 max_distance = 100 # distance contraint used for several calculations (see below)
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+checkpoint = 2 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -109,6 +121,8 @@ def create_base_components(
 		max_distance = 100, # distance contraint used for several calculations (see below)
 		nTimesteps = 4, # number of timesteps to use in observation space
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
+		flat = 'big', # determines size of flattened depth sensor array 
+		step_reward = 'constant', # reward function that penalizes longer episode length
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
 ):
@@ -302,6 +316,7 @@ def create_base_components(
 		from rewards.steps import Steps
 		Steps(
 			name = 'StepsReward',
+			value_type = step_reward,
 			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
 		# REWARDER
@@ -504,6 +519,7 @@ def create_base_components(
 		from transformers.resizeimage import ResizeImage
 		ResizeImage(
 			name = 'ResizeImage',
+			image_shape=(64,64) if flat=='big' else (84,84),
 		)
 		# SENSORS
 		# keep track of recent past actions
@@ -572,11 +588,11 @@ def create_base_components(
 		if policy == 'MlpPolicy':
 			# get flattened depth map (obsfucated front facing distance sensors)
 			from transformers.resizeflat import ResizeFlat
-			max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
-			max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
-			if airsim_release in ['AirSimNH', 'CityEnviron']: # need higher resolution in denser maps
-				max_cols = [4 + 8*i for i in range(11)] # splits depth map by columns
-				max_rows = [4 + 8*i for i in range(11)] # splits depth map by rows
+			max_cols = [8*(i+1) for i in range(8)] # splits depth map by columns
+			max_rows = [8*(i+1) for i in range(8)] # splits depth map by rows
+			if flat == 'small':
+				max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
+				max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
 			ResizeFlat(
 				max_cols = max_cols,
 				max_rows = max_rows,
@@ -890,6 +906,8 @@ configuration = create_base_components(
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
 		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
+		step_reward = step_reward, # reward function that penalizes longer episode length
+		flat = flat, # determines size of flattened depth sensor array 
 		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process
 		hyper_params = hyper_params, # which hyper parameters to hyper tune if model is type hyper
 )

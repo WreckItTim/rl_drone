@@ -62,6 +62,7 @@ class EvaluatorCharlie(Modifier):
 
 	def activate(self, state=None):
 		if self.check_counter(state):
+			# TEMPORARY CODE TO CHECK IS TRAINING
 			# print first weight (just to check if training)
 			model_name = str(self._model._child())
 			sb3_model = self._model._sb3model
@@ -75,6 +76,7 @@ class EvaluatorCharlie(Modifier):
 					msg = str(name) + ' ____ ' + str(param[0])
 					utils.speak(msg)
 					break
+			# permanent code below
 			# evaluate for a set of episodes, until failure
 			while(True):
 				stop, another_set = self.evaluate_set()
