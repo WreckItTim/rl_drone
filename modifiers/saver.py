@@ -11,7 +11,7 @@ class Saver(Modifier):
 			  parent_method, # name of parent method to modify
 			  track_vars, # which class specific variables to save [str]
 			  order, # modify 'pre' or 'post'?
-			  include_counter = False, # includes counter in write file name
+			  include_counter = False, # includes activation counter in write file name
 			  	# can use include_counter=True to overwrite model each epoch
 			  save_config = False, # saves config file with every activate
 			  save_benchmarks = False, # saves timer/mem benchmarks with every activate
@@ -20,6 +20,7 @@ class Saver(Modifier):
 			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
+			  activation_counter = 0, # keeps track of number of times activated
 			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
@@ -34,10 +35,10 @@ class Saver(Modifier):
 	def activate(self, state=None):
 		if self.check_counter(state):
 			_write_folder = self.write_folder + self._base.write_prefix()
-			if self.include_counter:
-				_write_folder += 'counter' + str(self.counter) + '_'
 			if not os.path.exists(_write_folder):
 				os.makedirs(_write_folder)
+			if self.include_counter:
+				_write_folder += 'counter' + str(self.activation_counter) + '_'
 			if state is None: 
 				state = {}
 			state['write_folder'] = _write_folder
@@ -46,3 +47,4 @@ class Saver(Modifier):
 				self._configuration.save()
 			if self.save_benchmarks:
 				self._configuration.save_benchmarks()
+			self.activation_counter += 1
