@@ -9,15 +9,16 @@ class Goal(Reward):
 	# constructor, set the relative point and min-max distances to normalize by
 	@_init_wrapper
 	def __init__(self,
-				 drone_component, 
-				 goal_component, 
-				 tolerance=4, # min distance from goal for success 
-				 include_z=True,
-				 to_start=True,
-				 # if to_start=True will calculate rewards relative to start position
-				 # if to_start=False will calculate rewards relative to last position
-				 terminate=True, # =True will terminate episodes when Goal
-				 ):
+				drone_component, 
+				goal_component, 
+			  	value_type='scale2', # see if statements in step() function
+				tolerance=4, # min distance from goal for success 
+				include_z=True,
+				to_start=True,
+				# if to_start=True will calculate rewards relative to start position
+				# if to_start=False will calculate rewards relative to last position
+				terminate=True, # =True will terminate episodes when Goal
+		):
 		super().__init__()
 		#self.init_normalization()
 
@@ -39,8 +40,12 @@ class Goal(Reward):
 		if not self.to_start:
 			self._last_distance = distance
 
-		distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
-		#distance_reward = 1 - d
+		if value_type == 'exp':
+			distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
+		if value_type == 'scale':
+			distance_reward = -1*distance
+		if value_type == 'scale2':
+			distance_reward = -1*d
 
 		done = False
 		value = distance_reward

@@ -37,7 +37,7 @@ class EvaluatorCharlie(Modifier):
 				set_counter = 0, # count number of eval sets
 				random = False, # set true to select randomly from spawn objects
 				write_folder = None, # writes best model / replay buffer here
-				track_vars = ['model', 'replay_buffer'], # which best vars to write
+				track_vars = ['model'], # which best vars to write
 				verbose = 1, # handles output (level 1 is set level, level 2 is episode level)
 				on_evaluate = True, # toggle to run modifier on evaluation environ
 				on_train = True, # toggle to run modifier on train environ
@@ -165,13 +165,10 @@ class EvaluatorCharlie(Modifier):
 				self.best_score = this_score
 				self.best_counter = self.counter
 				# save best
-				if 'model' in self.track_vars:
-					if self.amping_phase:
-						self._model.save_model(self.write_folder + 'best_model_' + str(this_score) + '.zip')
-					else:
-						self._model.save_model(self.write_folder + 'best_model_94_' + str(self.set_counter) + '.zip')
-				#if 'replay_buffer' in self.track_vars:
-				#	self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
+				if self.amping_phase:
+					self._model.save_model(self.write_folder + 'best_model_' + str(this_score) + '.zip')
+				if 'replay_buffer' in self.track_vars:
+					self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
 				# update early stopping
 				self.wait = 0
 				if self.verbose > 0:

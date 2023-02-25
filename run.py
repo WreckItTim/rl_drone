@@ -3,7 +3,7 @@ from configuration import Configuration
 import math
 import sys
 from hyperopt import hp
-repo_version = 'gamma12'
+repo_version = 'gamma13'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -93,9 +93,9 @@ flat = 'big'
 if test_case in ['s1', 'm9']:
 	flat = 'small'
 
-step_reward = 'constant'
-if test_case in ['s1', 'm9']:
-	step_reward = 'scale'
+goal_reward = 'scale2'
+
+step_reward = 'scale2'
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
@@ -122,7 +122,8 @@ def create_base_components(
 		nTimesteps = 4, # number of timesteps to use in observation space
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		flat = 'big', # determines size of flattened depth sensor array 
-		step_reward = 'constant', # reward function that penalizes longer episode length
+		goal_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
+		step_reward = 'scale2', # reward function that penalizes longer episode length
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
 ):
@@ -309,6 +310,7 @@ def create_base_components(
 		Goal(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
+			value_type = goal_reward,
 			include_z = True if vert_motion else False, # includes z in distance calculations
 			name = 'GoalReward',
 		)
@@ -328,8 +330,8 @@ def create_base_components(
 				'StepsReward',
 			],
 			reward_weights = [
-				2,
-				2,
+				1,
+				1,
 				1,
 			],
 			name = 'Rewarder',
@@ -776,6 +778,7 @@ def create_base_components(
 			order = 'post',
 			evaluate_environment_component = 'EvaluateEnvironment',
 			model_component = 'Model',
+			track_vars = [],
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
 			activate_on_first = False,
@@ -807,6 +810,7 @@ def create_base_components(
 							'replay_buffer',
 							],
 				order = 'pre',
+				include_counter = True, # save different model each epoch
 				frequency = nEvalEpisodes,
 				activate_on_first = False,
 				name='ModelSaver',
@@ -906,6 +910,7 @@ configuration = create_base_components(
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
 		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
+		goal_reward = goal_reward, # reward function that penalizes distance to goal (large positive fore reaching)
 		step_reward = step_reward, # reward function that penalizes longer episode length
 		flat = flat, # determines size of flattened depth sensor array 
 		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process

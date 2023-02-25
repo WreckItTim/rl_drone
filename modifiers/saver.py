@@ -11,6 +11,8 @@ class Saver(Modifier):
 			  parent_method, # name of parent method to modify
 			  track_vars, # which class specific variables to save [str]
 			  order, # modify 'pre' or 'post'?
+			  include_counter = False, # includes counter in write file name
+			  	# can use include_counter=True to overwrite model each epoch
 			  save_config = False, # saves config file with every activate
 			  save_benchmarks = False, # saves timer/mem benchmarks with every activate
 			  write_folder = None, # will default to working_directory/component_name/
@@ -32,6 +34,8 @@ class Saver(Modifier):
 	def activate(self, state=None):
 		if self.check_counter(state):
 			_write_folder = self.write_folder + self._base.write_prefix()
+			if self.include_counter:
+				_write_folder += 'counter' + str(self.counter) + '_'
 			if not os.path.exists(_write_folder):
 				os.makedirs(_write_folder)
 			if state is None: 
