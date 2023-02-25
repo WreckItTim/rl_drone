@@ -20,7 +20,7 @@ class Steps(Reward):
 	# calculates rewards from agent's current state (call to when taking a step)
 	def step(self, state):
 		nSteps = state['nSteps']
-		s = nSteps / max_steps
+		s = nSteps / self._max_steps
 
 		if self.value_type == 'exp':
 			value = 1-1/math.exp(math.log(0.5)*s**2)

@@ -28,14 +28,14 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['tp', 's2', 'tb']:
+if test_case in ['tp', 's2', 'tb', 'm9']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 's2', 'tb']:
+if test_case in ['h4', 's2', 's1', 'tb']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -90,12 +90,16 @@ if test_case in []:
 	training_steps = 40_000 # hyper surrogate model size
 
 flat = 'big'
-if test_case in ['s1', 'm9']:
+if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
+if test_case in ['h4', 'tp', 's2', 'pc']:
+	goal_reward = 'exp'
 
 step_reward = 'scale2'
+if test_case in ['h4', 'tp', 's2', 'pc']:
+	goal_reward = 'constant'
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate

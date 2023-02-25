@@ -40,11 +40,11 @@ class Goal(Reward):
 		if not self.to_start:
 			self._last_distance = distance
 
-		if value_type == 'exp':
+		if self.value_type == 'exp':
 			distance_reward = 2 * (math.exp(math.log(0.5)*d) - 0.5)
-		if value_type == 'scale':
+		if self.value_type == 'scale':
 			distance_reward = -1*distance
-		if value_type == 'scale2':
+		if self.value_type == 'scale2':
 			distance_reward = -1*d
 
 		done = False
