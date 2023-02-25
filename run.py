@@ -103,7 +103,7 @@ actor = 'Teleporter' # Teleporter Continuous
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 max_distance = 100 # distance contraint used for several calculations (see below)
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 2 # evaluate model and save checkpoint every # of episodes
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(

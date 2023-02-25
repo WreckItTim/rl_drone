@@ -154,7 +154,8 @@ class EvaluatorCharlie(Modifier):
 			else:
 				this_score = mean_reward
 				another_set = False # no need to evaluate again if optimizing reward (should get same reward)
-				new_best = this_score - self.best_score > self._epsilon # did we improve reward?
+				#new_best = this_score - self.best_score > self._epsilon # did we improve reward?
+				new_best = True
 				# round for cleaner file output
 				this_score = round(this_score, self.epsilon_order)
 
@@ -165,9 +166,12 @@ class EvaluatorCharlie(Modifier):
 				self.best_counter = self.counter
 				# save best
 				if 'model' in self.track_vars:
-					self._model.save_model(self.write_folder + 'best_model_' + str(this_score) + '.zip')
-				if 'replay_buffer' in self.track_vars:
-					self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
+					if self.amping_phase:
+						self._model.save_model(self.write_folder + 'best_model_' + str(this_score) + '.zip')
+					else:
+						self._model.save_model(self.write_folder + 'best_model_94_' + str(self.set_counter) + '.zip')
+				#if 'replay_buffer' in self.track_vars:
+				#	self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
 				# update early stopping
 				self.wait = 0
 				if self.verbose > 0:
