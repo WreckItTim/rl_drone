@@ -37,8 +37,6 @@ class Saver(Modifier):
 			_write_folder = self.write_folder + self._base.write_prefix()
 			if not os.path.exists(_write_folder):
 				os.makedirs(_write_folder)
-			if self.include_counter:
-				_write_folder += 'counter' + str(self.activation_counter) + '_'
 			if state is None: 
 				state = {}
 			state['write_folder'] = _write_folder

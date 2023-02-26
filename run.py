@@ -14,17 +14,17 @@ args = sys.argv
 test_case = 'h4'
 if len(args) > 1:
 	test_case = args[1].lower()
-# third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
-	# will assume no text to concat if no additional input
-run_post = ''
-if len(args) > 2:
-	run_post = args[2]
 # second sys argument is to continue training from last checkpoint (True) or not (False)
 	# will assume False if no additional input
 	# must pass in run_post var
 continue_training = False
+if len(args) > 2:
+	continue_training = args[2] in ['true', 'True']
+# third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
+	# will assume no text to concat if no additional input
+run_post = ''
 if len(args) > 3:
-	continue_training = args[3] in ['true', 'True']
+	run_post = args[3]
 	
 # airsim map to use?
 airsim_release = 'Blocks'
@@ -814,7 +814,6 @@ def create_base_components(
 							'replay_buffer',
 							],
 				order = 'pre',
-				include_counter = True, # save different model each epoch
 				frequency = nEvalEpisodes,
 				activate_on_first = False,
 				name='ModelSaver',

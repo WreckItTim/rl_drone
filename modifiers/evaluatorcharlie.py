@@ -112,7 +112,6 @@ class EvaluatorCharlie(Modifier):
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):
-		self.set_counter += 1
 
 		# keep track of episode results
 		total_success = 0
@@ -128,6 +127,9 @@ class EvaluatorCharlie(Modifier):
 
 		if self.verbose > 0:
 			utils.speak(f'Evaluation #{self.set_counter} evaluated with total_success:{total_success} and mean_reward:{mean_reward}')
+
+		# save every model
+		self._model.save_model(self.write_folder + 'model_' + str(self.set_counter) + '.zip')
 
 		another_set = False # used to determine if a nother set should run	
 		if all_success:
@@ -159,13 +161,15 @@ class EvaluatorCharlie(Modifier):
 				# round for cleaner file output
 				this_score = round(this_score, self.epsilon_order)
 
+				
+
 			# do we update best epoch?
 			if new_best:
 				# update best
 				self.best_score = this_score
 				self.best_counter = self.counter
 				# save best
-				if self.amping_phase:
+				if self.amping_phase and 'model' in self.track_vars:
 					self._model.save_model(self.write_folder + 'best_model_' + str(this_score) + '.zip')
 				if 'replay_buffer' in self.track_vars:
 					self._model.save_replay_buffer(self.write_folder + 'best_replay_buffer.zip')
@@ -177,5 +181,6 @@ class EvaluatorCharlie(Modifier):
 		else:
 			# update early stopping
 			self.wait += 1
-
+			
+		self.set_counter += 1
 		return self.wait >= self.patience, another_set
