@@ -1,6 +1,3 @@
 temp/
 local/
 global_parameters.json
-**/__pycache__/
-__pycache__/
-**.**
