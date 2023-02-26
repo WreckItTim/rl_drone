@@ -94,11 +94,11 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h4', 'tp', 's2', 'pc']:
+if test_case in ['h4', 'tp', 's2']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h4', 'tp', 's2', 'pc']:
+if test_case in ['h4', 'tp', 's2']:
 	goal_reward = 'constant'
 
 # see bottom of this file which calls functions to create components and run controller
