@@ -112,7 +112,7 @@ if test_case in ['h3', 'h4']:
 
 step_reward = 'scale2'
 if test_case in ['h3', 'h4']:
-	goal_reward = 'constant'
+	step_reward = 'constant'
 
 include_d = True
 if test_case in ['h3', 'h4', 'tp']:
