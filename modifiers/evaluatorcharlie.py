@@ -134,7 +134,7 @@ class EvaluatorCharlie(Modifier):
 		mean_reward = total_reward / self.nEpisodes
 
 		if self.verbose > 0:
-			utils.speak(f'Evaluation:{self.set_counter} distance:{self._evaluate_environment._goal.random_dim_min} reward:{round(mean_reward,2)} noise:{self.current_noise}')
+			utils.speak(f'Evaluation:{self.set_counter} distance:{self._evaluate_environment._goal.random_dim_min} reward:{round(mean_reward,2)} noise:{self.current_noise} nSuccess:{total_success}')
 
 		# save every model
 		if self.save_every_model:
