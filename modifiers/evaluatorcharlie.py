@@ -131,12 +131,6 @@ class EvaluatorCharlie(Modifier):
 		all_success = total_success >= self.success
 		mean_reward = total_reward / self.nEpisodes
 
-		mean_reward = -1*self.set_counter 
-		if self.phase in ['distance', 'reward']:
-			all_success = True
-		else:
-			all_success = False
-
 		if self.verbose > 0:
 			utils.speak(f'Evaluation #{self.set_counter} evaluated with total_success:{total_success} and mean_reward:{round(mean_reward,2)} at phase:{self.phase}')
 
