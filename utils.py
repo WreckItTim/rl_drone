@@ -2,6 +2,7 @@ import json
 from time import localtime, time
 import math
 import os
+import shutil
 
 def read_json(path):
 	return json.load(open(path, 'r'))
@@ -50,6 +51,7 @@ def set_read_write_paths(working_directory):
 	working_directory = fix_directory(working_directory)
 	if not os.path.exists(working_directory):
 		os.makedirs(working_directory)
+	shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
 	# save working directory path to global_parameters to be visible by all 
 	set_global_parameter('working_directory', working_directory) # relative to repo
 	# absoulte path on local computer to repo

@@ -118,6 +118,10 @@ include_d = True
 if test_case in ['h3', 'h4', 'tp']:
 	include_d = False
 
+reward_weights = [1,1,1]
+if test_case in ['h3', 'h4']:
+	reward_weights = [2,2,1]
+
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
 actor = 'Teleporter' # Teleporter Continuous
@@ -150,6 +154,7 @@ def create_base_components(
 		read_model_path = None, # load pretrained model?
 		read_replay_buffer_path = None, # load prebuilt replay buffer?
 		include_d = True, # inculde little d=distance/start_distance in sensors
+		reward_weights = [1,1,1], # reward weights in order: goal, collision, steps
 ):
 
 	# **** SETUP ****
@@ -353,11 +358,7 @@ def create_base_components(
 				'GoalReward',
 				'StepsReward',
 			],
-			reward_weights = [
-				1 if include_d else 2,
-				1 if include_d else 2,
-				1,
-			],
+			reward_weights = reward_weights.copy(),
 			name = 'Rewarder',
 		)
 
@@ -974,6 +975,7 @@ configuration = create_base_components(
 		read_model_path = read_model_path, # load pretrained model?
 		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
 		include_d = include_d, # inculde little d=distance/start_distance in sensors
+		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
 )
 
 # create any other components
