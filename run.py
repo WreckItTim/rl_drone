@@ -3,7 +3,7 @@ from configuration import Configuration
 import math
 import sys
 from hyperopt import hp
-repo_version = 'gamma14'
+repo_version = 'gamma15'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -28,14 +28,14 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['m9', 'tb']:
+if test_case in ['m9', 's1']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 's1', 'tb']:
+if test_case in ['h4', 's2', 's1', 'pc']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -51,10 +51,10 @@ if test_case in []:
 # read model and/or replay buffer?
 read_model_path = None
 read_replay_buffer_path = None
-if test_case in ['h3']:
+if test_case in ['h3', 'm9']:
 	read_model_path = 'local/models/GAMMA_model.zip'
 	read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in ['h4']:
+if test_case in ['h4', 's1']:
 	read_model_path = 'local/models/DELTA_model.zip'
 	read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
 if test_case in ['tp']:
@@ -107,20 +107,24 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h3', 'h4']:
+if test_case in ['h3', 'h4', 'm9', 's1']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h3', 'h4']:
+if test_case in ['h3', 'h4', 'm9', 's1']:
 	step_reward = 'constant'
 
 include_d = True
-if test_case in ['h3', 'h4', 'tp']:
+if test_case in ['h3', 'h4', 'tp', 'm9', 's1']:
 	include_d = False
 
 reward_weights = [1,1,1]
-if test_case in ['h3', 'h4']:
+if test_case in ['h3', 'h4', 'm9', 's1']:
 	reward_weights = [2,2,1]
+
+learning_starts = 100
+if test_case in ['tb', 's2']:
+	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
@@ -155,6 +159,7 @@ def create_base_components(
 		read_replay_buffer_path = None, # load prebuilt replay buffer?
 		include_d = True, # inculde little d=distance/start_distance in sensors
 		reward_weights = [1,1,1], # reward weights in order: goal, collision, steps
+		learning_starts = 100, # how many steps to collect in buffer before training starts
 ):
 
 	# **** SETUP ****
@@ -654,6 +659,7 @@ def create_base_components(
 				)
 
 		# OBSERVER
+		# currently must count vector size of sensor output (TODO: automate this)
 		vector_sensors = ['ActionsSensor', 'StepsSensor', 'GoalDistance', 'GoalOrientation']
 		vector_length = 1 + 1 + 1 # 1 for StepsSensor, 1 for GoalDistance, 1 for GoalOrientation
 		if include_d:
@@ -739,7 +745,7 @@ def create_base_components(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
 					buffer_size = replay_buffer_size,
-					learning_starts = 1000,
+					learning_starts = learning_starts,
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
@@ -751,7 +757,7 @@ def create_base_components(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
 					buffer_size = replay_buffer_size,
-					learning_starts = 1000,
+					learning_starts = learning_starts,
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
@@ -976,6 +982,7 @@ configuration = create_base_components(
 		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
 		include_d = include_d, # inculde little d=distance/start_distance in sensors
 		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
+		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
 )
 
 # create any other components

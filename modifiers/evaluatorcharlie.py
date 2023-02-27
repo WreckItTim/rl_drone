@@ -48,6 +48,7 @@ class EvaluatorCharlie(Modifier):
 				frequency = 1, # use modifiation after how many calls to parent method?
 				counter = 0, # keepts track of number of calls to parent method
 				activate_on_first = True, # will activate on first call otherwise only if % is not 0
+				current_noise = 0, # keeps track of current level of noise being applied to sensors 
 				): 
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self.connect_priority = -1 # needs other components to connect first
@@ -93,8 +94,9 @@ class EvaluatorCharlie(Modifier):
 
 	# reset learning loop to static values from connect()
 	def reset_learning(self):
-		self.best_distance = 0
+		self.best_distance = -1
 		self.best_reward = -999_999
+		self.current_noise = 0
 		self.best_noise = 0
 		self.wait = 0
 		self.phase = 'distance'
@@ -131,14 +133,8 @@ class EvaluatorCharlie(Modifier):
 		all_success = total_success >= self.success
 		mean_reward = total_reward / self.nEpisodes
 
-		mean_reward = -1*self.set_counter 
-		if self.phase in ['distance', 'reward']:
-			all_success = True
-		else:
-			all_success = False
-
 		if self.verbose > 0:
-			utils.speak(f'Evaluation #{self.set_counter} evaluated with total_success:{total_success} and mean_reward:{round(mean_reward,2)} at phase:{self.phase}')
+			utils.speak(f'Evaluation:{self.set_counter} distance:{self._evaluate_environment._goal.random_dim_min} reward:{round(mean_reward,2)} noise:{self.current_noise}')
 
 		# save every model
 		if self.save_every_model:
@@ -190,6 +186,7 @@ class EvaluatorCharlie(Modifier):
 					# amp up noise levels 
 					for _noise in self._noises:
 						_noise.amp_up_noise()
+					self.current_noise = 1
 					if self.verbose > 0:
 						utils.speak(f'Switching eval phase from reward to noise...')
 
@@ -197,11 +194,12 @@ class EvaluatorCharlie(Modifier):
 			elif self.phase == 'noise':
 				new_best = True # as long as we reached all_success then we are improving
 				another_set = True # evaluate again, to see if we can achieve goal with more noise
-				self._model._best_score = -10_000 * (self.best_noise+1) # need to minimize if hyper learning
 				self.best_noise += 1
+				self._model._best_score = -10_000 * (self.best_noise) # need to minimize if hyper learning
 				# amp up noise levels 
 				for _noise in self._noises:
 					_noise.amp_up_noise()
+				self.current_noise += 1
 
 			# do we update best epoch?
 			if new_best:
@@ -213,7 +211,7 @@ class EvaluatorCharlie(Modifier):
 				# update early stopping
 				self.wait = min(self.wait, 0) # consider any start as offset (i.e. noise_start)
 				if self.verbose > 0:
-					utils.speak(f'New best at distance:{self.best_distance} reward:{round(self.best_reward,2)} noise:{self.best_noise}')
+					utils.speak(f'New best! best_distance:{self.best_distance} best_reward:{round(self.best_reward,2)} best_noise:{self.best_noise}')
 		else:
 			# update early stopping
 			self.wait += 1
