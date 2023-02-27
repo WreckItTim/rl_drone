@@ -3,7 +3,7 @@ from configuration import Configuration
 import math
 import sys
 from hyperopt import hp
-repo_version = 'gamma15'
+repo_version = 'gamma14'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
