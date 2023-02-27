@@ -28,14 +28,14 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['m9', 's1']:
+if test_case in ['s1', 's2']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 's2', 's1', 'pc']:
+if test_case in ['h4', 'pc', 's2']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -51,15 +51,15 @@ if test_case in []:
 # read model and/or replay buffer?
 read_model_path = None
 read_replay_buffer_path = None
-if test_case in ['h3', 'm9']:
+if test_case in ['h3', 's1']:
 	read_model_path = 'local/models/GAMMA_model.zip'
-	read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in ['h4', 's1']:
+	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
+if test_case in ['h4', 's2']:
 	read_model_path = 'local/models/DELTA_model.zip'
-	read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
+	#read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
 if test_case in ['tp']:
 	read_model_path = 'local/models/EPSILON_model.zip'
-	read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
+	#read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
 
 # hyper parameter search?
 hyper = False
@@ -107,23 +107,23 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h3', 'h4', 'm9', 's1']:
+if test_case in ['h3', 'h4', 's1', 's2']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h3', 'h4', 'm9', 's1']:
+if test_case in ['h3', 'h4', 's1', 's2']:
 	step_reward = 'constant'
 
 include_d = True
-if test_case in ['h3', 'h4', 'tp', 'm9', 's1']:
+if test_case in ['h3', 'h4', 'tp', 's1', 's2']:
 	include_d = False
 
 reward_weights = [1,1,1]
-if test_case in ['h3', 'h4', 'm9', 's1']:
+if test_case in ['h3', 'h4', 's1', 's2']:
 	reward_weights = [2,2,1]
 
 learning_starts = 100
-if test_case in ['tb', 's2']:
+if test_case in ['tb', 'm9']:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
