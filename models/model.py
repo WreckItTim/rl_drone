@@ -25,6 +25,7 @@ class Model(Component):
 		self._model_arguments['env'] = self._environment
 		# create model object
 		if self.read_model_path is not None and exists(self.read_model_path):
+			utils.speak(f'reading model from path {self.read_model_path}')
 			self.load_model(self.read_model_path)
 			self._sb3model.set_env(self._model_arguments['env'])
 			utils.speak('loaded model from file')
