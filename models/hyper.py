@@ -116,7 +116,7 @@ class Hyper(Model):
 			)
 
 			# update table
-			best_score = self._environment._goal.random_dim_min
+			best_score = self._best_score # update from evaluator
 			self._results_table['run' + str(n)].append(best_score)
 			scores.append(best_score)
 

@@ -27,9 +27,10 @@ class Steps(Sensor):
 		nSteps = state['nSteps']
 		# get dynamic max steps from reward component
 		max_steps = self._steps._max_steps 
+		s = nSteps / max_steps
 		# calculate ratio of current steps to max
-		data = [nSteps / max_steps]
-
+		data = [s]
+		
 		observation = self.create_obj(data)
 		transformed = self.transform(observation)
 		return transformed

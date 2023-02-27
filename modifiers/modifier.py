@@ -28,7 +28,6 @@ class Modifier(Component):
 			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0 , # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
 		self.connect_priority = -999 # connects after everything else
 
@@ -49,12 +48,6 @@ class Modifier(Component):
 					return False
 		# we now know that we are in proper environment...
 		self.counter += 1
-		# check if we do not activate on first call
-		if self.counter == 1: 
-			if self.activate_on_first:
-				return True
-			else:
-				return False
 		# check if we are on frequency
 		if self.counter % self.frequency == 0:
 			return True

@@ -3,7 +3,7 @@ from configuration import Configuration
 import math
 import sys
 from hyperopt import hp
-repo_version = 'gamma13'
+repo_version = 'gamma14'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -28,14 +28,14 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['tp', 's2', 'tb', 'm9']:
+if test_case in ['m9', 'tb']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 's2', 's1', 'tb']:
+if test_case in ['h4', 's1', 'tb']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -47,6 +47,19 @@ if test_case in []:
 rl_model = 'TD3'
 if test_case in []:
 	rl_model = 'DQN'
+
+# read model and/or replay buffer?
+read_model_path = None
+read_replay_buffer_path = None
+if test_case in ['h3']:
+	read_model_path = 'local/models/GAMMA_model.zip'
+	read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
+if test_case in ['h4']:
+	read_model_path = 'local/models/DELTA_model.zip'
+	read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
+if test_case in ['tp']:
+	read_model_path = 'local/models/EPSILON_model.zip'
+	read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
 
 # hyper parameter search?
 hyper = False
@@ -94,12 +107,16 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h4', 'tp', 's2']:
+if test_case in ['h3', 'h4']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h4', 'tp', 's2']:
+if test_case in ['h3', 'h4']:
 	goal_reward = 'constant'
+
+include_d = True
+if test_case in ['h3', 'h4', 'tp']:
+	include_d = False
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
@@ -130,6 +147,9 @@ def create_base_components(
 		step_reward = 'scale2', # reward function that penalizes longer episode length
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
+		read_model_path = None, # load pretrained model?
+		read_replay_buffer_path = None, # load prebuilt replay buffer?
+		include_d = True, # inculde little d=distance/start_distance in sensors
 ):
 
 	# **** SETUP ****
@@ -334,8 +354,8 @@ def create_base_components(
 				'StepsReward',
 			],
 			reward_weights = [
-				1,
-				1,
+				1 if include_d else 2,
+				1 if include_d else 2,
 				1,
 			],
 			name = 'Rewarder',
@@ -494,21 +514,28 @@ def create_base_components(
 		# TRANSFORMERS
 		from transformers.gaussiannoise import GaussianNoise
 		GaussianNoise(
-			deviation = 0.5,
+			deviation = 0, # start at 0 meters in noise
+			deviation_amp = 0.1, # amp up noise by 0.1 meters
 			name = 'PositionNoise',
 		)
 		GaussianNoise(
-			deviation = math.radians(5),
+			deviation = 0, # start at 0 radians in noise
+			deviation_amp = math.radians(1), # amp up noise by 1 radian
 			name = 'OrientationNoise',
+		)
+		GaussianNoise(
+			deviation = 0, # start at 0  meters in noise
+			deviation_amp = 0.2, # amp up noise by 0.2 meters
+			name = 'DistanceNoise',
 		)
 		from transformers.gaussianblur import GaussianBlur
 		GaussianBlur(
-			sigma = 2,
+			sigma = 0, # start at 0 noise
+			sigma_amp = 0.25, # amp up noise by .25 sigma
 			name = 'DepthNoise',
 		)
 		from transformers.normalize import Normalize
 		Normalize(
-			min_input = 0, # min depth
 			max_input = max_distance, # max depth
 			min_output = 1, # SB3 uses 0-255 pixel values
 			max_output = 255, # SB3 uses 0-255 pixel values
@@ -548,7 +575,7 @@ def create_base_components(
 			include_z = False,
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				#'PositionNoise',
+				'PositionNoise',
 				'NormalizeDistance',
 				], 
 			name = 'GoalDistance',
@@ -560,10 +587,19 @@ def create_base_components(
 			misc2_component = 'Goal',
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				#'OrientationNoise',
+				'OrientationNoise',
 				'NormalizeOrientation',
 				],
 			name = 'GoalOrientation',
+		)
+		# sense normalized distance from start to goal
+		from sensors.goaldistance import GoalDistance
+		GoalDistance(
+			drone_component = 'Drone',
+			goal_component = 'Goal',
+			include_z = vert_motion,
+			prefix = 'GoalDistance',
+			name = 'GoalDistance2',
 		)
 		if vert_motion:
 			# sense altitude distance to goal
@@ -574,7 +610,7 @@ def create_base_components(
 				include_y = False,
 				prefix = 'drone_to_goal',
 				transformers_components = [
-					#'PositionNoise',
+					'PositionNoise',
 					'NormalizeDistance',
 					],
 				name = 'GoalAltitude',
@@ -609,25 +645,29 @@ def create_base_components(
 				transformers_components = [
 					'ResizeImage',
 					#'DepthNoise',
-					'NormalizeDistance',
 					'ResizeFlat',
+					'DistanceNoise',
+					'NormalizeDistance',
 					],
 				name = 'FlattenedDepth',
 				)
 
 		# OBSERVER
 		vector_sensors = ['ActionsSensor', 'StepsSensor', 'GoalDistance', 'GoalOrientation']
-		vector_length = len(actions) + 1 + 1 + 1
+		vector_length = 1 + 1 + 1 # 1 for StepsSensor, 1 for GoalDistance, 1 for GoalOrientation
+		if include_d:
+			vector_sensors.append('GoalDistance2')
+			vector_length += 1 # 1 for GoalDistance2
 		if rl_model in ['DQN']:
-			vector_length = 1 + 1 + 1 + 1
+			vector_length += 1 # DQN adds only one action for ActionSensor
 		if rl_model in ['TD3']:
-			vector_length = len(actions) + 1 + 1 + 1
+			vector_length += len(actions) # TD3 adds multiple actions for ActionSensor
 		if vert_motion:
 			vector_sensors.append('GoalAltitude')
-			vector_length += 1
+			vector_length += 1 # 1 for GoalAltitude
 		if policy == 'MlpPolicy':
 			vector_sensors.append('FlattenedDepth')
-			vector_length += len(max_cols) * len(max_rows)
+			vector_length += len(max_cols) * len(max_rows) # several more vector elements
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
@@ -698,7 +738,10 @@ def create_base_components(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
 					buffer_size = replay_buffer_size,
+					learning_starts = 1000,
 					tensorboard_log = working_directory + 'tensorboard_log/',
+					read_model_path = read_model_path,
+					read_replay_buffer_path = read_replay_buffer_path,
 					name='Model',
 				)
 			if rl_model == 'DQN':
@@ -707,7 +750,10 @@ def create_base_components(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
 					buffer_size = replay_buffer_size,
+					learning_starts = 1000,
 					tensorboard_log = working_directory + 'tensorboard_log/',
+					read_model_path = read_model_path,
+					read_replay_buffer_path = read_replay_buffer_path,
 					name='Model',
 				)
 
@@ -776,22 +822,29 @@ def create_base_components(
 		# EVALUATOR
 		nEvalEpisodes = 6
 		from modifiers.evaluatorcharlie import EvaluatorCharlie
+		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
 			base_component = 'TrainEnvironment',
-			parent_method = 'end',
-			order = 'post',
+			parent_method = 'reset',
+			order = 'pre',
 			evaluate_environment_component = 'EvaluateEnvironment',
 			model_component = 'Model',
-			track_vars = [],
+			noises_components = [
+				'PositionNoise', 
+				'OrientationNoise', 
+				'DistanceNoise', 
+				],
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
-			activate_on_first = False,
-			verbose = 1,
+			track_vars = [],
+			save_every_model = True,
+			counter = -1, # offset to do an eval before any training
 			name = 'Evaluator',
 		)
 		if not hyper:
 			# SAVERS
 			from modifiers.saver import Saver
+			# save Train states and observations after each epoch (checkpoint)
 			Saver(
 				base_component = 'TrainEnvironment',
 				parent_method = 'end',
@@ -799,13 +852,14 @@ def create_base_components(
 							'observations', 
 							'states',
 							],
-				order = 'pre',
+				order = 'post',
 				save_config = True,
 				save_benchmarks = True,
 				frequency = checkpoint,
-				activate_on_first = False,
 				name='TrainEnvSaver',
 			)
+			# save model after each epoch (checkpoint)
+			# environment does not have access to model
 			Saver(
 				base_component = 'Model',
 				parent_method = 'end',
@@ -813,11 +867,11 @@ def create_base_components(
 							'model', 
 							'replay_buffer',
 							],
-				order = 'pre',
+				order = 'post',
 				frequency = nEvalEpisodes,
-				activate_on_first = False,
 				name='ModelSaver',
 			)
+			# save Evlaluate states and observations after each epoch (checkpoint)
 			Saver(
 				base_component = 'EvaluateEnvironment',
 				parent_method = 'end',
@@ -825,9 +879,8 @@ def create_base_components(
 							'observations', 
 							'states',
 							],
-				order = 'pre',
+				order = 'post',
 				frequency = nEvalEpisodes,
-				activate_on_first = False,
 				name='EvalEnvSaver',
 			)
 		# TRACKER - tracks resources on local computer
@@ -918,6 +971,9 @@ configuration = create_base_components(
 		flat = flat, # determines size of flattened depth sensor array 
 		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process
 		hyper_params = hyper_params, # which hyper parameters to hyper tune if model is type hyper
+		read_model_path = read_model_path, # load pretrained model?
+		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
+		include_d = include_d, # inculde little d=distance/start_distance in sensors
 )
 
 # create any other components

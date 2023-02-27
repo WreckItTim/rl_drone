@@ -10,8 +10,22 @@ class GaussianBlur(Transformer):
 	@_init_wrapper
 	def __init__(self, 
 					sigma,
+					sigma_amp = 0, # (opt) how much to increase sigma during amp up phase from evaluator
+				 # these values are stored for amps (do not change) this is for file IO
+				 original_sigma = None,
 				 ):
 		super().__init__()
+		if original_sigma is None:
+			self.original_sigma = sigma
+
+	# reset noise level
+	def reset_learning(self, state=None):
+		self.sigma = self.original_sigma
+
+	# increase noise level
+	def amp_up_noise(self):
+		self.sigma += self.sigma_amp
+
 
 	# if observation type is valid, applies transformation
 	def transform(self, observation):
