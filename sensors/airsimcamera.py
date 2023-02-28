@@ -5,7 +5,7 @@ import airsim
 from observations.image import Image
 import numpy as np
 from component import _init_wrapper
-import utils
+import rl_utils as utils
 
 # see https://microsoft.github.io/AirSim/image_apis/
 class AirSimCamera(Sensor):

@@ -1,5 +1,5 @@
 # abstract class used to handle observations - sensor responses
-import utils
+import rl_utils as utils
 import os
 import numpy as np
 
@@ -23,3 +23,7 @@ class Observation:
 	# sets numpy array data
 	def set_data(self, data):
 		self._data = data.copy()
+
+	# displays observation
+	def display(self):
+		print(f'Observation {self._name}:{self._data}')

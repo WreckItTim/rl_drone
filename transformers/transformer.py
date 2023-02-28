@@ -10,5 +10,5 @@ class Transformer(Component):
     def transform(self, observation):
         raise NotImplementedError
 
-    def connect(self):
-        super().connect()
+    def connect(self, state=None):
+        super().connect(state)

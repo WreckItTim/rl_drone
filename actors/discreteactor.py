@@ -2,7 +2,7 @@ from actors.actor import Actor
 from random import randint
 from component import _init_wrapper
 import random
-import utils
+import rl_utils as utils
 from gym import spaces
 
 # handles discrete actions - RL returns an index specifying which action to take

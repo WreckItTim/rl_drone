@@ -19,6 +19,7 @@ class Move(Action):
 				# # they determine the possible ranges of output from rl algorithm
 				min_space = 0, # will scale base values by this range from rl_output
 				max_space = 1, # min_space to -1 will allow you to reverse positive motion
+				adjust_for_yaw = False,
 			):
 				self.min_space = min_space
 				self.max_space = max_space
@@ -29,11 +30,15 @@ class Move(Action):
 		# check for true zero
 		if abs(rl_output) < self.zero_threshold:
 			return {}
-		# must orient self with yaw
-		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		# calculate rate from rl_output
-		adjusted_x_rel = float(rl_output * (self.base_x_rel * math.cos(yaw) - self.base_y_rel * math.sin(yaw)))
-		adjusted_y_rel = float(rl_output * (self.base_x_rel * math.sin(yaw) + self.base_y_rel * math.cos(yaw)))
+		if self.adjust_for_yaw:
+			# must orient self with yaw
+			yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
+			adjusted_x_rel = float(rl_output * (self.base_x_rel * math.cos(yaw) - self.base_y_rel * math.sin(yaw)))
+			adjusted_y_rel = float(rl_output * (self.base_x_rel * math.sin(yaw) + self.base_y_rel * math.cos(yaw)))
+		else:
+			adjusted_x_rel = float(rl_output * self.base_x_rel)
+			adjusted_y_rel = float(rl_output * self.base_y_rel)
 		adjusted_z_rel = float(rl_output * self.base_z_rel)
 		# move calculated rate
 		if execute:

@@ -1,7 +1,7 @@
 from environments.environment import Environment
 from component import _init_wrapper
 import numpy as np
-import utils
+import rl_utils as utils
 import os
 
 # an environment is the heart of RL algorithms

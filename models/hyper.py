@@ -3,7 +3,7 @@ from stable_baselines3 import DQN as sb3DQN
 from component import _init_wrapper
 from hyperopt import fmin, tpe, hp
 from stable_baselines3 import TD3 as sb3TD3
-import utils
+import rl_utils as utils
 import pandas as pd
 import numpy as np
 import os

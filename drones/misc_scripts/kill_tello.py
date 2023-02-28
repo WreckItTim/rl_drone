@@ -12,7 +12,7 @@ locaddr = (host, port)
 address = ('192.168.10.1', 8889)
 
 while(True):
-    print('initialized. send any key to kill drone actions and enter hover mode')
+    print('initialized. send any key to hault drone')
     x = input()
 
     '''
@@ -45,11 +45,12 @@ while(True):
         except Exception as e:
             continue
 
-    # send command to stop and hover
+    # send command to abort
     while(True):
         try:
-            print('Sent stop, returned value:', sock.sendto('stop'.encode(encoding="utf-8"), address))
-            print('Sent land, returned value:', sock.sendto('land'.encode(encoding="utf-8"), address))
+            #print('Sent stop, returned value:', sock.sendto('stop'.encode(encoding="utf-8"), address))
+            #print('Sent land, returned value:', sock.sendto('land'.encode(encoding="utf-8"), address))
+            print('Sent emergency, returned value:', sock.sendto('emergency'.encode(encoding="utf-8"), address))
             break
         except Exception as e:
             continue

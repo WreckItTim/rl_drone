@@ -2,8 +2,10 @@
 from sensors.sensor import Sensor
 from observations.image import Image
 import numpy as np
+import cv2
 from cv2 import VideoCapture
 from component import _init_wrapper
+import rl_utils as utils
 
 # see https://microsoft.github.io/AirSim/image_apis/
 class PortCamera(Sensor):
@@ -12,6 +14,7 @@ class PortCamera(Sensor):
 	def __init__(self, 
 			  port='udp://0.0.0.0:11111', 
 			  is_gray=False,
+			  write=True,
 			  transformers_components=None,
 			  offline = False,
 			  ):
@@ -39,5 +42,6 @@ class PortCamera(Sensor):
 		while not ret:
 			ret, img_array = self._camera.read()
 		observation = self.create_obj(img_array)
+		cv2.imwrite(utils.get_global_parameter('working_directory') + 'tello_imgs/' + observation._name + '_pre.png', img_array)
 		transformed = self.transform(observation)
 		return transformed

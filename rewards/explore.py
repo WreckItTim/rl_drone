@@ -2,7 +2,7 @@ from rewards.reward import Reward
 from component import _init_wrapper
 import numpy as np
 import math
-import utils
+import rl_utils as utils
 
 # TODO: implement
 # applies a penalty for moving closer to previously traveled point(s)

@@ -1,4 +1,4 @@
-import utils
+import rl_utils as utils
 from sys import getsizeof
 
 # saves config of components

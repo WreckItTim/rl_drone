@@ -1,4 +1,4 @@
-import utils
+import rl_utils as utils
 import numpy as np
 from time import time
 from sys import getsizeof

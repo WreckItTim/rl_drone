@@ -1,7 +1,8 @@
-import utils
+import rl_utils as utils
 from configuration import Configuration
 import math
 import sys
+import os
 from hyperopt import hp
 repo_version = 'gamma14'
 
@@ -25,13 +26,15 @@ if len(args) > 2:
 run_post = ''
 if len(args) > 3:
 	run_post = args[3]
-	
+
 # airsim map to use?
 airsim_release = 'Blocks'
 if test_case in ['s1', 's2', 'h3', 'h4']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
+if test_case in ['sp']:
+	airsim_release = 'Tello'
 
 # unlock vertical motion?
 vert_motion = False
@@ -51,7 +54,7 @@ if test_case in []:
 # read model and/or replay buffer?
 read_model_path = None
 read_replay_buffer_path = None
-if test_case in ['s1']:
+if test_case in ['s1', 'sp']:
 	read_model_path = 'local/models/GAMMA_model.zip'
 	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
 if test_case in ['h3']:
@@ -111,19 +114,19 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
 	step_reward = 'constant'
 
 include_d = True
-if test_case in ['h3', 'h4', 'tp', 's1', 's2']:
+if test_case in ['h3', 'h4', 'tp', 's1', 's2', 'sp']:
 	include_d = False
 
 reward_weights = [1,1,1]
-if test_case in ['h3', 'h4', 's1', 's2']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
 	reward_weights = [2,2,1]
 
 learning_starts = 100
@@ -132,9 +135,23 @@ if test_case in ['tb', 'm9']:
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
+if test_case in ['sp']:
+	controller_type = 'Debug'
 actor = 'Teleporter' # Teleporter Continuous
+if test_case in ['sp']:
+	actor = 'Continuous'
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
+# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
+# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
 max_distance = 100 # distance contraint used for several calculations (see below)
+if test_case in ['sp']:
+	max_distance = 25
+tello_goal = 'Hallway1'
+if test_case in ['sp']:
+	run_post = 'GAMMA'
+adjust_for_yaw = True
+if test_case in ['sp']:
+	adjust_for_yaw = False
 nTimesteps = 4 # number of timesteps to use in observation space
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
@@ -164,6 +181,8 @@ def create_base_components(
 		include_d = True, # inculde little d=distance/start_distance in sensors
 		reward_weights = [1,1,1], # reward weights in order: goal, collision, steps
 		learning_starts = 100, # how many steps to collect in buffer before training starts
+		tello_goal = '',
+		adjust_for_yaw = True,
 ):
 
 	# **** SETUP ****
@@ -255,85 +274,130 @@ def create_base_components(
 		
 
 		# CREATE MAP
-		from maps.airsimmap import AirSimMap
-		# get airsim release to launch
-		release_path = None
-		if utils.get_global_parameter('OS') == 'windows':
-			if airsim_release == 'Blocks':
-				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
-			if airsim_release == 'AirSimNH':
-				release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.exe'
-			if airsim_release == 'CityEnviron':
-				release_path = 'local/airsim_maps/CityEnviron/WindowsNoEditor/CityEnviron.exe'
-		if utils.get_global_parameter('OS') == 'linux':
-			if airsim_release == 'Blocks':
-				release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
-			if airsim_release == 'AirSimNH':
-				release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
-		# add console flags
-		console_flags = []
-		# render screen? This should be false if SSH-ing from remote
-		render_screen = utils.get_global_parameter('render_screen')
-		if render_screen:
-			console_flags.append('-Windowed')
-		else:
-			console_flags.append('-RenderOffscreen')
-		# create airsim map object
-		AirSimMap(
-			voxels_component='Voxels',
-			release_path = release_path,
-			settings = {
-				'ClockSpeed': clock_speed,
-				},
-			setting_files = [
-				'lightweight', # see maps/airsim_settings
-				],
-			console_flags = console_flags.copy(),
-			name = 'Map',
-		)
-		# voxels grabs locations of objects from airsim map
-		# used to validate spawn and goal points (not inside an object)
-		# also used to visualize flight paths
-		from others.voxels import Voxels
-		Voxels(
-			relative_path = working_directory + 'map_voxels.binvox',
-			map_component = 'Map',
-			name = 'Voxels',
+		if airsim_release == 'Tello':
+			from maps.field import Field
+			Field(
+				name = 'Map',
 			)
+		else:
+			from maps.airsimmap import AirSimMap
+			# get airsim release to launch
+			release_path = None
+			if utils.get_global_parameter('OS') == 'windows':
+				if airsim_release == 'Blocks':
+					release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
+				if airsim_release == 'AirSimNH':
+					release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.exe'
+				if airsim_release == 'CityEnviron':
+					release_path = 'local/airsim_maps/CityEnviron/WindowsNoEditor/CityEnviron.exe'
+			if utils.get_global_parameter('OS') == 'linux':
+				if airsim_release == 'Blocks':
+					release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
+				if airsim_release == 'AirSimNH':
+					release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
+			# add console flags
+			console_flags = []
+			# render screen? This should be false if SSH-ing from remote
+			render_screen = utils.get_global_parameter('render_screen')
+			if render_screen:
+				console_flags.append('-Windowed')
+			else:
+				console_flags.append('-RenderOffscreen')
+			# create airsim map object
+			AirSimMap(
+				voxels_component='Voxels',
+				release_path = release_path,
+				settings = {
+					'ClockSpeed': clock_speed,
+					},
+				setting_files = [
+					'lightweight', # see maps/airsim_settings
+					],
+				console_flags = console_flags.copy(),
+				name = 'Map',
+			)
+			# voxels grabs locations of objects from airsim map
+			# used to validate spawn and goal points (not inside an object)
+			# also used to visualize flight paths
+			from others.voxels import Voxels
+			Voxels(
+				relative_path = working_directory + 'map_voxels.binvox',
+				map_component = 'Map',
+				name = 'Voxels',
+				)
 
 
 		# CREATE DRONE
-		from drones.airsimdrone import AirSimDrone
-		AirSimDrone(
-			airsim_component = 'Map',
-			name='Drone',
-		)
-
-
-		# CREATE GOAL
-		x_bounds = [-1*max_distance, max_distance]
-		y_bounds = [-1*max_distance, max_distance]
-		z_bounds = [-4, -4]
-		# dynamic goal will spawn in bounds - randomly for train, static for evaluate
-		# goal distance will increase, "amp up", with curriculum learning
-		from others.relativegoal import RelativeGoal
-		RelativeGoal(
-			drone_component = 'Drone',
-			map_component = 'Map',
-			xyz_point = [6, 6, 0],
-			random_point_on_train = True,
-			random_point_on_evaluate = False,
-			random_dim_min = 4,
-			random_dim_max = 8,
-			x_bounds = x_bounds,
-			y_bounds = y_bounds,
-			z_bounds = z_bounds,
-			random_yaw_on_train = True,
-			random_yaw_on_evaluate = False,
-			random_yaw_min = -1 * math.pi,
-			random_yaw_max = math.pi,
-			name = 'Goal',
+		if airsim_release == 'Tello':
+			from drones.tello import Tello
+			Tello(
+				name = 'Drone',
 			)
+		else:
+			from drones.airsimdrone import AirSimDrone
+			AirSimDrone(
+				airsim_component = 'Map',
+				name='Drone',
+			)
+
+		
+		from others.relativegoal import RelativeGoal
+		if airsim_release == 'Tello':
+			# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
+			# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
+			# origin at (2,2) - offset 2 tiles from walls in hallway 1 corner
+			if tello_goal == 'Hallway1':
+				RelativeGoal(
+					drone_component = 'Drone',
+					map_component = 'Map',
+					xyz_point = [2, 0, 0],
+					name = 'Goal',
+					)
+			if tello_goal == 'Hallway2':
+				RelativeGoal(
+					drone_component = 'Drone',
+					map_component = 'Map',
+					xyz_point = [2, -16.8, 0],
+					name = 'Goal',
+					)
+			if tello_goal == 'Hallway3':
+				RelativeGoal(
+					drone_component = 'Drone',
+					map_component = 'Map',
+					xyz_point = [-19.6, -16.8, 0],
+					name = 'Goal',
+					)
+			if tello_goal == 'hallway4':
+				RelativeGoal(
+					drone_component = 'Drone',
+					map_component = 'Map',
+					xyz_point = [-20.8, -10.2, 0],
+					name = 'Goal',
+					)
+		else:
+			# CREATE GOAL
+			x_bounds = [-1*max_distance, max_distance]
+			y_bounds = [-1*max_distance, max_distance]
+			z_bounds = [-4, -4]
+			# dynamic goal will spawn in bounds - randomly for train, static for evaluate
+			# goal distance will increase, "amp up", with curriculum learning
+			RelativeGoal(
+				drone_component = 'Drone',
+				map_component = 'Map',
+				xyz_point = [6, 6, 0],
+				random_point_on_train = True,
+				random_point_on_evaluate = False,
+				random_dim_min = 4,
+				random_dim_max = 8,
+				x_bounds = x_bounds,
+				y_bounds = y_bounds,
+				z_bounds = z_bounds,
+				random_yaw_on_train = True,
+				random_yaw_on_evaluate = False,
+				random_yaw_min = -1 * math.pi,
+				random_yaw_max = math.pi,
+				name = 'Goal',
+				)
 
 		# CREATE REWARDS AND TERMINATORS
 		# REWARDS
@@ -379,6 +443,7 @@ def create_base_components(
 			Move(
 				drone_component = 'Drone', 
 				base_x_rel = base_distance, 
+				adjust_for_yaw = adjust_for_yaw,
 				name = 'MoveForward',
 			)
 			from actions.rotate import Rotate 
@@ -397,6 +462,7 @@ def create_base_components(
 					drone_component = 'Drone', 
 					base_z_rel = base_distance, 
 					min_space = -1, # allows up and down movements
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'MoveVertical',
 				)
 				actions.append('MoveVertical')
@@ -405,16 +471,19 @@ def create_base_components(
 			FixedMove(
 				drone_component = 'Drone', 
 				x_speed = 1, 
+				adjust_for_yaw = adjust_for_yaw,
 				name = 'FixedForward1',
 			)
 			FixedMove(
 				drone_component = 'Drone', 
 				x_speed = 5, 
+				adjust_for_yaw = adjust_for_yaw,
 				name = 'FixedForward2',
 			)
 			FixedMove(
 				drone_component = 'Drone', 
 				x_speed = 10, 
+				adjust_for_yaw = adjust_for_yaw,
 				name = 'FixedForward3',
 			)
 			from actions.fixedrotate import FixedRotate 
@@ -463,31 +532,37 @@ def create_base_components(
 				FixedMove(
 					drone_component = 'Drone', 
 					z_speed = -1, 
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedUp1',
 				)
 				FixedMove(
 					drone_component = 'Drone', 
 					z_speed = -5, 
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedUp2',
 				)
 				FixedMove(
 					drone_component = 'Drone', 
 					z_speed = -10, 
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedUp3',
 				)
 				FixedMove(
 					drone_component = 'Drone', 
 					z_speed = 1, 
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedDown1',
 				)
 				FixedMove(
 					drone_component = 'Drone', 
 					z_speed = 5, 
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedDown2',
 				)
 				FixedMove(
 					drone_component = 'Drone', 
-					z_speed = 10, 
+					z_speed = 10,
+					adjust_for_yaw = adjust_for_yaw,
 					name = 'FixedDown3',
 				)
 				actions.append('FixedUp1')
@@ -559,11 +634,20 @@ def create_base_components(
 			max_input = max_distance, # max depth
 			name = 'NormalizeDistance',
 		)
+		Normalize(
+			max_input = 255, # MonoDepth2 outputs pixels from 0 to 255
+			name = 'NormalizeMD2',
+		)
 		from transformers.resizeimage import ResizeImage
 		ResizeImage(
-			name = 'ResizeImage',
 			image_shape=(64,64) if flat=='big' else (84,84),
+			name = 'ResizeImage',
 		)
+		if airsim_release == 'Tello':
+			from transformers.monodepth2 import MonoDepth2
+			MonoDepth2(
+				name = 'MonoDepth2'
+			)
 		# SENSORS
 		# keep track of recent past actions
 		from sensors.actions import Actions
@@ -586,7 +670,6 @@ def create_base_components(
 			prefix = 'drone_to_goal',
 			transformers_components = [
 				'PositionNoise',
-				'NormalizeDistance',
 				], 
 			name = 'GoalDistance',
 		)
@@ -626,17 +709,6 @@ def create_base_components(
 				name = 'GoalAltitude',
 			)
 		from sensors.airsimcamera import AirSimCamera
-		if policy == 'MultiInputPolicy':
-			# get 2d depth map from camera
-			AirSimCamera(
-				airsim_component = 'Map',
-				transformers_components = [
-					'ResizeImage',
-					#'DepthNoise',
-					'NormalizeDepth',
-					],
-				name = 'DepthMap',
-				)
 		if policy == 'MlpPolicy':
 			# get flattened depth map (obsfucated front facing distance sensors)
 			from transformers.resizeflat import ResizeFlat
@@ -650,17 +722,29 @@ def create_base_components(
 				max_rows = max_rows,
 				name = 'ResizeFlat',
 			)
-			AirSimCamera(
-				airsim_component = 'Map',
-				transformers_components = [
-					'ResizeImage',
-					#'DepthNoise',
-					'ResizeFlat',
-					'DistanceNoise',
-					'NormalizeDistance',
-					],
-				name = 'FlattenedDepth',
+			if airsim_release == 'Tello':
+				from sensors.portcamera import PortCamera
+				PortCamera(
+					transformers_components = [
+						'MonoDepth2',
+						'ResizeImage',
+						'ResizeFlat',
+						'NormalizeMD2',
+						],
+					name = 'FlattenedDepth',
 				)
+			else:
+				AirSimCamera(
+					airsim_component = 'Map',
+					transformers_components = [
+						'ResizeImage',
+						#'DepthNoise',
+						'ResizeFlat',
+						'DistanceNoise',
+						'NormalizeDistance',
+						],
+					name = 'FlattenedDepth',
+					)
 
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
@@ -831,7 +915,7 @@ def create_base_components(
 			name='EvaluateSpawner',
 		)
 		# EVALUATOR
-		nEvalEpisodes = 6
+		nEvalEpisodes = 1
 		from modifiers.evaluatorcharlie import EvaluatorCharlie
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
@@ -987,7 +1071,14 @@ configuration = create_base_components(
 		include_d = include_d, # inculde little d=distance/start_distance in sensors
 		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
 		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
+		tello_goal = tello_goal,
+		adjust_for_yaw = adjust_for_yaw,
 )
+
+# make dir to save all tello imgs to
+tell_img_path = utils.get_global_parameter('working_directory') + 'tello_imgs/'
+if test_case in ['sp'] and not os.path.exists(tell_img_path):
+	os.makedirs(tell_img_path)
 
 # create any other components
 if not continue_training:

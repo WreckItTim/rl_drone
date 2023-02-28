@@ -2,7 +2,7 @@ from rewards.reward import Reward
 from component import _init_wrapper
 import numpy as np
 import math
-import utils
+import rl_utils as utils
 
 # calculates distance between drone and point relative to starting position/orientation
 class Goal(Reward):

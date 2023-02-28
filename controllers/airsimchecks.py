@@ -2,7 +2,7 @@ from controllers.controller import Controller
 from component import _init_wrapper
 from configuration import Configuration
 import random
-import utils
+import rl_utils as utils
 import pickle
 
 # takes series of random actions

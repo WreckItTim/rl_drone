@@ -1,6 +1,6 @@
 # abstract class used to handle RL model
 from component import Component
-import utils
+import rl_utils as utils
 from os.path import exists
 
 class Model(Component):

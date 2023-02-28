@@ -2,7 +2,7 @@ from others.other import Other
 from component import _init_wrapper
 import random
 import numpy as np
-import utils
+import rl_utils as utils
 
 # data structure specifying a spawn zone
 class Spawn(Other):

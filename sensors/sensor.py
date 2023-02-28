@@ -1,6 +1,6 @@
 
 from component import Component
-import utils
+import rl_utils as utils
 
 # abstract class used to handle sensors
 class Sensor(Component):
@@ -22,6 +22,10 @@ class Sensor(Component):
 				if observation_conversion is not None:
 					observation = observation_conversion
 		return observation
+
+	def debug(self, state=None):
+		observation = self.step(state)
+		observation.display()
 
 	def connect(self, state=None):
 		super().connect()
