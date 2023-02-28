@@ -135,7 +135,7 @@ if test_case in ['tb', 'm9']:
 
 # see bottom of this file which calls functions to create components and run controller
 controller_type = 'Train' # Train, Debug, Drift, Evaluate
-if test_case in ['sp']:
+if test_case in []:
 	controller_type = 'Debug'
 actor = 'Teleporter' # Teleporter Continuous
 if test_case in ['sp']:
@@ -345,19 +345,19 @@ def create_base_components(
 		if airsim_release == 'Tello':
 			# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
 			# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
-			# origin at (2,2) - offset 2 tiles from walls in hallway 1 corner
+			# origin at (3 3) - offset 3 tiles from walls in hallway 1 corner
 			if tello_goal == 'Hallway1':
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [2, 0, 0],
+					xyz_point = [2.7, 0, 0],
 					name = 'Goal',
 					)
 			if tello_goal == 'Hallway2':
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [2, -16.8, 0],
+					xyz_point = [2.7, -16.8, 0],
 					name = 'Goal',
 					)
 			if tello_goal == 'Hallway3':
@@ -413,6 +413,7 @@ def create_base_components(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
 			value_type = goal_reward,
+			tolerance = 0 if airsim_release == 'Tello' else 4,
 			include_z = True if vert_motion else False, # includes z in distance calculations
 			name = 'GoalReward',
 		)

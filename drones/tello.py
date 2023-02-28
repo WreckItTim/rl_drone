@@ -119,7 +119,7 @@ class Tello(Drone):
 			ini = utils.prompt(f'go {x2} {y2} {z2} {speed}?')
 			if ini == 'y':
 				self.command(f'go {x2} {y2} {z2} {speed}')
-				self._pos += np.array([x2, y2, z2])
+				self._pos += np.array([x2, y2, z2], dtype=float)
 			elif ini == 'g':
 				self.flip()
 			else:
@@ -134,7 +134,7 @@ class Tello(Drone):
 		if min(abs(x_diff), abs(y_diff), abs(z_diff)) < 100 or max(abs(x_diff), abs(y_diff), abs(z_diff)) > 1000:
 			utils.error('position out of range for tello')
 		self.command(f'go {x_diff} {y_diff} {z_diff} {speed}')
-		self._pos = np.array([x, y, z])
+		self._pos = np.array([x, y, z], dtype=float)
 
 	def flip(self, direction=None):
 		if direction is None:
@@ -143,7 +143,7 @@ class Tello(Drone):
 
 	def take_off(self):
 		response = self.command('takeoff')
-		self._pos = np.array([0, 0, 0])
+		self._pos = np.array([0, 0, 0], dtype=float)
 
 	def land(self):
 		response = self.command('land')
