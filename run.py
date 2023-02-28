@@ -916,7 +916,7 @@ def create_base_components(
 			name='EvaluateSpawner',
 		)
 		# EVALUATOR
-		nEvalEpisodes = 1
+		nEvalEpisodes = 6
 		from modifiers.evaluatorcharlie import EvaluatorCharlie
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
