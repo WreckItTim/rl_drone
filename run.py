@@ -28,7 +28,7 @@ if len(args) > 3:
 	
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['s1', 's2']:
+if test_case in ['s1', 's2', 'h3', 'h4']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
@@ -51,11 +51,15 @@ if test_case in []:
 # read model and/or replay buffer?
 read_model_path = None
 read_replay_buffer_path = None
-if test_case in ['h3', 's1']:
+if test_case in ['s1']:
 	read_model_path = 'local/models/GAMMA_model.zip'
 	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in ['h4', 's2']:
+if test_case in ['h3']:
+	read_model_path = 'local/models/GAMMA2_model.zip'
+if test_case in ['s2']:
 	read_model_path = 'local/models/DELTA_model.zip'
+if test_case in ['h4']:
+	read_model_path = 'local/models/DELTA2_model.zip'
 	#read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
 if test_case in ['tp']:
 	read_model_path = 'local/models/EPSILON_model.zip'
