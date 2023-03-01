@@ -38,7 +38,7 @@ if test_case in ['sp']:
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 'pc', 's2']:
+if test_case in ['h4', 's2']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -56,16 +56,21 @@ read_model_path = None
 read_replay_buffer_path = None
 if test_case in ['s1', 'sp']:
 	read_model_path = 'local/models/GAMMA_model.zip'
+	run_post += '_GAMMA'
 	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in ['h3']:
+if test_case in ['h3', 'pc']:
 	read_model_path = 'local/models/GAMMA2_model.zip'
+	run_post += '_GAMMA2'
 if test_case in ['s2']:
 	read_model_path = 'local/models/DELTA_model.zip'
+	run_post += '_DELTA'
 if test_case in ['h4']:
 	read_model_path = 'local/models/DELTA2_model.zip'
+	run_post += '_DELTA2'
 	#read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
 if test_case in ['tp']:
 	read_model_path = 'local/models/EPSILON_model.zip'
+	run_post += '_EPSILON'
 	#read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
 
 # hyper parameter search?
@@ -114,19 +119,19 @@ if test_case in []:
 	flat = 'small'
 
 goal_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
 	goal_reward = 'exp'
 
 step_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
 	step_reward = 'constant'
 
 include_d = True
-if test_case in ['h3', 'h4', 'tp', 's1', 's2', 'sp']:
+if test_case in ['h3', 'h4', 'tp', 's1', 's2', 'sp', 'pc']:
 	include_d = False
 
 reward_weights = [1,1,1]
-if test_case in ['h3', 'h4', 's1', 's2', 'sp']:
+if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
 	reward_weights = [2,2,1]
 
 learning_starts = 100
@@ -147,8 +152,6 @@ max_distance = 100 # distance contraint used for several calculations (see below
 if test_case in ['sp']:
 	max_distance = 25
 tello_goal = 'Hallway1'
-if test_case in ['sp']:
-	run_post = 'GAMMA'
 adjust_for_yaw = True
 if test_case in ['sp']:
 	adjust_for_yaw = False
@@ -916,7 +919,7 @@ def create_base_components(
 			name='EvaluateSpawner',
 		)
 		# EVALUATOR
-		nEvalEpisodes = 6
+		nEvalEpisodes = 1 if airsim_release == 'Tello' else 6
 		from modifiers.evaluatorcharlie import EvaluatorCharlie
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
