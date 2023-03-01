@@ -1,5 +1,5 @@
 from maps.map import Map
-import utils
+import rl_utils as utils
 import subprocess
 import os
 from component import _init_wrapper

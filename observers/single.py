@@ -6,7 +6,7 @@ from sensors.sensor import Sensor
 from transformers.transformer import Transformer
 from gym import spaces
 import numpy as np
-import utils
+import rl_utils as utils
 
 class Single(Observer):
 	

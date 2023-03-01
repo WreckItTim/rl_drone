@@ -2,7 +2,7 @@ from actors.actor import Actor
 from component import _init_wrapper
 from gym import spaces
 import numpy as np
-import utils
+import rl_utils as utils
 import random
 import math
 

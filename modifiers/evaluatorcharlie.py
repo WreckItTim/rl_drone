@@ -1,6 +1,6 @@
 from modifiers.modifier import Modifier
 from component import _init_wrapper
-import utils
+import rl_utils as utils
 from configuration import Configuration
 import numpy as np
 import os

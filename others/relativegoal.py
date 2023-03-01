@@ -2,7 +2,7 @@ from others.other import Other
 from component import _init_wrapper
 import random
 import math
-import utils
+import rl_utils as utils
 import numpy as np
 
 # set goal according to drone's starting position and orientation

@@ -1,6 +1,6 @@
 from modifiers.modifier import Modifier
 from component import _init_wrapper
-import utils
+import rl_utils as utils
 import random
 
 # this will adjust the altitude of a drone

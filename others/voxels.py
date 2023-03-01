@@ -2,7 +2,7 @@ from others.other import Other
 from component import _init_wrapper
 import random
 import numpy as np
-import utils
+import rl_utils as utils
 import binvox as bv
 
 # voxels is used to handle 3d/2d map representation of objects
