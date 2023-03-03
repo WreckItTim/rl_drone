@@ -164,7 +164,7 @@ adjust_for_yaw = True
 if test_case in []:
 	adjust_for_yaw = False
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 2 # evaluate model and save checkpoint every # of episodes
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
