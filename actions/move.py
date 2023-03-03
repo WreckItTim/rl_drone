@@ -13,7 +13,7 @@ class Move(Action):
 				base_x_rel=0, # relative x,y,z to drone
 				base_y_rel=0, 
 				base_z_rel=0, 
-				zero_threshold=0, # absolute value of rl_output below this will do nothing (true zero)
+				zero_threshold=0.01, # absolute value of rl_output below this will do nothing (true zero)
 				speed=2, # m/s
 				# set these values for continuous actions
 				# # they determine the possible ranges of output from rl algorithm
@@ -21,8 +21,7 @@ class Move(Action):
 				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 				adjust_for_yaw = False,
 			):
-				self.min_space = min_space
-				self.max_space = max_space
+		pass
 		
 	# move at input rate
 	def step(self, state, execute=True):

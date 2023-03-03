@@ -8,14 +8,13 @@ class Rotate(Action):
 	def __init__(self, 
 				drone_component, 
 				base_yaw, # radians to rotate in range [-pi, pi] (angle to sweep, relative to drone)
-				zero_threshold=0, # absolute value below this will do nothing (true zero)
+				zero_threshold=0.01,# absolute value below this will do nothing (true zero)
 				# set these values for continuous actions
 				# # they determine the possible ranges of output from rl algorithm
 				min_space = -1,
 				max_space = 1,
 			):
-				self.min_space = min_space
-				self.max_space = max_space
+		pass
 		
 	# rotate yaw at input rate
 	def step(self, state, execute=True):

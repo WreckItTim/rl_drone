@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma14'
+repo_version = 'gamma15'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -29,16 +29,16 @@ if len(args) > 3:
 
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['s1', 's2', 'h3', 'h4']:
+if test_case in ['tp', 'tb']:
 	airsim_release = 'AirSimNH'
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
-if test_case in ['sp']:
+if test_case in []:
 	airsim_release = 'Tello'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 's2']:
+if test_case in ['h4', 'tb', 's2']:
 	vert_motion = True
 
 # MLP or CNN?
@@ -54,21 +54,21 @@ if test_case in []:
 # read model and/or replay buffer?
 read_model_path = None
 read_replay_buffer_path = None
-if test_case in ['s1', 'sp']:
+if test_case in []:
 	read_model_path = 'local/models/GAMMA_model.zip'
 	run_post += '_GAMMA'
 	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in ['h3', 'pc']:
+if test_case in []:
 	read_model_path = 'local/models/GAMMA2_model.zip'
 	run_post += '_GAMMA2'
-if test_case in ['s2']:
+if test_case in []:
 	read_model_path = 'local/models/DELTA_model.zip'
 	run_post += '_DELTA'
-if test_case in ['h4']:
+if test_case in []:
 	read_model_path = 'local/models/DELTA2_model.zip'
 	run_post += '_DELTA2'
 	#read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
-if test_case in ['tp']:
+if test_case in []:
 	read_model_path = 'local/models/EPSILON_model.zip'
 	run_post += '_EPSILON'
 	#read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
@@ -114,28 +114,36 @@ training_steps = 1_000_000 # roughly 250k steps a day
 if test_case in []:
 	training_steps = 40_000 # hyper surrogate model size
 
-flat = 'big'
+flat = 'big2'
 if test_case in []:
 	flat = 'small'
+if test_case in ['s1', 's2']:
+	flat = 'big'
 
-goal_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
-	goal_reward = 'exp'
+include_resolution = True
+if test_case in ['s1', 's2']:
+	include_resolution = False
 
-step_reward = 'scale2'
-if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
-	step_reward = 'constant'
+goal_reward = 'exp'
+if test_case in ['s1', 's2']:
+	goal_reward = 'scale2'
 
-include_d = True
-if test_case in ['h3', 'h4', 'tp', 's1', 's2', 'sp', 'pc']:
-	include_d = False
+step_reward = 'constant'
+if test_case in []:
+	step_reward = 'scale2'
 
-reward_weights = [1,1,1]
-if test_case in ['h3', 'h4', 's1', 's2', 'sp', 'pc']:
-	reward_weights = [2,2,1]
+include_d = False
+if test_case in []:
+	include_d = True
+
+reward_weights = [2,2,1]
+if test_case in []:
+	reward_weights = [1,1,1]
+if include_resolution:
+	reward_weights.append(1)
 
 learning_starts = 100
-if test_case in ['tb', 'm9']:
+if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
@@ -143,20 +151,20 @@ controller_type = 'Train' # Train, Debug, Drift, Evaluate
 if test_case in []:
 	controller_type = 'Debug'
 actor = 'Teleporter' # Teleporter Continuous
-if test_case in ['sp']:
+if test_case in []:
 	actor = 'Continuous'
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 # office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
 # halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
 max_distance = 100 # distance contraint used for several calculations (see below)
-if test_case in ['sp']:
+if test_case in []:
 	max_distance = 25
 tello_goal = 'Hallway1'
 adjust_for_yaw = True
-if test_case in ['sp']:
+if test_case in []:
 	adjust_for_yaw = False
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+checkpoint = 2 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -186,6 +194,7 @@ def create_base_components(
 		learning_starts = 100, # how many steps to collect in buffer before training starts
 		tello_goal = '',
 		adjust_for_yaw = True,
+		include_resolution = True,
 ):
 
 	# **** SETUP ****
@@ -404,12 +413,22 @@ def create_base_components(
 
 		# CREATE REWARDS AND TERMINATORS
 		# REWARDS
+		rewards = []
+		# penalty for higher resolution
+		if include_resolution:
+			from rewards.resolution import Resolution
+			Resolution(
+				resolution_component = 'ResolutionAction',
+				name = 'ResolutionReward',
+			)
+			rewards.append('ResolutionReward')
 		# heavy penalty for collision
 		from rewards.collision import Collision
 		Collision(
 			drone_component = 'Drone',
 			name = 'CollisionReward',
 		)
+		rewards.append('CollisionReward')
 		# increasing reward as approaches goal
 		from rewards.goal import Goal
 		Goal(
@@ -420,6 +439,7 @@ def create_base_components(
 			include_z = True if vert_motion else False, # includes z in distance calculations
 			name = 'GoalReward',
 		)
+		rewards.append('GoalReward')
 		# penalize heavier as approaches time constraint
 		from rewards.steps import Steps
 		Steps(
@@ -427,19 +447,27 @@ def create_base_components(
 			value_type = step_reward,
 			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
+		rewards.append('StepsReward')
 		# REWARDER
 		from rewarders.schema import Schema
 		Schema(
-			rewards_components = [
-				'CollisionReward',
-				'GoalReward',
-				'StepsReward',
-			],
+			rewards_components = rewards,
 			reward_weights = reward_weights.copy(),
 			name = 'Rewarder',
 		)
 
 		# ACTIONS
+		actions = []
+		if include_resolution:
+			from actions.resolution import Resolution 
+			Resolution(
+				scales_components = [
+					'FlattenedDepth',
+				],
+				max_level = 3,
+				name = 'ResolutionAction',
+			)
+			actions.append('ResolutionAction')
 		if rl_model in ['TD3']:
 			base_distance = 10 # meters, will multiply rl_output by this value
 			base_yaw = math.pi # degrees, will multiply rl_output by this value
@@ -457,10 +485,8 @@ def create_base_components(
 				min_space = -1, # allows left and right rotations
 				name = 'Rotate',
 			)
-			actions = [
-				'MoveForward',
-				'Rotate'
-			]
+			actions.append('MoveForward')
+			actions.append('Rotate')
 			if vert_motion:
 				Move(
 					drone_component = 'Drone', 
@@ -521,17 +547,15 @@ def create_base_components(
 				yaw_rate = -1 * math.pi / 2,
 				name = 'FixedRotate6',
 			)
-			actions = [
-				'FixedForward1',
-				'FixedForward2',
-				'FixedForward3',
-				'FixedRotate1',
-				'FixedRotate2',
-				'FixedRotate3',
-				'FixedRotate4',
-				'FixedRotate5',
-				'FixedRotate6',
-			]
+			actions.append('FixedForward1')
+			actions.append('FixedForward2')
+			actions.append('FixedForward3')
+			actions.append('FixedRotate1')
+			actions.append('FixedRotate2')
+			actions.append('FixedRotate3')
+			actions.append('FixedRotate4')
+			actions.append('FixedRotate5')
+			actions.append('FixedRotate6')
 			if vert_motion:
 				FixedMove(
 					drone_component = 'Drone', 
@@ -635,7 +659,9 @@ def create_base_components(
 			name = 'NormalizeOrientation',
 		)
 		Normalize(
+			min_input = max_distance / 1000, # min depth (below this is erroneous)
 			max_input = max_distance, # max depth
+			left = 0, # all values below min_input are erroneous
 			name = 'NormalizeDistance',
 		)
 		Normalize(
@@ -643,8 +669,13 @@ def create_base_components(
 			name = 'NormalizeMD2',
 		)
 		from transformers.resizeimage import ResizeImage
+		image_shape=(84,84) 
+		if flat == 'big':
+			image_shape=(64,64) 
+		if flat == 'big2':
+			image_shape=(81,81) 
 		ResizeImage(
-			image_shape=(64,64) if flat=='big' else (84,84),
+			image_shape=image_shape,
 			name = 'ResizeImage',
 		)
 		if airsim_release == 'Tello':
@@ -718,6 +749,9 @@ def create_base_components(
 			from transformers.resizeflat import ResizeFlat
 			max_cols = [8*(i+1) for i in range(8)] # splits depth map by columns
 			max_rows = [8*(i+1) for i in range(8)] # splits depth map by rows
+			if flat == 'big2':
+				max_cols = [9*(i+1) for i in range(9)] # splits depth map by columns
+				max_rows = [9*(i+1) for i in range(9)] # splits depth map by rows
 			if flat == 'small':
 				max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
 				max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
@@ -1077,6 +1111,7 @@ configuration = create_base_components(
 		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
 		tello_goal = tello_goal,
 		adjust_for_yaw = adjust_for_yaw,
+		include_resolution = include_resolution,
 )
 
 # make dir to save all tello imgs to
