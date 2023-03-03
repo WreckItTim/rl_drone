@@ -462,7 +462,7 @@ def create_base_components(
 			from actions.resolution import Resolution 
 			Resolution(
 				scales_components = [
-					'FlattenedDepth',
+					'ResizeFlat',
 				],
 				max_level = 3,
 				name = 'ResolutionAction',
