@@ -38,7 +38,7 @@ if test_case in []:
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h4', 'tb', 's2']:
+if test_case in ['h3', 'tb', 's2']:
 	vert_motion = True
 
 # MLP or CNN?
