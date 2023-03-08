@@ -124,17 +124,15 @@ include_resolution = False
 if test_case in []:
 	include_resolution = True
 
-goal_reward = 'scale2'
+distance_reward = 'scale2'
 if test_case in []:
-	goal_reward = 'exp'
+	distance_reward = 'exp'
 
 step_reward = 'constant'
 if test_case in []:
 	step_reward = 'scale2'
 
-reward_weights = [1,1,1]
-if test_case in []:
-	reward_weights = [2,2,1]
+reward_weights = [1, 1, 100, 100, 0]
 if include_resolution:
 	reward_weights = [1] + reward_weights
 
@@ -162,7 +160,7 @@ adjust_for_yaw = True
 if test_case in []:
 	adjust_for_yaw = False
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 2 # evaluate model and save checkpoint every # of episodes
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -181,7 +179,7 @@ def create_base_components(
 		nTimesteps = 4, # number of timesteps to use in observation space
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		flat = 'big', # determines size of flattened depth sensor array 
-		goal_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
+		distance_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
 		step_reward = 'scale2', # reward function that penalizes longer episode length
 		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
 		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
@@ -420,6 +418,24 @@ def create_base_components(
 				name = 'ResolutionReward',
 			)
 			rewards.append('ResolutionReward')
+		# penalize heavier as approaches time constraint
+		from rewards.steps import Steps
+		Steps(
+			name = 'StepsReward',
+			value_type = step_reward,
+		)
+		rewards.append('StepsReward')
+		# increasing reward as approaches goal
+		from rewards.distance import Distance
+		Distance(
+			drone_component = 'Drone',
+			goal_component = 'Goal',
+			value_type = distance_reward,
+			max_distance = max_distance, # scale in meters
+			include_z = True if vert_motion else False, # includes z in distance calculations
+			name = 'DistanceReward',
+		)
+		rewards.append('DistanceReward')
 		# heavy penalty for collision
 		from rewards.collision import Collision
 		Collision(
@@ -432,20 +448,17 @@ def create_base_components(
 		Goal(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
-			value_type = goal_reward,
-			tolerance = 0 if airsim_release == 'Tello' else 4,
 			include_z = True if vert_motion else False, # includes z in distance calculations
+			tolerance = 0 if airsim_release == 'Tello' else 4,
 			name = 'GoalReward',
 		)
 		rewards.append('GoalReward')
-		# penalize heavier as approaches time constraint
-		from rewards.steps import Steps
-		Steps(
-			name = 'StepsReward',
-			value_type = step_reward,
+		from rewards.maxsteps import MaxSteps
+		MaxSteps(
+			name = 'MaxStepsReward',
 			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
-		rewards.append('StepsReward')
+		rewards.append('MaxStepsReward')
 		# REWARDER
 		from rewarders.schema import Schema
 		Schema(
@@ -1074,7 +1087,7 @@ configuration = create_base_components(
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
 		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
-		goal_reward = goal_reward, # reward function that penalizes distance to goal (large positive fore reaching)
+		distance_reward = distance_reward, # reward function that penalizes distance to goal (large positive fore reaching)
 		step_reward = step_reward, # reward function that penalizes longer episode length
 		flat = flat, # determines size of flattened depth sensor array 
 		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process

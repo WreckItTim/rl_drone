@@ -19,7 +19,7 @@ class Collision(Reward):
 		value = 0
 		done = False
 		if has_collided:
-			value = -10
+			value = -1
 			done = True
 		if done and self.terminate:
 			state['termination_reason'] = 'collision'

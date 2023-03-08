@@ -108,15 +108,17 @@ class EvaluatorCharlie(Modifier):
 		observation_data = self._evaluate_environment.reset()
 		# start episode
 		done = False
+		total_reward = 0
 		while(not done):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
 			# take next step
 			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
+			total_reward += reward
 		# call end for modifiers
 		self._model.end()
 		# end of episode
-		return state['termination_result'] == 'success', reward
+		return state['termination_result'] == 'success', total_reward
 
 	# evaluates all episodes for this next set
 	def evaluate_set(self):

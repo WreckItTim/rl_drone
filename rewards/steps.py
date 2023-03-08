@@ -8,43 +8,17 @@ class Steps(Reward):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			  max_steps=4, # initial number of max steps before episode termination (use update_steps to scale)
 			  value_type='scale2', # see if statements in step() function
-			  update_steps=True, # if True, will add more steps for further distance to goal
-			  step_ratio=1, # steps added per meter of distance to goal (added to initial max_steps)
-			  terminate=True, # if True will terminate episodes when steps reached
 			  ):
 		super().__init__()
-		self._max_steps = max_steps # make private to possibly update (still want to save to config file)
 
 	# calculates rewards from agent's current state (call to when taking a step)
 	def step(self, state):
 		nSteps = state['nSteps']
-		s = nSteps / self._max_steps
 
-		if self.value_type == 'exp':
-			value = 1-1/math.exp(math.log(0.5)*s**2)
 		if self.value_type == 'constant':
 			value = -1
 		if self.value_type == 'scale':
 			value = -1 * nSteps
-		if self.value_type == 'scale2':
-			value = -1*s
 
-		done = False
-		if nSteps >= self._max_steps:
-			done = True
-		if done and self.terminate:
-			#value = -10
-			state['termination_reason'] = 'steps'
-			state['termination_result'] = 'failure'
-		return value, done and self.terminate
-
-	# update max steps based on goal distance
-	def reset(self, state):
-		if self.update_steps:
-			_drone_position = np.array(state['drone_position'])
-			_goal_position = np.array(state['goal_position'])
-			distance_vector = _goal_position - _drone_position
-			distance = np.linalg.norm(distance_vector)
-			self._max_steps = self.max_steps + int(self.step_ratio*distance)
+		return value, False
