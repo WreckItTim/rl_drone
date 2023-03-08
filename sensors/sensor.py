@@ -29,3 +29,8 @@ class Sensor(Component):
 
 	def connect(self, state=None):
 		super().connect()
+		
+	def reset(self, state=None):
+		if self._transformers is not None:
+			for transformer in self._transformers:
+				transformer.reset(state)

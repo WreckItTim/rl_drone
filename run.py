@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma15'
+repo_version = 'gamma16'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -12,7 +12,7 @@ repo_version = 'gamma15'
 args = sys.argv
 # first sys argument is test_case to run (see options below)
 	# if no arguments will default to test_case 'H4' - blocks, horizontal motion, with an MLP
-test_case = 'h4'
+test_case = ''
 if len(args) > 1:
 	test_case = args[1].lower()
 # second sys argument is to continue training from last checkpoint (True) or not (False)
@@ -29,16 +29,16 @@ if len(args) > 3:
 
 # airsim map to use?
 airsim_release = 'Blocks'
-if test_case in ['tp', 'tb']:
+if test_case in []:
 	airsim_release = 'AirSimNH'
-if test_case in ['pc']:
+if test_case in []:
 	airsim_release = 'CityEnviron'
 if test_case in []:
 	airsim_release = 'Tello'
 
 # unlock vertical motion?
 vert_motion = False
-if test_case in ['h3', 'tb', 's2']:
+if test_case in []:
 	vert_motion = True
 
 # MLP or CNN?
@@ -117,30 +117,26 @@ if test_case in []:
 flat = 'big2'
 if test_case in []:
 	flat = 'small'
-if test_case in ['s1', 's2']:
+if test_case in []:
 	flat = 'big'
 
-include_resolution = True
-if test_case in ['s1', 's2']:
-	include_resolution = False
+include_resolution = False
+if test_case in []:
+	include_resolution = True
 
-goal_reward = 'exp'
-if test_case in ['s1', 's2']:
-	goal_reward = 'scale2'
+goal_reward = 'scale2'
+if test_case in []:
+	goal_reward = 'exp'
 
 step_reward = 'constant'
 if test_case in []:
 	step_reward = 'scale2'
 
-include_d = False
+reward_weights = [1,1,1]
 if test_case in []:
-	include_d = True
-
-reward_weights = [2,2,1]
-if test_case in []:
-	reward_weights = [1,1,1]
+	reward_weights = [2,2,1]
 if include_resolution:
-	reward_weights.append(1)
+	reward_weights = [1] + reward_weights
 
 learning_starts = 100
 if test_case in []:
@@ -159,12 +155,14 @@ clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-qu
 max_distance = 100 # distance contraint used for several calculations (see below)
 if test_case in []:
 	max_distance = 25
-tello_goal = 'Hallway1'
+tello_goal = ''
+if test_case in []:
+	tello_goal = 'Hallway1'
 adjust_for_yaw = True
 if test_case in []:
 	adjust_for_yaw = False
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+checkpoint = 2 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -627,24 +625,19 @@ def create_base_components(
 		# TRANSFORMERS
 		from transformers.gaussiannoise import GaussianNoise
 		GaussianNoise(
-			deviation = 0, # start at 0 meters in noise
-			deviation_amp = 0.1, # amp up noise by 0.1 meters
-			name = 'PositionNoise',
-		)
-		GaussianNoise(
 			deviation = 0, # start at 0 radians in noise
-			deviation_amp = math.radians(1), # amp up noise by 1 radian
+			deviation_amp = math.radians(1), # amp up noise by 1 degree
 			name = 'OrientationNoise',
 		)
 		GaussianNoise(
 			deviation = 0, # start at 0  meters in noise
-			deviation_amp = 0.2, # amp up noise by 0.2 meters
+			deviation_amp = 0.1, # amp up noise by 0.1 meters
 			name = 'DistanceNoise',
 		)
 		from transformers.gaussianblur import GaussianBlur
 		GaussianBlur(
 			sigma = 0, # start at 0 noise
-			sigma_amp = 0.25, # amp up noise by .25 sigma
+			sigma_amp = 0.1, # amp up noise by .1 sigma
 			name = 'DepthNoise',
 		)
 		from transformers.normalize import Normalize
@@ -690,12 +683,6 @@ def create_base_components(
 			actor_component = 'Actor',
 			name = 'ActionsSensor',
 			)
-		# keep track of time steps
-		from sensors.steps import Steps
-		Steps(
-			steps_component = 'StepsReward',
-			name = 'StepsSensor',
-			)
 		# sense linear distance to goal
 		from sensors.distance import Distance
 		Distance(
@@ -704,7 +691,8 @@ def create_base_components(
 			include_z = False,
 			prefix = 'drone_to_goal',
 			transformers_components = [
-				'PositionNoise',
+				'DistanceNoise',
+				'NormalizeDistance',
 				], 
 			name = 'GoalDistance',
 		)
@@ -720,15 +708,6 @@ def create_base_components(
 				],
 			name = 'GoalOrientation',
 		)
-		# sense normalized distance from start to goal
-		from sensors.goaldistance import GoalDistance
-		GoalDistance(
-			drone_component = 'Drone',
-			goal_component = 'Goal',
-			include_z = vert_motion,
-			prefix = 'GoalDistance',
-			name = 'GoalDistance2',
-		)
 		if vert_motion:
 			# sense altitude distance to goal
 			Distance(
@@ -738,7 +717,7 @@ def create_base_components(
 				include_y = False,
 				prefix = 'drone_to_goal',
 				transformers_components = [
-					'PositionNoise',
+					'DistanceNoise',
 					'NormalizeDistance',
 					],
 				name = 'GoalAltitude',
@@ -786,11 +765,8 @@ def create_base_components(
 
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
-		vector_sensors = ['ActionsSensor', 'StepsSensor', 'GoalDistance', 'GoalOrientation']
-		vector_length = 1 + 1 + 1 # 1 for StepsSensor, 1 for GoalDistance, 1 for GoalOrientation
-		if include_d:
-			vector_sensors.append('GoalDistance2')
-			vector_length += 1 # 1 for GoalDistance2
+		vector_sensors = ['ActionsSensor', 'GoalDistance', 'GoalOrientation']
+		vector_length = 1 + 1 # 1 for GoalDistance, 1 for GoalOrientation
 		if rl_model in ['DQN']:
 			vector_length += 1 # DQN adds only one action for ActionSensor
 		if rl_model in ['TD3']:
@@ -963,7 +939,6 @@ def create_base_components(
 			evaluate_environment_component = 'EvaluateEnvironment',
 			model_component = 'Model',
 			noises_components = [
-				'PositionNoise', 
 				'OrientationNoise', 
 				'DistanceNoise', 
 				],
@@ -1106,7 +1081,6 @@ configuration = create_base_components(
 		hyper_params = hyper_params, # which hyper parameters to hyper tune if model is type hyper
 		read_model_path = read_model_path, # load pretrained model?
 		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
-		include_d = include_d, # inculde little d=distance/start_distance in sensors
 		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
 		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
 		tello_goal = tello_goal,
