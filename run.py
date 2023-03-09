@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma16'
+repo_version = 'gamma17'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -159,6 +159,12 @@ if test_case in []:
 adjust_for_yaw = True
 if test_case in []:
 	adjust_for_yaw = False
+
+include_bottom = True
+if test_case in []:
+	include_bottom = False
+
+
 nTimesteps = 4 # number of timesteps to use in observation space
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
@@ -191,6 +197,7 @@ def create_base_components(
 		tello_goal = '',
 		adjust_for_yaw = True,
 		include_resolution = True,
+		include_bottom = False,
 ):
 
 	# **** SETUP ****
@@ -410,14 +417,20 @@ def create_base_components(
 		# CREATE REWARDS AND TERMINATORS
 		# REWARDS
 		rewards = []
-		# penalty for higher resolution
+		# penalty for higher resolutions
 		if include_resolution:
 			from rewards.resolution import Resolution
 			Resolution(
-				resolution_component = 'ResolutionAction',
+				resolution_component = 'FlattenedDepthResolution',
 				name = 'ResolutionReward',
 			)
 			rewards.append('ResolutionReward')
+			if include_bottom:
+				Resolution(
+					resolution_component = 'FlattenedDepthResolution2',
+					name = 'ResolutionReward2',
+				)
+				rewards.append('ResolutionReward2')
 		# penalize heavier as approaches time constraint
 		from rewards.steps import Steps
 		Steps(
@@ -476,9 +489,18 @@ def create_base_components(
 					'ResizeFlat',
 				],
 				max_level = 3,
-				name = 'ResolutionAction',
+				name = 'FlattenedDepthResolution',
 			)
-			actions.append('ResolutionAction')
+			actions.append('FlattenedDepthResolution')
+			if include_bottom:
+				Resolution(
+					scales_components = [
+						'ResizeFlat2',
+					],
+					max_level = 3,
+					name = 'FlattenedDepthResolution',
+				)
+				actions.append('FlattenedDepthResolution2')
 		if rl_model in ['TD3']:
 			base_distance = 10 # meters, will multiply rl_output by this value
 			base_yaw = math.pi # degrees, will multiply rl_output by this value
@@ -620,7 +642,6 @@ def create_base_components(
 					name='Actor',
 				)
 			if actor == 'Teleporter':
-				print('teleporter ACTIVE')
 				from actors.teleporter import Teleporter
 				Teleporter(
 					drone_component = 'Drone',
@@ -752,6 +773,11 @@ def create_base_components(
 				max_rows = max_rows,
 				name = 'ResizeFlat',
 			)
+			ResizeFlat(
+				max_cols = max_cols,
+				max_rows = max_rows,
+				name = 'ResizeFlat2',
+			)
 			if airsim_release == 'Tello':
 				from sensors.portcamera import PortCamera
 				PortCamera(
@@ -775,6 +801,19 @@ def create_base_components(
 						],
 					name = 'FlattenedDepth',
 					)
+				if include_bottom:
+					AirSimCamera(
+						airsim_component = 'Map',
+						camera_view='3', 
+						transformers_components = [
+							'ResizeImage',
+							#'DepthNoise',
+							'ResizeFlat2',
+							'DistanceNoise',
+							'NormalizeDistance',
+							],
+						name = 'FlattenedDepth2',
+						)
 
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
@@ -790,6 +829,9 @@ def create_base_components(
 		if policy == 'MlpPolicy':
 			vector_sensors.append('FlattenedDepth')
 			vector_length += len(max_cols) * len(max_rows) # several more vector elements
+			if include_bottom:
+				vector_sensors.append('FlattenedDepth2')
+				vector_length += len(max_cols) * len(max_rows) # several more vector elements
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
@@ -1099,11 +1141,12 @@ configuration = create_base_components(
 		tello_goal = tello_goal,
 		adjust_for_yaw = adjust_for_yaw,
 		include_resolution = include_resolution,
+		include_bottom = include_bottom.
 )
 
 # make dir to save all tello imgs to
 tell_img_path = utils.get_global_parameter('working_directory') + 'tello_imgs/'
-if test_case in ['sp'] and not os.path.exists(tell_img_path):
+if release_path == 'Tello' and not os.path.exists(tell_img_path):
 	os.makedirs(tell_img_path)
 
 # create any other components
