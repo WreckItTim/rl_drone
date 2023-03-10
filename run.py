@@ -120,9 +120,9 @@ if test_case in []:
 if test_case in []:
 	flat = 'big'
 
-include_resolution = False
+include_resolution = True
 if test_case in []:
-	include_resolution = True
+	include_resolution = False
 
 distance_reward = 'scale2'
 if test_case in []:
@@ -132,11 +132,11 @@ step_reward = 'constant'
 if test_case in []:
 	step_reward = 'scale2'
 
-reward_weights = [1, 1, 100, 100, 0]
+reward_weights = [1/1000, 1/1000, 1, 1, 0]
 if include_resolution:
-	reward_weights = [1] + reward_weights
+	reward_weights = [1/1000, 1/1000] + reward_weights
 
-learning_starts = 100
+learning_starts = 200
 if test_case in []:
 	learning_starts = 500
 
@@ -498,7 +498,7 @@ def create_base_components(
 						'ResizeFlat2',
 					],
 					max_level = 3,
-					name = 'FlattenedDepthResolution',
+					name = 'FlattenedDepthResolution2',
 				)
 				actions.append('FlattenedDepthResolution2')
 		if rl_model in ['TD3']:
@@ -1141,12 +1141,12 @@ configuration = create_base_components(
 		tello_goal = tello_goal,
 		adjust_for_yaw = adjust_for_yaw,
 		include_resolution = include_resolution,
-		include_bottom = include_bottom.
+		include_bottom = include_bottom,
 )
 
 # make dir to save all tello imgs to
 tell_img_path = utils.get_global_parameter('working_directory') + 'tello_imgs/'
-if release_path == 'Tello' and not os.path.exists(tell_img_path):
+if airsim_release == 'Tello' and not os.path.exists(tell_img_path):
 	os.makedirs(tell_img_path)
 
 # create any other components
