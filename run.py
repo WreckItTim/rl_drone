@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma17'
+repo_version = 'gamma18'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -37,9 +37,9 @@ if test_case in []:
 	airsim_release = 'Tello'
 
 # unlock vertical motion?
-vert_motion = False
+vert_motion = True
 if test_case in []:
-	vert_motion = True
+	vert_motion = False
 
 # MLP or CNN?
 policy = 'MlpPolicy' # MLP (flattened depth map)
@@ -132,11 +132,12 @@ step_reward = 'constant'
 if test_case in []:
 	step_reward = 'scale2'
 
-reward_weights = [1/1000, 1/1000, 1, 1, 0]
+# res1 res2 steps distance collision goal max_steps
+reward_weights = [1/2, 1/2, 20, 20, 0]
 if include_resolution:
-	reward_weights = [1/1000, 1/1000] + reward_weights
+	reward_weights = [1/8, 1/8] + reward_weights
 
-learning_starts = 200
+learning_starts = 100
 if test_case in []:
 	learning_starts = 500
 
@@ -220,6 +221,8 @@ def create_base_components(
 		model_component = 'Model', # if using train, set model
 		environment_component = 'TrainEnvironment', # if using train, set train environment
 		tb_log_name = 'tb_log', # logs tensor board to this directory
+		log_interval = 10,
+		evaluator = 'Evaluator',
 		)
 
 	# SET META DATA (anything you want here, just writes to config file as a dict)
@@ -415,6 +418,7 @@ def create_base_components(
 				)
 
 		# CREATE REWARDS AND TERMINATORS
+
 		# REWARDS
 		rewards = []
 		# penalty for higher resolutions
@@ -488,7 +492,6 @@ def create_base_components(
 				scales_components = [
 					'ResizeFlat',
 				],
-				max_level = 3,
 				name = 'FlattenedDepthResolution',
 			)
 			actions.append('FlattenedDepthResolution')
@@ -497,7 +500,6 @@ def create_base_components(
 					scales_components = [
 						'ResizeFlat2',
 					],
-					max_level = 3,
 					name = 'FlattenedDepthResolution2',
 				)
 				actions.append('FlattenedDepthResolution2')
@@ -906,6 +908,7 @@ def create_base_components(
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
+					action_noise = 'normal',
 					name='Model',
 				)
 			if rl_model == 'DQN':

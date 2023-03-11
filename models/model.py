@@ -2,6 +2,25 @@
 from component import Component
 import rl_utils as utils
 from os.path import exists
+import wandb
+from wandb.integration.sb3 import WandbCallback
+from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.callbacks import BaseCallback
+
+class TensorboardCallback(BaseCallback):
+	"""
+	Custom callback for plotting additional values in tensorboard.
+	"""
+	def __init__(self, evaluator, verbose=0):
+		super().__init__(verbose)
+		self.evaluator = evaluator
+	def _on_step(self) -> bool:
+		best_distance = self.evaluator.best_distance
+		self.logger.record("best_distance", best_distance)
+		best_reward = self.evaluator.best_reward
+		self.logger.record("best_reward", best_reward)
+		best_noise = self.evaluator.best_noise
+		self.logger.record("best_noise", best_noise)
 
 class Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
@@ -14,6 +33,9 @@ class Model(Component):
 			  ):
 		# if the model is a hyper parameter tuner, some things get handeled differently
 		self._is_hyper = False
+		if _model_arguments['action_noise'] == 'normal':
+			print('action noise added')
+			_model_arguments['action_noise'] = NormalActionNoise(0, .1)
 		self._model_arguments = _model_arguments
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
@@ -83,15 +105,34 @@ class Model(Component):
 		log_interval = -1,
 		tb_log_name = None,
 		reset_num_timesteps = False,
+		evaluator=None,
 		):
+		config = {
+			"policy_type": self.policy,
+			"total_timesteps": total_timesteps,
+		}
+		run = wandb.init(
+			project="sb3",
+			config=config,
+			name = utils.get_global_parameter('run_name'),
+			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+			monitor_gym=False,  # auto-upload the videos of agents playing the game
+			save_code=False,  # optional
+		)
 		# call sb3 learn method
 		self._sb3model.learn(
 			total_timesteps,
-			callback = callback,
+			callback=[
+				TensorboardCallback(evaluator),
+				WandbCallback(
+					gradient_save_freq=100,
+					),
+			],
 			log_interval= log_interval,
 			tb_log_name = tb_log_name,
 			reset_num_timesteps = reset_num_timesteps,
 		)
+		run.finish()
 		
 	# makes a single prediction g;iven input data
 	def predict(self, rl_input):

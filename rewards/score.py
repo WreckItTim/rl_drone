@@ -4,16 +4,18 @@ import numpy as np
 import math
 import rl_utils as utils
 
-# calculates distance between drone and point relative to starting position/orientation
-class Distance(Reward):
+# generates a final score for ending episode
+class Score(Reward):
 	# constructor, set the relative point and min-max distances to normalize by
 	@_init_wrapper
 	def __init__(self,
 				drone_component, 
 				goal_component, 
-			  	value_type='scale2', # see if statements in step() function
-				max_distance = 100, # scale in meters
-				include_z=True,
+				include_z = True, # include z in distance calculations
+				tolerance=4, # min distance from goal for success 
+				# if to_start=True will calculate rewards relative to start position
+				# if to_start=False will calculate rewards relative to last position
+				terminate=True, # =True will terminate episodes when Goal
 		):
 		super().__init__()
 		#self.init_normalization()
@@ -30,20 +32,14 @@ class Distance(Reward):
 	
 	# get reward based on distance to point 
 	def step(self, state):
-		this_distance = self.get_distance()
-		delta_distance = self._last_distance - this_distance
+		distance = self.get_distance()
 
-		d = delta_distance / self.max_distance
+		done = False
+		value = 0
+		if distance <= self.tolerance:
+			value = 1
+			done = True
+			state['termination_reason'] = 'goal'
+			state['termination_result'] = 'success'
 
-		if self.value_type == 'exp':
-			value = 2 * (math.exp(math.log(0.5)*d) - 0.5)
-		if self.value_type == 'scale':
-			value = delta_distance
-		if self.value_type == 'scale2':
-			value = d
-
-		self._last_distance = this_distance
-		return value, False
-
-	def reset(self, state):
-		self._last_distance = self.get_distance()
+		return value, done and self.terminate

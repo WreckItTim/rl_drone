@@ -43,3 +43,4 @@ python -m pip install tensorboard==2.11.2
 python -m pip install nvidia-smi==0.1.3
 python -m pip install nvidia-ml-py3==7.352.0
 python -m pip install nvitop==1.0.0
+python -m pip install wandb==0.13.11

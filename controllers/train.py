@@ -11,6 +11,7 @@ class Train(Controller):
 	def __init__(self, 
 				 model_component,
 				 environment_component,
+				 evaluator_component,
 				 continue_training=True,
 				 total_timesteps = 1_000_000,
 				 callback = None,
@@ -45,4 +46,5 @@ class Train(Controller):
 			log_interval = self.log_interval,
 			tb_log_name = self.tb_log_name,
 			reset_num_timesteps = not self.continue_training,
+			evaluator = self._evaluator,
 			)

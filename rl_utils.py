@@ -65,6 +65,8 @@ def get_controller(controller_type,
 				   environment_component = 'TrainEnvironment',
 				   evaluator_component = 'Evaluator',
 				   tb_log_name = 'run',
+				   log_interval = -1,
+				   evaluator = 'Evaluator',
 				   ):
 	# create CONTROLLER - controls all components (mode)
 	controller = None
@@ -83,9 +85,10 @@ def get_controller(controller_type,
 		controller = Train(
 			model_component = model_component,
 			environment_component = environment_component,
+			evaluator_component = evaluator_component,
 			total_timesteps = total_timesteps,
 			callback = None,
-			log_interval = -1,
+			log_interval = log_interval,
 			tb_log_name = tb_log_name,
 			continue_training = continue_training,
 			)

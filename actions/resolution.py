@@ -13,7 +13,7 @@ class Resolution(Action):
 				# # they determine the possible ranges of output from rl algorithm
 				min_space = 0, # will scale base values by this range from rl_output
 				max_space = 1, # min_space to -1 will allow you to reverse positive motion
-				max_level = 3, # levels of resolution scale down by (do not include zero)
+				max_level = 4, # levels of resolution scale down by (do not include zero)
 					# for example, if want to scale down by zero or one level then levels=1
 				adjust_for_yaw = False,
 			):
