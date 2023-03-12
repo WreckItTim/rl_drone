@@ -14,9 +14,8 @@ class Train(Controller):
 				 evaluator_component,
 				 continue_training=True,
 				 total_timesteps = 1_000_000,
-				 callback = None,
+				 use_wandb = True,
 				 log_interval = -1,
-				 tb_log_name = None,
 				 ):
 		super().__init__()
 
@@ -42,9 +41,8 @@ class Train(Controller):
 		# learn baby learn
 		self._model.learn(
 			total_timesteps = _total_timesteps,
-			callback = self.callback,
 			log_interval = self.log_interval,
-			tb_log_name = self.tb_log_name,
+			use_wandb = self.use_wandb,
 			reset_num_timesteps = not self.continue_training,
 			evaluator = self._evaluator,
 			)

@@ -33,7 +33,7 @@ class AirSimDrone(Drone):
 		self._airsim._client.armDisarm(True)
 		#self._airsim._client.pause(False)
 
-		time.sleep(0.1)
+		#time.sleep(0.1)
 		self.take_off()
 		self.check_collision()
 

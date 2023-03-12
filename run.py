@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma18'
+repo_version = 'gamma19'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -220,7 +220,7 @@ def create_base_components(
 		continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 		model_component = 'Model', # if using train, set model
 		environment_component = 'TrainEnvironment', # if using train, set train environment
-		tb_log_name = 'tb_log', # logs tensor board to this directory
+		use_wandb = True, # logs tensor board and wandb
 		log_interval = 10,
 		evaluator = 'Evaluator',
 		)
@@ -277,6 +277,7 @@ def create_base_components(
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
+			model_component='Model',
 			name='TrainEnvironment',
 		)
 		# CREATE EVALUATE ENVIRONMENT
@@ -286,6 +287,7 @@ def create_base_components(
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
+			model_component='Model',
 			is_evaluation_env=True,
 			name='EvaluateEnvironment',
 		)

@@ -21,6 +21,7 @@ class GoalEnv(Environment):
 				 observer_component, 
 				 rewarder_component, 
 				 goal_component,
+				 model_component,
 				 others_components=None,
 				 step_counter=0, 
 				 episode_counter=0, 
@@ -91,6 +92,9 @@ class GoalEnv(Environment):
 		self._states[this_step] = {}
 		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
+		# add noise to action?
+		if not self.is_evaluation_env and self._model._model_arguments['action_noise'] is not None:
+			rl_output += self._model._model_arguments['action_noise']._noise
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
 		# take action

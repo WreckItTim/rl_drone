@@ -3,9 +3,58 @@ from component import Component
 import rl_utils as utils
 from os.path import exists
 import wandb
+import numpy as np
 from wandb.integration.sb3 import WandbCallback
-from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
+
+class NormalActionNoise2(ActionNoise):
+	"""
+	A Gaussian action noise.
+
+	:param mean: Mean value of the noise
+	:param sigma: Scale of the noise (std here)
+	:param dtype: Type of the output noise
+	"""
+
+	def __init__(self, 
+	mean, 
+	sigma, 
+	clip, 
+	exploration_fraction=0.1, 
+	exploration_initial_eps=1.0, 
+	exploration_final_eps=0.05,
+	):
+		self._mu = mean
+		self._sigma = sigma
+		self._clip = clip
+		self._fraction = exploration_fraction
+		self._initial = exploration_initial_eps
+		self._final = exploration_final_eps
+		self._nSteps = 0
+		self._max_steps = 1_000_000 # set before learn
+		self._noise = 0
+		super().__init__()
+
+	def __call__(self) -> np.ndarray:
+		self._noise = 0
+		self._nSteps += 1
+		progress_remaining = 1.0 - self._nSteps / self._max_steps
+		if (1 - progress_remaining) > self._fraction :
+			proba = self._final
+		else:
+			proba =  self._initial + (1 - progress_remaining) * (self._final  - self._initial) / self._fraction
+		if np.random.uniform() < proba:
+			self._noise = max(-1*self._clip, (min(self._clip, 
+				np.random.normal(self._mu, self._sigma)
+			)))
+		return self._noise
+
+	def reset_learning(self, state=None):
+		self._nSteps = 0
+
+	def __repr__(self) -> str:
+		return f"NormalActionNoise(mu={self._mu}, sigma={self._sigma})"
 
 class TensorboardCallback(BaseCallback):
 	"""
@@ -34,11 +83,16 @@ class Model(Component):
 		# if the model is a hyper parameter tuner, some things get handeled differently
 		self._is_hyper = False
 		if _model_arguments['action_noise'] == 'normal':
-			print('action noise added')
-			_model_arguments['action_noise'] = NormalActionNoise(0, .1)
+			_model_arguments['action_noise'] = NormalActionNoise2(0, .05, .1)
 		self._model_arguments = _model_arguments
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
+
+	def reset_learning(self, state=None):
+		super().reset_learning(state)
+		# reset noise 
+		if self._model_arguments['action_noise'] is not None:
+			self._model_arguments['action_noise'].reset_learning(state)
 
 	def connect(self):
 		super().connect()
@@ -101,9 +155,8 @@ class Model(Component):
 	# runs learning loop on model
 	def learn(self, 
 		total_timesteps=10_000,
-		callback = None,
+		use_wandb = True,
 		log_interval = -1,
-		tb_log_name = None,
 		reset_num_timesteps = False,
 		evaluator=None,
 		):
@@ -119,17 +172,23 @@ class Model(Component):
 			monitor_gym=False,  # auto-upload the videos of agents playing the game
 			save_code=False,  # optional
 		)
-		# call sb3 learn method
-		self._sb3model.learn(
-			total_timesteps,
-			callback=[
+		callback = None
+		if use_wandb:
+			callback = [
 				TensorboardCallback(evaluator),
 				WandbCallback(
 					gradient_save_freq=100,
 					),
-			],
+			]
+		# set noise 
+		if self._model_arguments['action_noise'] is not None:
+			self._model_arguments['action_noise']._max_steps = total_timesteps
+		# call sb3 learn method
+		self._sb3model.learn(
+			total_timesteps,
+			callback=callback,
 			log_interval= log_interval,
-			tb_log_name = tb_log_name,
+			tb_log_name = 'tb_log',
 			reset_num_timesteps = reset_num_timesteps,
 		)
 		run.finish()
