@@ -16,12 +16,7 @@ class Spawn(Other):
 				 y=0,
 				 z=0,
 				 yaw=0,
-				 x_min=0, 
-				 x_max=0, 
-				 y_min=0, 
-				 y_max=0, 
-				 z_min=0, 
-				 z_max=0,
+				 bounds_component=None,
 				 yaw_min=0,
 				 yaw_max=0,
 				 random=False,
@@ -39,9 +34,7 @@ class Spawn(Other):
 
 	# uniform distribution between passed in range
 	def get_random_pos(self):
-		x = random.uniform(self.x_min, self.x_max)
-		y = random.uniform(self.y_min, self.y_max)
-		z = random.uniform(self.z_min, self.z_max)
+		x,y,z = self._bounds.get_random()
 		in_object = self._map.at_object_2d(x, y)
 		return x, y, z, in_object
 	

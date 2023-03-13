@@ -48,6 +48,7 @@ class GoalEnv(Environment):
 		self._track_save = track_save
 		self._track_vars = track_vars.copy()
 
+
 	# if reset learning loop
 	def reset_learning(self):
 		self.step_counter = 0 # total steps

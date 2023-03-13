@@ -396,9 +396,6 @@ def create_base_components(
 					)
 		else:
 			# CREATE GOAL
-			x_bounds = [-1*max_distance, max_distance]
-			y_bounds = [-1*max_distance, max_distance]
-			z_bounds = [-4, -4]
 			# dynamic goal will spawn in bounds - randomly for train, static for evaluate
 			# goal distance will increase, "amp up", with curriculum learning
 			RelativeGoal(
@@ -407,17 +404,14 @@ def create_base_components(
 				xyz_point = [6, 6, 0],
 				random_point_on_train = True,
 				random_point_on_evaluate = False,
-				random_dim_min = 4,
+				random_dim_min = 6,
 				random_dim_max = 8,
-				x_bounds = x_bounds,
-				y_bounds = y_bounds,
-				z_bounds = z_bounds,
 				random_yaw_on_train = True,
 				random_yaw_on_evaluate = False,
 				random_yaw_min = -1 * math.pi,
 				random_yaw_max = math.pi,
 				name = 'Goal',
-				)
+			)
 
 		# CREATE REWARDS AND TERMINATORS
 
@@ -911,6 +905,7 @@ def create_base_components(
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
 					action_noise = 'normal',
+					#action_noise = None,
 					name='Model',
 				)
 			if rl_model == 'DQN':
@@ -928,6 +923,16 @@ def create_base_components(
 
 
 		# CREATE MODIFIERS
+		# create training bounds for spawn
+		from others.bounds import Bounds
+		training_bounds = Bounds(
+                    inner_x = [-106,106],
+                    outter_x = [-110,110],
+                    inner_y = [-106,106],
+                    outter_y = [-110,110],
+                    inner_z = [-4,-4],
+                    outter_z = [-4,-4],
+					)
 		# SPAWNER
 		start_z = -4 
 		from modifiers.spawner import Spawner
@@ -939,12 +944,7 @@ def create_base_components(
 			spawns_components=[
 				Spawn(
 					map_component = 'Map',
-					x_min=-max_distance,
-					x_max=max_distance,
-					y_min=-max_distance,
-					y_max=max_distance,
-					z_min=start_z,
-					z_max=start_z,
+					bounds_component = training_bounds,
 					yaw_min = -1 * math.pi,
 					yaw_max = math.pi,
 					random=True,
@@ -1002,6 +1002,7 @@ def create_base_components(
 				'OrientationNoise', 
 				'DistanceNoise', 
 				],
+			bounds_component = training_bounds,
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
 			track_vars = [],

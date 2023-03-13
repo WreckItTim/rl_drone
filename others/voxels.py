@@ -35,8 +35,8 @@ class Voxels(Other):
 			  # voxel params if make new voxels (else these are set from read)
 			  center = [0,0,0], # in meters
 			  resolution = 1, # in meters
-			  x_length = 200, # total x-axis meters (split around center)
-			  y_length = 200, # total y-axis  meters (split around center)
+			  x_length = 240, # total x-axis meters (split around center)
+			  y_length = 240, # total y-axis  meters (split around center)
 			  z_length = 100, # total z-axis  meters (split around center)
 			  ):
 		super().__init__()

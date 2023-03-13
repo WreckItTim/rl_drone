@@ -23,14 +23,15 @@ class EvaluatorCharlie(Modifier):
 				order, # modify 'pre' or 'post'?
 				evaluate_environment_component, # environment to run eval in
 				model_component, # used to make predictions, track best model
-				noises_components, # list of compenents to amp up noise
+				noises_components, # list of compenents to amp up noise with curriculum learning
+				bounds_component, # will change bounds with curriuclum learning
 				best_distance = 0, # distance metric to maximize
 				best_reward = -999_999, # reward metric to maximize
 				best_noise = 0, # noise metric to maximize
 				amp_up_static = [4, 0, 0], # increases static goal distance
 				amp_up_random = 4, # increases random goal distance
 				phase = 'distance', # toggle which phase to evaluate at
-				distance_max = 92, # will train until succesfully reaches goal this far away
+				distance_max = 100, # will train until succesfully reaches goal this far away
 				reward_epsilon = 1e-2, # will train until reward does not improve by this much
 				reward_patience = 10, # will train until does not reach success within this many evals
 				noise_start = 10, # how many epochs to wait to start patience (collect noisy data first)
@@ -51,7 +52,7 @@ class EvaluatorCharlie(Modifier):
 				current_noise = 0, # keeps track of current level of noise being applied to sensors 
 				): 
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
-		self.connect_priority = -1 # needs other components to connect first
+		self.connect_priority = -2 # needs other components to connect first
 		self.amp_up_static = np.array(amp_up_static, dtype=float)
 		if success < 0:
 			self.success = self.nEpisodes
@@ -63,6 +64,13 @@ class EvaluatorCharlie(Modifier):
 			self.write_folder += self._name + '/'
 			if not os.path.exists(self.write_folder):
 				os.makedirs(self.write_folder)
+		# give noise component visiblity of progress in learning loop
+		if self._model._model_arguments['action_noise'] is not None:
+			self._model._model_arguments['action_noise'].set_progress_calculator(self)
+
+	# returns progress of learning loop
+	def get_progress(self):
+		return self.best_distance / self.distance_max
 
 	def activate(self, state=None):
 		if self.check_counter(state):
@@ -169,6 +177,7 @@ class EvaluatorCharlie(Modifier):
 				else:
 					# amp up goal distance
 					self._evaluate_environment._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
+					self._bounds.apply_delta_inner([self.amp_up_random, self.amp_up_random, 0])
 					another_set = True # evaluate again, to see if we can get even farther without more training
 
 			# are we optimizing reward?

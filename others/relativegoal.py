@@ -15,11 +15,8 @@ class RelativeGoal(Other):
 				 xyz_point = [10, 0, 0],
 				 random_point_on_train = False,
 				 random_point_on_evaluate = False,
-				 random_dim_min = 4, # magnitude of dim min
+				 random_dim_min = 6, # magnitude of dim min
 				 random_dim_max = 8, # magnitude of dim max
-				 x_bounds = [-100, 100],
-				 y_bounds = [-100, 100],
-				 z_bounds = [-100, 100],
 				 random_yaw_on_train = False,
 				 random_yaw_on_evaluate = False,
 				 random_yaw_min = -1 * math.pi,
@@ -68,10 +65,6 @@ class RelativeGoal(Other):
 		x = x0 + alpha * (x1 * math.cos(yaw) - y1 * math.sin(yaw))
 		y = y0 + alpha * (x1 * math.sin(yaw) + y1 * math.cos(yaw))
 		z = z0 + z1
-		# make in bounds
-		x = min(self.x_bounds[1], max(self.x_bounds[0], x))
-		y = min(self.y_bounds[1], max(self.y_bounds[0], y))
-		z = min(self.z_bounds[1], max(self.z_bounds[0], z))
 		# check if goal is in an object
 		in_object = self._map.at_object_2d(x, y)
 		return x, y, z, in_object
