@@ -16,6 +16,7 @@ class Steps(Reward):
 	def step(self, state):
 		nSteps = state['nSteps']
 
+		value = 0
 		if self.value_type == 'constant':
 			value = -1
 		if self.value_type == 'scale':

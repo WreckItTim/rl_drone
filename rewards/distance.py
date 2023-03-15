@@ -11,8 +11,7 @@ class Distance(Reward):
 	def __init__(self,
 				drone_component, 
 				goal_component, 
-			  	value_type='scale2', # see if statements in step() function
-				max_distance = 100, # scale in meters
+			  	value_type='exp2', # see if statements in step() function
 				include_z=True,
 		):
 		super().__init__()
@@ -33,12 +32,15 @@ class Distance(Reward):
 		this_distance = self.get_distance()
 		delta_distance = self._last_distance - this_distance
 
-		d = delta_distance / self.max_distance
+		d = delta_distance
 
 		if self.value_type == 'exp':
 			value = 2 * (math.exp(math.log(0.5)*d) - 0.5)
+		if self.value_type == 'exp2':
+			#value = -1 * (math.exp(-1*d))
+			value = np.tanh(d) - 1
 		if self.value_type == 'scale':
-			value = delta_distance
+			value = d
 		if self.value_type == 'scale2':
 			value = d
 

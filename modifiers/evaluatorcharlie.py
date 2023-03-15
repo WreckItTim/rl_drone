@@ -22,14 +22,14 @@ class EvaluatorCharlie(Modifier):
 				parent_method, # name of parent method to modify
 				order, # modify 'pre' or 'post'?
 				evaluate_environment_component, # environment to run eval in
+				goal_component, # used to get current goal
 				model_component, # used to make predictions, track best model
 				noises_components, # list of compenents to amp up noise with curriculum learning
-				bounds_component, # will change bounds with curriuclum learning
+				spawn_bounds_component, # will change bounds with curriuclum learning
 				best_distance = 0, # distance metric to maximize
 				best_reward = -999_999, # reward metric to maximize
 				best_noise = 0, # noise metric to maximize
-				amp_up_static = [4, 0, 0], # increases static goal distance
-				amp_up_random = 4, # increases random goal distance
+				amp_up_r = 4, # increases goal distance
 				phase = 'distance', # toggle which phase to evaluate at
 				distance_max = 100, # will train until succesfully reaches goal this far away
 				reward_epsilon = 1e-2, # will train until reward does not improve by this much
@@ -53,7 +53,6 @@ class EvaluatorCharlie(Modifier):
 				): 
 		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self.connect_priority = -2 # needs other components to connect first
-		self.amp_up_static = np.array(amp_up_static, dtype=float)
 		if success < 0:
 			self.success = self.nEpisodes
 
@@ -144,7 +143,7 @@ class EvaluatorCharlie(Modifier):
 		mean_reward = total_reward / self.nEpisodes
 
 		if self.verbose > 0:
-			utils.speak(f'Evaluation:{self.set_counter} distance:{self._evaluate_environment._goal.random_dim_min} reward:{round(mean_reward,2)} noise:{self.current_noise} nSuccess:{total_success}')
+			utils.speak(f'Evaluation:{self.set_counter} distance:{self._goal.static_r} reward:{round(mean_reward,2)} noise:{self.current_noise} nSuccess:{total_success}')
 
 		# save every model
 		if self.save_every_model:
@@ -159,7 +158,7 @@ class EvaluatorCharlie(Modifier):
 			# are we optimizing goal distance?
 			if self.phase == 'distance':
 				new_best = True # as long as we reached all_success then we are improving
-				this_distance = self._evaluate_environment._goal.random_dim_min
+				this_distance = self._goal.static_r
 				self._model._best_score = -1 * this_distance # need to minimize if hyper learning
 				self.best_distance = this_distance
 				if this_distance >= self.distance_max:
@@ -176,8 +175,10 @@ class EvaluatorCharlie(Modifier):
 						utils.speak(f'Switching eval phase from distance to reward...')
 				else:
 					# amp up goal distance
-					self._evaluate_environment._goal.amp_up(self.amp_up_static, self.amp_up_random, self.amp_up_random)
-					self._bounds.apply_delta_inner([self.amp_up_random, self.amp_up_random, 0])
+					self._goal.static_r += self.amp_up_r
+					self._goal.random_r[0] += self.amp_up_r
+					self._goal.random_r[1] += self.amp_up_r
+					self._spawn_bounds.inner_radius -= self.amp_up_r
 					another_set = True # evaluate again, to see if we can get even farther without more training
 
 			# are we optimizing reward?

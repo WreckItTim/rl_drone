@@ -2,6 +2,7 @@ from others.other import Other
 from component import _init_wrapper
 import random
 import numpy as np
+import math
 import rl_utils as utils
 
 # data structure specifying a spawn zone
@@ -17,8 +18,7 @@ class Spawn(Other):
 				 z=0,
 				 yaw=0,
 				 bounds_component=None,
-				 yaw_min=0,
-				 yaw_max=0,
+				 random_yaw = True,
 				 random=False,
 				 ):
 		super().__init__()
@@ -43,7 +43,15 @@ class Spawn(Other):
 		in_object = True
 		while(in_object):
 			self._x, self._y, self._z, in_object = self.get_random_pos()
-		self._yaw = random.uniform(self.yaw_min, self.yaw_max)
+		if self.random_yaw:
+			# make yaw face towards origin (with some noise)
+			# this is used to make sure drone navigates through buildings (most of the time)
+			curr_position = np.array([self._x, self._y, self._z], dtype=float)
+			facing_position = np.array([0, 0, 0], dtype=float)
+			distance_vector = facing_position - curr_position
+			facing_yaw = math.atan2(distance_vector[1], distance_vector[0])
+			noise = np.random.normal(0, np.pi/6)
+			self._yaw = facing_yaw + noise
 		return [self._x, self._y, self._z], self._yaw
 		
 	# simply return a static spawn 

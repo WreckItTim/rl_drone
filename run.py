@@ -4,7 +4,7 @@ import math
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma19'
+repo_version = 'gamma20'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -31,10 +31,29 @@ if len(args) > 3:
 airsim_release = 'Blocks'
 if test_case in []:
 	airsim_release = 'AirSimNH'
-if test_case in []:
+if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 if test_case in []:
 	airsim_release = 'Tello'
+
+action_noise = None
+if test_case in ['h3', 'h4', 'tp']:
+	action_noise = 'normal'
+
+include_resolution = True
+if test_case in ['pc']:
+	include_resolution = False
+
+# steps distance collision goal max_steps
+reward_weights = [0, 1, 120, 240, 0]
+if test_case in ['h3', 's1']:
+	reward_weights = [0, 2, 220, 440, 0]
+if include_resolution:
+	# res1 res2 
+	if test_case in ['h4', 's2']:
+		reward_weights = [0.25, 0.25] + reward_weights
+	else:
+		reward_weights = [0.5, 0.5] + reward_weights
 
 # unlock vertical motion?
 vert_motion = True
@@ -120,22 +139,13 @@ if test_case in []:
 if test_case in []:
 	flat = 'big'
 
-include_resolution = True
-if test_case in []:
-	include_resolution = False
-
-distance_reward = 'scale2'
+distance_reward = 'exp2'
 if test_case in []:
 	distance_reward = 'exp'
 
-step_reward = 'constant'
+step_reward = 'none'
 if test_case in []:
 	step_reward = 'scale2'
-
-# res1 res2 steps distance collision goal max_steps
-reward_weights = [1/2, 1/2, 20, 20, 0]
-if include_resolution:
-	reward_weights = [1/8, 1/8] + reward_weights
 
 learning_starts = 100
 if test_case in []:
@@ -180,10 +190,7 @@ def create_base_components(
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
 		actor = 'Teleporter', # Teleporter Continuous
-		clock_speed = 10, # airsim clock speed (increasing this will also decerase sim-quality)
-		training_steps = 50_000_000, # max number of training steps 
-		max_distance = 100, # distance contraint used for several calculations (see below)
-		nTimesteps = 4, # number of timesteps to use in observation space
+		clock_speed = 10, # airsim clock speed (increasing this will alsovalue_typevalue_typee
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		flat = 'big', # determines size of flattened depth sensor array 
 		distance_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
@@ -199,6 +206,10 @@ def create_base_components(
 		adjust_for_yaw = True,
 		include_resolution = True,
 		include_bottom = False,
+		training_steps = 50_000_000,
+		max_distance = 100,
+		nTimesteps = 4,
+		action_noise = None,
 ):
 
 	# **** SETUP ****
@@ -346,6 +357,23 @@ def create_base_components(
 				name = 'Voxels',
 				)
 
+		# Create bounds to spawn in and for goal
+		from others.bounds import Bounds
+		training_bounds = Bounds(
+					inner_radius = 116,
+					outter_radius = 118,
+					min_z = -4,
+					max_z = -4,
+					name = 'TrainingBounds'
+					)
+		goal_bounds = Bounds(
+					inner_radius = 0,
+					outter_radius = 160,
+					min_z = -100,
+					max_z = 0,
+					name = 'GoalBounds'
+					)
+
 
 		# CREATE DRONE
 		if airsim_release == 'Tello':
@@ -370,28 +398,28 @@ def create_base_components(
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [2.7, 0, 0],
+					static_point = [2.7, 0, 0],
 					name = 'Goal',
 					)
 			if tello_goal == 'Hallway2':
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [2.7, -16.8, 0],
+					static_point = [2.7, -16.8, 0],
 					name = 'Goal',
 					)
 			if tello_goal == 'Hallway3':
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [-19.6, -16.8, 0],
+					static_point = [-19.6, -16.8, 0],
 					name = 'Goal',
 					)
 			if tello_goal == 'hallway4':
 				RelativeGoal(
 					drone_component = 'Drone',
 					map_component = 'Map',
-					xyz_point = [-20.8, -10.2, 0],
+					static_point = [-20.8, -10.2, 0],
 					name = 'Goal',
 					)
 		else:
@@ -401,15 +429,10 @@ def create_base_components(
 			RelativeGoal(
 				drone_component = 'Drone',
 				map_component = 'Map',
-				xyz_point = [6, 6, 0],
-				random_point_on_train = True,
-				random_point_on_evaluate = False,
-				random_dim_min = 6,
-				random_dim_max = 8,
-				random_yaw_on_train = True,
-				random_yaw_on_evaluate = False,
-				random_yaw_min = -1 * math.pi,
-				random_yaw_max = math.pi,
+				bounds_component = 'GoalBounds',
+				static_r = 6, # relative distance for static goal from drone
+				random_r = [6,8], # relative distance for random goal from drone
+				random_point_on_train = True, # random goal when training?
 				name = 'Goal',
 			)
 
@@ -444,7 +467,6 @@ def create_base_components(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
 			value_type = distance_reward,
-			max_distance = max_distance, # scale in meters
 			include_z = True if vert_motion else False, # includes z in distance calculations
 			name = 'DistanceReward',
 		)
@@ -509,6 +531,7 @@ def create_base_components(
 				adjust_for_yaw = adjust_for_yaw,
 				name = 'MoveForward',
 			)
+			actions.append('MoveForward')
 			from actions.rotate import Rotate 
 			Rotate(
 				drone_component = 'Drone',  
@@ -516,7 +539,6 @@ def create_base_components(
 				min_space = -1, # allows left and right rotations
 				name = 'Rotate',
 			)
-			actions.append('MoveForward')
 			actions.append('Rotate')
 			if vert_motion:
 				Move(
@@ -904,8 +926,8 @@ def create_base_components(
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
-					action_noise = 'normal',
-					#action_noise = None,
+					#action_noise = 'normal',
+					action_noise = None,
 					name='Model',
 				)
 			if rl_model == 'DQN':
@@ -923,16 +945,6 @@ def create_base_components(
 
 
 		# CREATE MODIFIERS
-		# create training bounds for spawn
-		from others.bounds import Bounds
-		training_bounds = Bounds(
-                    inner_x = [-106,106],
-                    outter_x = [-110,110],
-                    inner_y = [-106,106],
-                    outter_y = [-110,110],
-                    inner_z = [-4,-4],
-                    outter_z = [-4,-4],
-					)
 		# SPAWNER
 		start_z = -4 
 		from modifiers.spawner import Spawner
@@ -944,9 +956,7 @@ def create_base_components(
 			spawns_components=[
 				Spawn(
 					map_component = 'Map',
-					bounds_component = training_bounds,
-					yaw_min = -1 * math.pi,
-					yaw_max = math.pi,
+					bounds_component = 'TrainingBounds',
 					random=True,
 				),
 			],
@@ -997,17 +1007,18 @@ def create_base_components(
 			parent_method = 'reset',
 			order = 'pre',
 			evaluate_environment_component = 'EvaluateEnvironment',
+			goal_component = 'Goal',
 			model_component = 'Model',
 			noises_components = [
 				'OrientationNoise', 
 				'DistanceNoise', 
 				],
-			bounds_component = training_bounds,
+			spawn_bounds_component = 'TrainingBounds',
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
 			track_vars = [],
 			save_every_model = True,
-			counter = -1, # offset to do an eval before any training
+			counter = 0, # -1 offset to do an eval before any training
 			name = 'Evaluator',
 		)
 		if not hyper:
@@ -1148,6 +1159,7 @@ configuration = create_base_components(
 		adjust_for_yaw = adjust_for_yaw,
 		include_resolution = include_resolution,
 		include_bottom = include_bottom,
+		action_noise = action_noise,
 )
 
 # make dir to save all tello imgs to
