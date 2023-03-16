@@ -178,7 +178,7 @@ class EvaluatorCharlie(Modifier):
 					self._goal.static_r += self.amp_up_r
 					self._goal.random_r[0] += self.amp_up_r
 					self._goal.random_r[1] += self.amp_up_r
-					self._spawn_bounds.inner_radius -= self.amp_up_r
+					#self._spawn_bounds.inner_radius -= self.amp_up_r
 					another_set = True # evaluate again, to see if we can get even farther without more training
 
 			# are we optimizing reward?

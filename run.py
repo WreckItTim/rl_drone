@@ -1,10 +1,11 @@
 import rl_utils as utils
 from configuration import Configuration
 import math
+import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma20'
+repo_version = 'gamma21'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -360,15 +361,17 @@ def create_base_components(
 		# Create bounds to spawn in and for goal
 		from others.bounds import Bounds
 		training_bounds = Bounds(
-					inner_radius = 116,
-					outter_radius = 118,
+					center = [-20, 0, 0],
+					inner_radius = 20,
+					outter_radius = 200,
 					min_z = -4,
 					max_z = -4,
 					name = 'TrainingBounds'
 					)
 		goal_bounds = Bounds(
+					center = [-20, 0, 0],
 					inner_radius = 0,
-					outter_radius = 160,
+					outter_radius = 200,
 					min_z = -100,
 					max_z = 0,
 					name = 'GoalBounds'
@@ -431,7 +434,11 @@ def create_base_components(
 				map_component = 'Map',
 				bounds_component = 'GoalBounds',
 				static_r = 6, # relative distance for static goal from drone
+				static_dz = 4, # relative z for static goal from drone (this is dz above roof or floor)
+				static_yaw = 0, # relative yaw for static goal from drone
 				random_r = [6,8], # relative distance for random goal from drone
+				random_dz = [4,4], # relative z for random goal from drone (this is dz above roof or floor)
+				random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
 				random_point_on_train = True, # random goal when training?
 				name = 'Goal',
 			)
@@ -946,7 +953,6 @@ def create_base_components(
 
 		# CREATE MODIFIERS
 		# SPAWNER
-		start_z = -4 
 		from modifiers.spawner import Spawner
 		from others.spawn import Spawn
 		Spawner(
@@ -970,27 +976,39 @@ def create_base_components(
 			drone_component = 'Drone',
 			spawns_components=[
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(0),
 					),
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(45),
 					),
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(135),
 					),
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(180),
 					),
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(-130),
 					),
 				Spawn(
-					z=start_z,
+					x=0,
+					y=0,
+					dz=4,
 					yaw=math.radians(-45),
 					),
 			],

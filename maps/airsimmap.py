@@ -64,6 +64,7 @@ class AirSimMap(Map):
 			  # ABSOLUTE path to write to, must be absolute
 			  absolute_path:str,
 			  # voxel params if make new voxels (else these are set from read)
+			  # user be WARNED: use a cube centered around 0,0,0 because this sh** is wonky if not
 			  center = [0,0,0], # in meters
 			  resolution = 1, # in meters
 			  x_length = 200, # total x-axis meters (split around center)

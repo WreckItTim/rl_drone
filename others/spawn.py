@@ -15,13 +15,16 @@ class Spawn(Other):
 				 map_component='Map',
 				 x=0,
 				 y=0,
-				 z=0,
+				 dz=4, # this will spawn w/dz-meters above (positive) object (roof or floor)
 				 yaw=0,
 				 bounds_component=None,
-				 random_yaw = True,
+				 random_yaw=True,
 				 random=False,
 				 ):
 		super().__init__()
+
+	def connect(self):
+		super().connect()
 		# define if spawn method will be random or static
 		if random:
 			self.get_spawn = self.random_spawn
@@ -29,14 +32,16 @@ class Spawn(Other):
 			self.get_spawn = self.static_spawn
 			self._x = x
 			self._y = y
+			z = self._map.get_roof(x, y, dz)
 			self._z = z
 			self._yaw = yaw
 
 	# uniform distribution between passed in range
 	def get_random_pos(self):
-		x,y,z = self._bounds.get_random()
-		in_object = self._map.at_object_2d(x, y)
-		return x, y, z, in_object
+		x, y, z = self._bounds.get_random()
+		z = self._map.get_roof(x, y, self.dz)
+		#in_object = self._map.at_object_2d(x, y)
+		return x, y, z, False
 	
 	# generate random spawn until outside of an object
 	def random_spawn(self):
@@ -46,12 +51,13 @@ class Spawn(Other):
 		if self.random_yaw:
 			# make yaw face towards origin (with some noise)
 			# this is used to make sure drone navigates through buildings (most of the time)
-			curr_position = np.array([self._x, self._y, self._z], dtype=float)
-			facing_position = np.array([0, 0, 0], dtype=float)
-			distance_vector = facing_position - curr_position
-			facing_yaw = math.atan2(distance_vector[1], distance_vector[0])
-			noise = np.random.normal(0, np.pi/6)
-			self._yaw = facing_yaw + noise
+			#curr_position = np.array([self._x, self._y, self._z], dtype=float)
+			#facing_position = np.array([0, 0, 0], dtype=float)
+			#distance_vector = facing_position - curr_position
+			#facing_yaw = math.atan2(distance_vector[1], distance_vector[0])
+			#noise = np.random.normal(0, np.pi/6)
+			#self._yaw = facing_yaw + noise
+			self._yaw = np.random.uniform(-1*np.pi, np.pi)
 		return [self._x, self._y, self._z], self._yaw
 		
 	# simply return a static spawn 

@@ -33,11 +33,11 @@ class Voxels(Other):
 			  floor_z = None, # index of largest z-axis index for surface of floor from voxels 
 				# None will auto find floor_dim from origin, assumes there is no object there in map upon connect() (excluding drone)
 			  # voxel params if make new voxels (else these are set from read)
-			  center = [0,0,0], # in meters
+			  center = [0, 0, 0], # x,y,z in meters
 			  resolution = 1, # in meters
-			  x_length = 240, # total x-axis meters (split around center)
-			  y_length = 240, # total y-axis  meters (split around center)
-			  z_length = 100, # total z-axis  meters (split around center)
+			  x_length = 320, # total x-axis meters (split around center)
+			  y_length = 320, # total y-axis  meters (split around center)
+			  z_length = 320, # total z-axis  meters (split around center)
 			  ):
 		super().__init__()
 		self._map_2d = None
@@ -84,17 +84,32 @@ class Voxels(Other):
 		self._xi_to_x = lambda xi : float((xi + trans[1])*res[1])
 		self._yi_to_y = lambda yi : float((yi + trans[0])*res[0])
 		self._zi_to_z = lambda zi : float(-1*(zi + trans[2])*res[2])
+		self._map_3d = self._voxels.data 
 		print('loaded voxels from file')
+
+	# will get lowest z-point without being inside object at given x,y
+	# this includes the floor (which will be lowest point found)
+	# dz is height above roof point
+	def get_roof(self, x, y, dz):
+		yi = self._y_to_yi(y)
+		xi = self._x_to_xi(x)
+		z_len = self.get_z_length()
+		# iterate down from highest point at x,y point
+		for k in range(z_len-1, -1, -1):
+			# when found roof ..
+			if self._map_3d[yi, xi, k]:
+				z = self._zi_to_z(k) + dz
+				return z
+
 
 	def get_map_2d(self):
 		if self._map_2d is not None:
 			return self._map_2d
 		# turn 3d voxels map into 2d aerial view
 		# map_3d is 3d array, elements are true where surface of objects are
-		map_3d = self._voxels.data 
-		x_len = map_3d.shape[1]
-		y_len = map_3d.shape[0]
-		z_len = map_3d.shape[2]
+		x_len = self.get_x_length()
+		y_len = self.get_y_length()
+		z_len = self.get_z_length()
 		# map_2d will be aerial view, with no z axis
 		self._map_2d = np.full((x_len, y_len), False, dtype=bool)
 		# we need to get the floor from the voxels
@@ -102,7 +117,7 @@ class Voxels(Other):
 		# TODO: better conversion here considering uneven floors
 		if self.floor_z is None:
 			# get floor height (ASSUMES no object at 0,0) - messy I know, need a better solution
-			origin = map_3d[int(map_3d.shape[0]/2), int(map_3d.shape[1]/2), :]
+			origin = self._map_3d[int(self._map_3d.shape[0]/2), int(self._map_3d.shape[1]/2), :]
 			_floor_z = max([i for i, is_obj in enumerate(origin) if is_obj])
 		else:
 			_floor_z = self.floor_z
@@ -110,7 +125,7 @@ class Voxels(Other):
 		for i in range(y_len):
 			for j in range(x_len):
 				for k in range(z_len):
-					if map_3d[i, j, k] and k > _floor_z:
+					if self._map_3d[i, j, k] and k > _floor_z:
 						# pad nearby cells
 						for h in range(-1, 2, 1):
 							for v in range(-1, 2, 1):
