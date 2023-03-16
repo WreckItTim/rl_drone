@@ -157,7 +157,7 @@ if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
-controller_type = 'Debug' # Train, Debug, Drift, Evaluate
+controller_type = 'Train' # Train, Debug, Drift, Evaluate
 if test_case in []:
 	controller_type = 'Debug'
 actor = 'Teleporter' # Teleporter Continuous
@@ -386,19 +386,19 @@ def create_base_components(
 					)
 		'''
 		from others.boundscube import BoundsCube
-		dz = distance_param/25
+		dz = 4 #distance_param/25
 		training_bounds = BoundsCube(
 					center = [0, 0, 0],
 					x = [-1*distance_param, distance_param],
 					y = [-1*distance_param, distance_param],
-					z = [dz, dz],
+					z = [-1*distance_param, -1],
 					name = 'TrainingBounds'
 					)
 		goal_bounds = BoundsCube(
 					center = [0, 0, 0],
 					x = [-1*distance_param, distance_param],
 					y = [-1*distance_param, distance_param],
-					z = [dz, dz],
+					z = [-1*distance_param, -1],
 					name = 'GoalBounds'
 					)
 
@@ -1021,6 +1021,7 @@ def create_base_components(
 				Spawn(
 					map_component = 'Map',
 					bounds_component = 'TrainingBounds',
+					dz=dz,
 					random=True,
 				),
 			],
@@ -1036,37 +1037,37 @@ def create_base_components(
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(0),
 					),
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(45),
 					),
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(135),
 					),
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(180),
 					),
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(-130),
 					),
 				Spawn(
 					x=0,
 					y=0,
-					dz=4,
+					dz=dz,
 					yaw=math.radians(-45),
 					),
 			],

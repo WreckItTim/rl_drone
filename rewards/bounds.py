@@ -28,7 +28,7 @@ class Bounds(Reward):
 		if y <= self.y_bounds[0] or y >= self.y_bounds[1]:
 			value = -1
 			done = True
-		if z <= self.z_bounds[0] or y >= self.z_bounds[1]:
+		if z <= self.z_bounds[0] or z >= self.z_bounds[1]:
 			value = -1
 			done = True
 		if done and self.terminate:

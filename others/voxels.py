@@ -57,15 +57,7 @@ class Voxels(Other):
 		self.read_voxels(
 				utils.get_global_parameter('absolute_path') + self.relative_path
 				)
-
-	def get_x_length(self):
-		return self._voxels.data.shape[1] 
-
-	def get_y_length(self):
-		return self._voxels.data.shape[0] 
-
-	def get_z_length(self):
-		return self._voxels.data.shape[2] 
+		self.make_roofs()
 			
 	# read voxels (3d object map) from file
 	# this is not needed (I used it to handle invalid spawns and objective points)
@@ -84,12 +76,41 @@ class Voxels(Other):
 		self._yi_to_y = lambda yi : float((yi + trans[0])*res[0])
 		self._xi_to_x = lambda xi : float((xi + trans[1])*res[1])
 		self._zi_to_z = lambda zi : float(-1*(zi + trans[2])*res[2])
-		self._map_3d = self._voxels.data 
+		self._map_3d = self._voxels.data.copy()
 		print('loaded voxels from file')
+
+	def get_x_length(self):
+		return self._voxels.data.shape[1] 
+
+	def get_y_length(self):
+		return self._voxels.data.shape[0] 
+
+	def get_z_length(self):
+		return self._voxels.data.shape[2] 
+
+	# gets highest z-point for each x,y-pair
+	# also pads by 1 to highest point
+	# 0 is considered as floor and lowest point
+	def make_roofs(self):
+		# pad roof by 1
+		x_len = self.get_x_length()
+		y_len = self.get_y_length()
+		z_len = self.get_z_length()
+		# zero is floor
+		self._roofs = np.zeros((x_len, y_len), dtype=float)
+		for yi in range(1, y_len-1):
+			for xi in range(1, x_len-1):
+				for zi in range(z_len-1, -1, -1):
+					if self._map_3d[yi, xi, zi]:
+						z = -1*self._zi_to_z(zi)
+						for i in range(-1,2,1):
+							for j in range(-1,2,1):
+								self._roofs[yi+i, xi+j] = max(self._roofs[yi+i, xi+j], z) 
 
 	# will get lowest z-point without being inside object at given x,y
 	# this includes the floor (which will be lowest point found)
-	# dz is height above roof point
+	# dz is height above roof point (also creates smallest z-point to return)
+	# note that voxels is not perfect in detecting floors - thus dz is needed as a highest z-point
 	def get_roof(self, x, y, dz):
 		# need to convert from drone-coords to map-coords
 		x_len = self.get_x_length()
@@ -97,18 +118,12 @@ class Voxels(Other):
 		z_len = self.get_z_length()
 		yi = self._y_to_yi(y)
 		xi = self._x_to_xi(x)
-		z = dz
 		if xi < 0 or xi >= x_len:
-			return z
+			return dz
 		if yi < 0 or yi >= y_len:
-			return z
-		# iterate down from highest point at x,y point
-		for k in range(z_len-1, -1, -1):
-			# when found roof ..
-			if self._map_3d[yi, xi, k]:
-				# z in map-coords
-				z = self._zi_to_z(k) + dz
-				break
+			return dz
+		# grab nearest roof
+		z = self._roofs[yi, xi] + dz
 		return z
 
 

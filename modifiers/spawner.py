@@ -43,4 +43,6 @@ class Spawner(Modifier):
 		if self.check_counter(state):
 			next_spawn = self.get_next_spawn()
 			position, yaw = next_spawn.get_spawn()
+			#print('spawn to ', position[0], position[1], position[2], yaw)
 			self._drone.teleport(position[0], position[1], position[2], yaw)
+			#print('spawned to ', self._drone.get_position(), self._drone.get_yaw())

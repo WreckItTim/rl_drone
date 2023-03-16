@@ -98,7 +98,7 @@ class AirSimDrone(Drone):
 		self._airsim._client.simSetVehiclePose(pose, ignore_collision=ignore_collision)
 		# stabalize drone
 		if stabelize:
-			self._airsim._client.rotateByYawRateAsync(0, 0.1)
+			self._airsim._client.rotateByYawRateAsync(0, 0.1).join()
 			self._airsim._client.moveByVelocityAsync(0, 0, 0, 0.1).join()
 		
 	# NEW: rotates along z-axis, yaw in radians offset from current yaw

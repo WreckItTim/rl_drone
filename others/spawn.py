@@ -26,15 +26,14 @@ class Spawn(Other):
 	def connect(self):
 		super().connect()
 		# define if spawn method will be random or static
-		if random:
+		if self.random:
 			self.get_spawn = self.random_spawn
 		else:
 			self.get_spawn = self.static_spawn
-			self._x = x
-			self._y = y
-			z = self._map.get_roof(x, y, dz)
-			self._z = z
-			self._yaw = yaw
+			self._x = self.x
+			self._y = self.y
+			self._z = self._map.get_roof(self._x, self._y, self.dz)
+			self._yaw = self.yaw
 
 	# uniform distribution between passed in range
 	def get_random_pos(self):
