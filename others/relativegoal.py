@@ -89,7 +89,7 @@ class RelativeGoal(Other):
 				y = r * np.sin(yaw)
 				z = self._map.get_roof(x, y, dz)
 				relative_position = np.array([x, y, z])
-				if self._bounds.check_bounds(drone_position[0]+x, drone_position[1]+y, drone_position[2]+z):
+				if self._bounds.check_bounds(drone_position[0]+x, drone_position[1]+y, z):
 					break
 				attempt += 1
 				if attempt > 1000:

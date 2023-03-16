@@ -35,9 +35,9 @@ class Voxels(Other):
 			  # voxel params if make new voxels (else these are set from read)
 			  center = [0, 0, 0], # x,y,z in meters
 			  resolution = 1, # in meters
-			  x_length = 320, # total x-axis meters (split around center)
-			  y_length = 320, # total y-axis  meters (split around center)
-			  z_length = 320, # total z-axis  meters (split around center)
+			  x_length = 250, # total x-axis meters (split around center)
+			  y_length = 250, # total y-axis  meters (split around center)
+			  z_length = 250, # total z-axis  meters (split around center)
 			  ):
 		super().__init__()
 		self._map_2d = None
@@ -78,11 +78,11 @@ class Voxels(Other):
 		# voxels save in fundamental (x,y,z) euclidian space
 		# keep this mind with conversion functions below
 		# create functions to convert between drone position and voxel indicies
-		self._x_to_xi = lambda x : int((x/res[1] - trans[1]))
 		self._y_to_yi = lambda y : int((y/res[0] - trans[0]))
+		self._x_to_xi = lambda x : int((x/res[1] - trans[1]))
 		self._z_to_zi = lambda z : int(((-1*z)/res[2] - trans[2]))
-		self._xi_to_x = lambda xi : float((xi + trans[1])*res[1])
 		self._yi_to_y = lambda yi : float((yi + trans[0])*res[0])
+		self._xi_to_x = lambda xi : float((xi + trans[1])*res[1])
 		self._zi_to_z = lambda zi : float(-1*(zi + trans[2])*res[2])
 		self._map_3d = self._voxels.data 
 		print('loaded voxels from file')
@@ -91,15 +91,25 @@ class Voxels(Other):
 	# this includes the floor (which will be lowest point found)
 	# dz is height above roof point
 	def get_roof(self, x, y, dz):
+		# need to convert from drone-coords to map-coords
+		x_len = self.get_x_length()
+		y_len = self.get_y_length()
+		z_len = self.get_z_length()
 		yi = self._y_to_yi(y)
 		xi = self._x_to_xi(x)
-		z_len = self.get_z_length()
+		z = dz
+		if xi < 0 or xi >= x_len:
+			return z
+		if yi < 0 or yi >= y_len:
+			return z
 		# iterate down from highest point at x,y point
 		for k in range(z_len-1, -1, -1):
 			# when found roof ..
 			if self._map_3d[yi, xi, k]:
+				# z in map-coords
 				z = self._zi_to_z(k) + dz
-				return z
+				break
+		return z
 
 
 	def get_map_2d(self):

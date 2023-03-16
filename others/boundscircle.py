@@ -14,7 +14,7 @@ import random
 #  | x |---| x |
 #   | x x x x |
 #    |-------|
-class Bounds(Other):
+class BoundsCircle(Other):
 	@_init_wrapper
 	def __init__(self, 
 				center = [0,0,0],

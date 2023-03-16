@@ -22,14 +22,14 @@ class Bounds(Reward):
 		z = _drone_position[2]
 		value = 0
 		done = False
-		if x < self.x_bounds[0] or x > self.x_bounds[1]:
-			value = -10
+		if x <= self.x_bounds[0] or x >= self.x_bounds[1]:
+			value = -1
 			done = True
-		if y < self.y_bounds[0] or y > self.y_bounds[1]:
-			value = -10
+		if y <= self.y_bounds[0] or y >= self.y_bounds[1]:
+			value = -1
 			done = True
-		if z < self.z_bounds[0] or y > self.z_bounds[1]:
-			value = -10
+		if z <= self.z_bounds[0] or y >= self.z_bounds[1]:
+			value = -1
 			done = True
 		if done and self.terminate:
 			state['termination_reason'] = 'bounds'

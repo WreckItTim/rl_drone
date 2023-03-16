@@ -45,16 +45,20 @@ include_resolution = True
 if test_case in ['pc']:
 	include_resolution = False
 
-# steps distance collision goal max_steps
-reward_weights = [0, 1, 120, 240, 0]
+# bounds collision goal steps ditance
+reward_weights = [120, 120, 240, 0, 1]
 if test_case in ['h3', 's1']:
-	reward_weights = [0, 2, 220, 440, 0]
+	reward_weights = [220, 220, 440, 0, 1]
 if include_resolution:
 	# res1 res2 
 	if test_case in ['h4', 's2']:
-		reward_weights = [0.25, 0.25] + reward_weights
+		reward_weights.append(0.25) # res1
+		reward_weights.append(0.25) # res2
 	else:
-		reward_weights = [0.5, 0.5] + reward_weights
+		reward_weights.append(0.5) # res1
+		reward_weights.append(0.5) # res2
+# maxsteps
+reward_weights.append(0)
 
 # unlock vertical motion?
 vert_motion = True
@@ -153,7 +157,7 @@ if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
-controller_type = 'Train' # Train, Debug, Drift, Evaluate
+controller_type = 'Debug' # Train, Debug, Drift, Evaluate
 if test_case in []:
 	controller_type = 'Debug'
 actor = 'Teleporter' # Teleporter Continuous
@@ -162,9 +166,9 @@ if test_case in []:
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 # office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
 # halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
-max_distance = 100 # distance contraint used for several calculations (see below)
+distance_param = 125 # distance contraint used for several calculations (see below)
 if test_case in []:
-	max_distance = 25
+	distance_param = 25
 tello_goal = ''
 if test_case in []:
 	tello_goal = 'Hallway1'
@@ -208,7 +212,7 @@ def create_base_components(
 		include_resolution = True,
 		include_bottom = False,
 		training_steps = 50_000_000,
-		max_distance = 100,
+		distance_param = 125,
 		nTimesteps = 4,
 		action_noise = None,
 ):
@@ -355,12 +359,16 @@ def create_base_components(
 			Voxels(
 				relative_path = working_directory + 'map_voxels.binvox',
 				map_component = 'Map',
+				x_length = 2 * distance_param, # total x-axis meters (split around center)
+				y_length = 2 * distance_param, # total y-axis  meters (split around center)
+				z_length = 2 * distance_param, # total z-axis  meters (split around center)
 				name = 'Voxels',
 				)
 
 		# Create bounds to spawn in and for goal
-		from others.bounds import Bounds
-		training_bounds = Bounds(
+		'''
+		from others.boundscircle import BoundsCircle
+		training_bounds = BoundsCircle(
 					center = [-20, 0, 0],
 					inner_radius = 20,
 					outter_radius = 200,
@@ -368,12 +376,29 @@ def create_base_components(
 					max_z = -4,
 					name = 'TrainingBounds'
 					)
-		goal_bounds = Bounds(
+		goal_bounds = BoundsCircle(
 					center = [-20, 0, 0],
 					inner_radius = 0,
 					outter_radius = 200,
 					min_z = -100,
 					max_z = 0,
+					name = 'GoalBounds'
+					)
+		'''
+		from others.boundscube import BoundsCube
+		dz = distance_param/25
+		training_bounds = BoundsCube(
+					center = [0, 0, 0],
+					x = [-1*distance_param, distance_param],
+					y = [-1*distance_param, distance_param],
+					z = [dz, dz],
+					name = 'TrainingBounds'
+					)
+		goal_bounds = BoundsCube(
+					center = [0, 0, 0],
+					x = [-1*distance_param, distance_param],
+					y = [-1*distance_param, distance_param],
+					z = [dz, dz],
 					name = 'GoalBounds'
 					)
 
@@ -434,10 +459,10 @@ def create_base_components(
 				map_component = 'Map',
 				bounds_component = 'GoalBounds',
 				static_r = 6, # relative distance for static goal from drone
-				static_dz = 4, # relative z for static goal from drone (this is dz above roof or floor)
+				static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
 				static_yaw = 0, # relative yaw for static goal from drone
 				random_r = [6,8], # relative distance for random goal from drone
-				random_dz = [4,4], # relative z for random goal from drone (this is dz above roof or floor)
+				random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
 				random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
 				random_point_on_train = True, # random goal when training?
 				name = 'Goal',
@@ -445,39 +470,19 @@ def create_base_components(
 
 		# CREATE REWARDS AND TERMINATORS
 
+		
 		# REWARDS
 		rewards = []
-		# penalty for higher resolutions
-		if include_resolution:
-			from rewards.resolution import Resolution
-			Resolution(
-				resolution_component = 'FlattenedDepthResolution',
-				name = 'ResolutionReward',
-			)
-			rewards.append('ResolutionReward')
-			if include_bottom:
-				Resolution(
-					resolution_component = 'FlattenedDepthResolution2',
-					name = 'ResolutionReward2',
-				)
-				rewards.append('ResolutionReward2')
-		# penalize heavier as approaches time constraint
-		from rewards.steps import Steps
-		Steps(
-			name = 'StepsReward',
-			value_type = step_reward,
-		)
-		rewards.append('StepsReward')
-		# increasing reward as approaches goal
-		from rewards.distance import Distance
-		Distance(
+		# heavy penalty out of bounds
+		from rewards.bounds import Bounds
+		Bounds(
 			drone_component = 'Drone',
-			goal_component = 'Goal',
-			value_type = distance_reward,
-			include_z = True if vert_motion else False, # includes z in distance calculations
-			name = 'DistanceReward',
+			x_bounds = [-1*distance_param, distance_param],
+			y_bounds = [-1*distance_param, distance_param],
+			z_bounds = [-1*distance_param, 0],
+			name = 'BoundsReward',
 		)
-		rewards.append('DistanceReward')
+		rewards.append('BoundsReward')
 		# heavy penalty for collision
 		from rewards.collision import Collision
 		Collision(
@@ -495,6 +500,38 @@ def create_base_components(
 			name = 'GoalReward',
 		)
 		rewards.append('GoalReward')
+		# penalize heavier as approaches time constraint
+		from rewards.steps import Steps
+		Steps(
+			name = 'StepsReward',
+			value_type = step_reward,
+		)
+		rewards.append('StepsReward')
+		# increasing reward as approaches goal
+		from rewards.distance import Distance
+		Distance(
+			drone_component = 'Drone',
+			goal_component = 'Goal',
+			value_type = distance_reward,
+			include_z = True if vert_motion else False, # includes z in distance calculations
+			name = 'DistanceReward',
+		)
+		# penalty for higher resolutions
+		if include_resolution:
+			from rewards.resolution import Resolution
+			Resolution(
+				resolution_component = 'FlattenedDepthResolution',
+				name = 'ResolutionReward',
+			)
+			rewards.append('ResolutionReward')
+			if include_bottom:
+				Resolution(
+					resolution_component = 'FlattenedDepthResolution2',
+					name = 'ResolutionReward2',
+				)
+				rewards.append('ResolutionReward2')
+		rewards.append('DistanceReward')
+		# do not exceed this many steps
 		from rewards.maxsteps import MaxSteps
 		MaxSteps(
 			name = 'MaxStepsReward',
@@ -683,12 +720,18 @@ def create_base_components(
 			)
 
 		# CREATE OBSERVATION SPACE
+		distance_epsilon = distance_param/1000 # below this error sensor
 		# TRANSFORMERS
 		from transformers.gaussiannoise import GaussianNoise
 		GaussianNoise(
 			deviation = 0, # start at 0 radians in noise
 			deviation_amp = math.radians(1), # amp up noise by 1 degree
 			name = 'OrientationNoise',
+		)
+		GaussianNoise(
+			deviation = 0, # start at 0  meters in noise
+			deviation_amp = 0.1, # amp up noise by 0.1 meters
+			name = 'PositionNoise',
 		)
 		GaussianNoise(
 			deviation = 0, # start at 0  meters in noise
@@ -703,7 +746,7 @@ def create_base_components(
 		)
 		from transformers.normalize import Normalize
 		Normalize(
-			max_input = max_distance, # max depth
+			max_input = distance_param, # max depth
 			min_output = 1, # SB3 uses 0-255 pixel values
 			max_output = 255, # SB3 uses 0-255 pixel values
 			name = 'NormalizeDepth',
@@ -713,9 +756,14 @@ def create_base_components(
 			name = 'NormalizeOrientation',
 		)
 		Normalize(
-			min_input = max_distance / 1000, # min depth (below this is erroneous)
-			max_input = max_distance, # max depth
-			left = 0, # all values below min_input are erroneous
+			min_input = -1*distance_param-distance_epsilon, # min position (below this is erroneous)
+			max_input = distance_param, # max position
+			name = 'NormalizePosition',
+		)
+		Normalize(
+			min_input = distance_epsilon, # min depth (below this is erroneous)
+			max_input = distance_param, # max depth
+			left = 0, # set all values below range to this
 			name = 'NormalizeDistance',
 		)
 		Normalize(
@@ -783,6 +831,16 @@ def create_base_components(
 					],
 				name = 'GoalAltitude',
 			)
+		# sense position on map
+		from sensors.position import Position
+		Position(
+			misc_component = 'Drone',
+			transformers_components = [
+				'PositionNoise',
+				'NormalizePosition',
+				],
+			name = 'DronePosition',
+		)
 		from sensors.airsimcamera import AirSimCamera
 		if policy == 'MlpPolicy':
 			# get flattened depth map (obsfucated front facing distance sensors)
@@ -844,8 +902,8 @@ def create_base_components(
 
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
-		vector_sensors = ['ActionsSensor', 'GoalDistance', 'GoalOrientation']
-		vector_length = 1 + 1 # 1 for GoalDistance, 1 for GoalOrientation
+		vector_sensors = ['ActionsSensor', 'GoalDistance', 'GoalOrientation', 'DronePosition']
+		vector_length = 1 + 1 + 3 # 1 for GoalDistance, 1 for GoalOrientation, 3 for position
 		if rl_model in ['DQN']:
 			vector_length += 1 # DQN adds only one action for ActionSensor
 		if rl_model in ['TD3']:
@@ -1160,7 +1218,7 @@ configuration = create_base_components(
 		actor = actor, # Teleporter Continuous
 		clock_speed = clock_speed, # airsim clock speed (increasing this will also decerase sim-quality)
 		training_steps = training_steps, # max number of training steps 
-		max_distance = max_distance, # distance contraint used for several calculations (see below)
+		distance_param = distance_param, # distance contraint used for several calculations (see below)
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
 		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
