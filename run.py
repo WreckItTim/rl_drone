@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma21'
+repo_version = 'gamma22'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -24,7 +24,7 @@ if len(args) > 2:
 	continue_training = args[2] in ['true', 'True']
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
 	# will assume no text to concat if no additional input
-run_post = ''
+run_post = '_base'
 if len(args) > 3:
 	run_post = args[3]
 
@@ -38,13 +38,18 @@ if test_case in []:
 	airsim_release = 'Tello'
 
 action_noise = None
-if test_case in ['h3', 'h4', 'tp']:
+if test_case in ['s1', 'h3', 'tb']:
 	action_noise = 'normal'
 
-include_resolution = True
-if test_case in ['pc']:
-	include_resolution = False
+include_resolution = False
+if test_case in []:
+	include_resolution = True
 
+include_bounds = False
+if test_case in []:
+	include_bounds = True
+
+'''
 # bounds collision goal steps ditance
 reward_weights = [120, 120, 240, 0, 1]
 if test_case in ['h3', 's1']:
@@ -59,10 +64,23 @@ if include_resolution:
 		reward_weights.append(0.5) # res2
 # maxsteps
 reward_weights.append(0)
+'''
+reward_weights = []
+# bounds 
+if include_bounds:
+	reward_weights.append(20)
+# collision goal steps ditance
+reward_weights = reward_weights + [20, 20, 0, .1]
+if include_resolution:
+	# res1 res2 
+	reward_weights.append(0.05) # res1
+	reward_weights.append(0.05) # res2
+# maxsteps
+reward_weights.append(0)
 
 # unlock vertical motion?
 vert_motion = True
-if test_case in []:
+if test_case in ['h3', 's2']:
 	vert_motion = False
 
 # MLP or CNN?
@@ -215,6 +233,7 @@ def create_base_components(
 		distance_param = 125,
 		nTimesteps = 4,
 		action_noise = None,
+		include_bounds = False,
 ):
 
 	# **** SETUP ****
@@ -366,40 +385,14 @@ def create_base_components(
 				)
 
 		# Create bounds to spawn in and for goal
-		'''
-		from others.boundscircle import BoundsCircle
-		training_bounds = BoundsCircle(
-					center = [-20, 0, 0],
-					inner_radius = 20,
-					outter_radius = 200,
-					min_z = -4,
-					max_z = -4,
-					name = 'TrainingBounds'
-					)
-		goal_bounds = BoundsCircle(
-					center = [-20, 0, 0],
-					inner_radius = 0,
-					outter_radius = 200,
-					min_z = -100,
-					max_z = 0,
-					name = 'GoalBounds'
-					)
-		'''
 		from others.boundscube import BoundsCube
 		dz = 4 #distance_param/25
-		training_bounds = BoundsCube(
+		BoundsCube(
 					center = [0, 0, 0],
 					x = [-1*distance_param, distance_param],
 					y = [-1*distance_param, distance_param],
 					z = [-1*distance_param, -1],
-					name = 'TrainingBounds'
-					)
-		goal_bounds = BoundsCube(
-					center = [0, 0, 0],
-					x = [-1*distance_param, distance_param],
-					y = [-1*distance_param, distance_param],
-					z = [-1*distance_param, -1],
-					name = 'GoalBounds'
+					name = 'MapBounds'
 					)
 
 
@@ -457,7 +450,7 @@ def create_base_components(
 			RelativeGoal(
 				drone_component = 'Drone',
 				map_component = 'Map',
-				bounds_component = 'GoalBounds',
+				bounds_component = 'MapBounds',
 				static_r = 6, # relative distance for static goal from drone
 				static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
 				static_yaw = 0, # relative yaw for static goal from drone
@@ -474,15 +467,16 @@ def create_base_components(
 		# REWARDS
 		rewards = []
 		# heavy penalty out of bounds
-		from rewards.bounds import Bounds
-		Bounds(
-			drone_component = 'Drone',
-			x_bounds = [-1*distance_param, distance_param],
-			y_bounds = [-1*distance_param, distance_param],
-			z_bounds = [-1*distance_param, 0],
-			name = 'BoundsReward',
-		)
-		rewards.append('BoundsReward')
+		if include_bounds:
+			from rewards.bounds import Bounds
+			Bounds(
+				drone_component = 'Drone',
+				x_bounds = [-1*distance_param, distance_param],
+				y_bounds = [-1*distance_param, distance_param],
+				z_bounds = [-1*distance_param, 0],
+				name = 'BoundsReward',
+			)
+			rewards.append('BoundsReward')
 		# heavy penalty for collision
 		from rewards.collision import Collision
 		Collision(
@@ -535,6 +529,7 @@ def create_base_components(
 		from rewards.maxsteps import MaxSteps
 		MaxSteps(
 			name = 'MaxStepsReward',
+			update_steps = True,
 			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
 		rewards.append('MaxStepsReward')
@@ -728,11 +723,12 @@ def create_base_components(
 			deviation_amp = math.radians(1), # amp up noise by 1 degree
 			name = 'OrientationNoise',
 		)
-		GaussianNoise(
-			deviation = 0, # start at 0  meters in noise
-			deviation_amp = 0.1, # amp up noise by 0.1 meters
-			name = 'PositionNoise',
-		)
+		if include_bounds:
+			GaussianNoise(
+				deviation = 0, # start at 0  meters in noise
+				deviation_amp = 0.1, # amp up noise by 0.1 meters
+				name = 'PositionNoise',
+			)
 		GaussianNoise(
 			deviation = 0, # start at 0  meters in noise
 			deviation_amp = 0.1, # amp up noise by 0.1 meters
@@ -755,11 +751,12 @@ def create_base_components(
 			max_input = 2*math.pi, # max angle
 			name = 'NormalizeOrientation',
 		)
-		Normalize(
-			min_input = -1*distance_param-distance_epsilon, # min position (below this is erroneous)
-			max_input = distance_param, # max position
-			name = 'NormalizePosition',
-		)
+		if include_bounds:
+			Normalize(
+				min_input = -1*distance_param-distance_epsilon, # min position (below this is erroneous)
+				max_input = distance_param, # max position
+				name = 'NormalizePosition',
+			)
 		Normalize(
 			min_input = distance_epsilon, # min depth (below this is erroneous)
 			max_input = distance_param, # max depth
@@ -832,15 +829,16 @@ def create_base_components(
 				name = 'GoalAltitude',
 			)
 		# sense position on map
-		from sensors.position import Position
-		Position(
-			misc_component = 'Drone',
-			transformers_components = [
-				'PositionNoise',
-				'NormalizePosition',
-				],
-			name = 'DronePosition',
-		)
+		if include_bounds:
+			from sensors.position import Position
+			Position(
+				misc_component = 'Drone',
+				transformers_components = [
+					'PositionNoise',
+					'NormalizePosition',
+					],
+				name = 'DronePosition',
+			)
 		from sensors.airsimcamera import AirSimCamera
 		if policy == 'MlpPolicy':
 			# get flattened depth map (obsfucated front facing distance sensors)
@@ -902,12 +900,20 @@ def create_base_components(
 
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
-		vector_sensors = ['ActionsSensor', 'GoalDistance', 'GoalOrientation', 'DronePosition']
-		vector_length = 1 + 1 + 3 # 1 for GoalDistance, 1 for GoalOrientation, 3 for position
+		vector_sensors = []
+		vector_length = 0
+		if include_bounds:
+			vector_sensors.append('DronePosition')
+			vector_length += 3
+		vector_sensors.append('ActionsSensor')
 		if rl_model in ['DQN']:
 			vector_length += 1 # DQN adds only one action for ActionSensor
 		if rl_model in ['TD3']:
 			vector_length += len(actions) # TD3 adds multiple actions for ActionSensor
+		vector_sensors.append('GoalDistance')
+		vector_length += 1
+		vector_sensors.append('GoalOrientation')
+		vector_length += 1
 		if vert_motion:
 			vector_sensors.append('GoalAltitude')
 			vector_length += 1 # 1 for GoalAltitude
@@ -991,8 +997,7 @@ def create_base_components(
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
-					#action_noise = 'normal',
-					action_noise = None,
+					action_noise = action_noise,
 					name='Model',
 				)
 			if rl_model == 'DQN':
@@ -1020,7 +1025,7 @@ def create_base_components(
 			spawns_components=[
 				Spawn(
 					map_component = 'Map',
-					bounds_component = 'TrainingBounds',
+					bounds_component = 'MapBounds',
 					dz=dz,
 					random=True,
 				),
@@ -1078,6 +1083,12 @@ def create_base_components(
 		# EVALUATOR
 		nEvalEpisodes = 1 if airsim_release == 'Tello' else 6
 		from modifiers.evaluatorcharlie import EvaluatorCharlie
+		noises_components = [
+			'OrientationNoise', 
+			'DistanceNoise', 
+			]
+		if include_bounds:
+			noises_components.append('PositionNoise')
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
 			base_component = 'TrainEnvironment',
@@ -1086,11 +1097,8 @@ def create_base_components(
 			evaluate_environment_component = 'EvaluateEnvironment',
 			goal_component = 'Goal',
 			model_component = 'Model',
-			noises_components = [
-				'OrientationNoise', 
-				'DistanceNoise', 
-				],
-			spawn_bounds_component = 'TrainingBounds',
+			noises_components = noises_components,
+			spawn_bounds_component = 'MapBounds',
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
 			track_vars = [],
@@ -1237,6 +1245,7 @@ configuration = create_base_components(
 		include_resolution = include_resolution,
 		include_bottom = include_bottom,
 		action_noise = action_noise,
+		include_bounds = include_bounds,
 )
 
 # make dir to save all tello imgs to

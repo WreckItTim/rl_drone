@@ -85,11 +85,13 @@ class RelativeGoal(Other):
 				dz = random.uniform(self.random_dz[0], self.random_dz[1])
 				yaw = random.uniform(self.random_yaw[0], self.random_yaw[1])
 				#yaw = drone_yaw + yaw
-				x = r * np.cos(yaw)
-				y = r * np.sin(yaw)
+				dx = r * np.cos(yaw)
+				dy = r * np.sin(yaw)
+				x = drone_position[0] + dx
+				y = drone_position[1] + dy
 				z = self._map.get_roof(x, y, dz)
-				relative_position = np.array([x, y, z])
-				if self._bounds.check_bounds(drone_position[0]+x, drone_position[1]+y, z):
+				goal_position = np.array([x, y, z])
+				if self._bounds.check_bounds(x, y, z):
 					break
 				attempt += 1
 				if attempt > 1000:
@@ -98,13 +100,15 @@ class RelativeGoal(Other):
 					break
 		else:
 			yaw = drone_yaw + self.static_yaw
-			x = self.static_r * np.cos(yaw)
-			y = self.static_r * np.sin(yaw)
+			dx = self.static_r * np.cos(yaw)
+			dy = self.static_r * np.sin(yaw)
+			x = drone_position[0] + dx
+			y = drone_position[1] + dy
 			z = self._map.get_roof(x, y, self.static_dz)
-			relative_position = np.array([x, y, z])
+			goal_position = np.array([x, y, z])
 		if valid_point:
-			self._x = drone_position[0] + relative_position[0]
-			self._y = drone_position[1] + relative_position[1]
-			self._z = relative_position[2]
+			self._x = goal_position[0]
+			self._y = goal_position[1]
+			self._z = goal_position[2]
 		if not valid_point:
 			self.reset(state)

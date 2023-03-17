@@ -15,7 +15,7 @@ class Collision(Reward):
 	def step(self, state):
 		if 'has_collided' not in state:
 			state['has_collided'] = self._drone.check_collision()
-		has_collided = state['has_collided']
+		has_collided = state['has_collided'] or state['drone_position'][2] > 0
 		value = 0
 		done = False
 		if has_collided:
