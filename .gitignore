@@ -8,3 +8,4 @@ __pycache__/
 **/__pycache__/
 .vs/
 **/.vs/
+train_eval.ipynb
