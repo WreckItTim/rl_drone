@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma22'
+repo_version = 'gamma23'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -175,9 +175,13 @@ if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
-controller_type = 'Train' # Train, Debug, Drift, Evaluate
+controller_type = 'Data' # Train, Debug, Drift, Evaluate Data
 if test_case in []:
 	controller_type = 'Debug'
+points_file_path = 'paths.p'
+eval_enviro = False
+if controller_type == 'Data':
+	eval_enviro = True
 actor = 'Teleporter' # Teleporter Continuous
 if test_case in []:
 	actor = 'Continuous'
@@ -197,6 +201,10 @@ if test_case in []:
 include_bottom = True
 if test_case in []:
 	include_bottom = False
+
+include_actions = False
+if test_case in []:
+	include_actions = True
 
 
 nTimesteps = 4 # number of timesteps to use in observation space
@@ -234,6 +242,9 @@ def create_base_components(
 		nTimesteps = 4,
 		action_noise = None,
 		include_bounds = False,
+		points_file_path = None,
+		eval_enviro = True,
+		include_actions = False,
 ):
 
 	# **** SETUP ****
@@ -258,6 +269,7 @@ def create_base_components(
 		use_wandb = True, # logs tensor board and wandb
 		log_interval = 10,
 		evaluator = 'Evaluator',
+		points_file_path = points_file_path,
 		)
 
 	# SET META DATA (anything you want here, just writes to config file as a dict)
@@ -457,7 +469,7 @@ def create_base_components(
 				random_r = [6,8], # relative distance for random goal from drone
 				random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
 				random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
-				random_point_on_train = True, # random goal when training?
+				#random_point_on_train = True, # random goal when training?
 				name = 'Goal',
 			)
 
@@ -905,11 +917,12 @@ def create_base_components(
 		if include_bounds:
 			vector_sensors.append('DronePosition')
 			vector_length += 3
-		vector_sensors.append('ActionsSensor')
-		if rl_model in ['DQN']:
-			vector_length += 1 # DQN adds only one action for ActionSensor
-		if rl_model in ['TD3']:
-			vector_length += len(actions) # TD3 adds multiple actions for ActionSensor
+		if include_actions:
+			vector_sensors.append('ActionsSensor')
+			if rl_model in ['DQN']:
+				vector_length += 1 # DQN adds only one action for ActionSensor
+			if rl_model in ['TD3']:
+				vector_length += len(actions) # TD3 adds multiple actions for ActionSensor
 		vector_sensors.append('GoalDistance')
 		vector_length += 1
 		vector_sensors.append('GoalOrientation')
@@ -1082,30 +1095,31 @@ def create_base_components(
 		)
 		# EVALUATOR
 		nEvalEpisodes = 1 if airsim_release == 'Tello' else 6
-		from modifiers.evaluatorcharlie import EvaluatorCharlie
-		noises_components = [
-			'OrientationNoise', 
-			'DistanceNoise', 
-			]
-		if include_bounds:
-			noises_components.append('PositionNoise')
-		# Evaluate model after each epoch (checkpoint)
-		EvaluatorCharlie(
-			base_component = 'TrainEnvironment',
-			parent_method = 'reset',
-			order = 'pre',
-			evaluate_environment_component = 'EvaluateEnvironment',
-			goal_component = 'Goal',
-			model_component = 'Model',
-			noises_components = noises_components,
-			spawn_bounds_component = 'MapBounds',
-			nEpisodes = nEvalEpisodes,
-			frequency = checkpoint,
-			track_vars = [],
-			save_every_model = True,
-			counter = 0, # -1 offset to do an eval before any training
-			name = 'Evaluator',
-		)
+		if eval_enviro:
+			from modifiers.evaluatorcharlie import EvaluatorCharlie
+			noises_components = [
+				'OrientationNoise', 
+				'DistanceNoise', 
+				]
+			if include_bounds:
+				noises_components.append('PositionNoise')
+			# Evaluate model after each epoch (checkpoint)
+			EvaluatorCharlie(
+				base_component = 'TrainEnvironment',
+				parent_method = 'reset',
+				order = 'pre',
+				evaluate_environment_component = 'EvaluateEnvironment',
+				goal_component = 'Goal',
+				model_component = 'Model',
+				noises_components = noises_components,
+				spawn_bounds_component = 'MapBounds',
+				nEpisodes = nEvalEpisodes,
+				frequency = checkpoint,
+				track_vars = [],
+				save_every_model = True,
+				counter = 0, # -1 offset to do an eval before any training
+				name = 'Evaluaor',
+			)
 		if not hyper:
 			# SAVERS
 			from modifiers.saver import Saver
@@ -1246,6 +1260,8 @@ configuration = create_base_components(
 		include_bottom = include_bottom,
 		action_noise = action_noise,
 		include_bounds = include_bounds,
+		points_file_path = points_file_path,
+		include_actions = include_actions,
 )
 
 # make dir to save all tello imgs to

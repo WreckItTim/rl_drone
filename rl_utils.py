@@ -59,15 +59,18 @@ def set_read_write_paths(working_directory):
 
 # set up controller to run configuration on
 def get_controller(controller_type, 
-				   total_timesteps = 1_000_000,
-				   continue_training = True,
-				   model_component = 'Model',
-				   environment_component = 'TrainEnvironment',
-				   evaluator_component = 'Evaluator',
-				   use_wandb = True,
-				   log_interval = -1,
-				   evaluator = 'Evaluator',
-				   ):
+				total_timesteps = 1_000_000,
+				continue_training = True,
+				model_component = 'Model',
+				environment_component = 'TrainEnvironment',
+				drone_component = 'Drone',
+				evaluator_component = 'Evaluator',
+				actor_component = 'Actor',
+				use_wandb = True,
+				log_interval = -1,
+				evaluator = 'Evaluator',
+				points_file_path = None,
+				):
 	# create CONTROLLER - controls all components (mode)
 	controller = None
 	speak(f'CONTROLLER = {controller_type}')
@@ -75,7 +78,7 @@ def get_controller(controller_type,
 	if controller_type == 'Debug':
 		from controllers.debug import Debug
 		controller = Debug(
-			drone_component='Drone',
+			drone_component=drone_component,
 			)
 	# train will create a new or read in a previously trained model
 	# set continue_training=True to pick up where learning loop last saved
@@ -101,8 +104,17 @@ def get_controller(controller_type,
 	elif controller_type == 'AirSimChecks':
 		from controllers.airsimchecks import AirSimChecks
 		controller = AirSimChecks(
-			drone_component = 'Drone',
-			actor_component = 'Actor',
+			drone_component = drone_component,
+			actor_component = actor_component,
+			)
+	# will teleport drone to specified points and collect data
+	elif controller_type == 'Data':
+		from controllers.data import Data
+		controller = Data(
+			model_component = model_component,
+			environment_component = environment_component,
+			drone_component = drone_component,
+			points_file_path = points_file_path,
 			)
 	else:
 		from controllers.empty import Empty
@@ -173,17 +185,17 @@ def warning(msg):
 # simple stopwatch to time whatevs, in (float) seconds
 # keeps track of laps along with final time
 class StopWatch:
-  def __init__(self):
-    self.start_time = time()
-    self.last_time = self.start_time
-    self.laps = []
-  def lap(self):
-    this_time = time()
-    delta_time = this_time - self.last_time
-    self.laps.append(delta_time)
-    self.last_time = this_time
-    return delta_time
-  def stop(self):
-    self.stop_time = time()
-    self.delta_time = self.stop_time - self.start_time
-    return self.delta_time
+	def __init__(self):
+		self.start_time = time()
+		self.last_time = self.start_time
+		self.laps = []
+	def lap(self):
+		this_time = time()
+		delta_time = this_time - self.last_time
+		self.laps.append(delta_time)
+		self.last_time = this_time
+		return delta_time
+	def stop(self):
+		self.stop_time = time()
+		self.delta_time = self.stop_time - self.start_time
+		return self.delta_time

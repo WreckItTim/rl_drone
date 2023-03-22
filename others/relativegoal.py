@@ -57,6 +57,11 @@ class RelativeGoal(Other):
 		self.random_dz = self.original_random_dz.copy()
 		self.random_yaw = self.original_random_yaw.copy()
 
+	def set_position(self, x, y, z):
+		self._x = x 
+		self._y = y
+		self._z = z
+
 	def get_position(self):
 		return [self._x, self._y, self._z]
 

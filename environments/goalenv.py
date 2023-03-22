@@ -129,7 +129,8 @@ class GoalEnv(Environment):
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
-	def reset(self):
+	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
+	def reset(self, state = None):
 		self.episode_counter += 1
 		# init state(s)
 		self._nSteps = 0 # steps this episode
@@ -141,10 +142,14 @@ class GoalEnv(Environment):
 		# reset drone and goal components, several reset() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
 		self._drone.reset(self._states[this_step])
+		if state is not None and 'spawn_to' in state:
+			self._drone.teleport(*state['spawn_to'], ignore_collision=True)
 		self._states[this_step]['drone_position'] = self._drone.get_position()
 		self._states[this_step]['yaw'] = self._drone.get_yaw() 
 
 		self._goal.reset(self._states[this_step])
+		if state is not None and 'goal_at' in state:
+			self._goal.set_position(*state['goal_at'][:3])
 		self._states[this_step]['goal_position'] = self._goal.get_position()
 
 		# reset other components
