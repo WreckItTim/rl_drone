@@ -168,7 +168,7 @@ class Model(Component):
 			"total_timesteps": total_timesteps,
 		}
 		run = wandb.init(
-			project="SECON23_alpha",
+			project="SECON23_beta",
 			config=config,
 			name = utils.get_global_parameter('run_name'),
 			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
@@ -193,7 +193,7 @@ class Model(Component):
 		)
 		run.finish()
 		
-	# makes a single prediction g;iven input data
+	# makes a single prediction given input data
 	def predict(self, rl_input):
 		rl_output, next_state = self._sb3model.predict(rl_input, deterministic=True)
 		return rl_output

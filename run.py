@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma23'
+repo_version = 'gamma24'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -28,7 +28,6 @@ run_post = '_base'
 if len(args) > 3:
 	run_post = args[3]
 
-# airsim map to use?
 airsim_release = 'Blocks'
 if test_case in []:
 	airsim_release = 'AirSimNH'
@@ -37,8 +36,12 @@ if test_case in ['pc']:
 if test_case in []:
 	airsim_release = 'Tello'
 
+vert_motion = True
+if test_case in ['tb']:
+	vert_motion = False
+
 action_noise = None
-if test_case in ['s1', 'h3', 'tb']:
+if test_case in ['s2']:
 	action_noise = 'normal'
 
 include_resolution = False
@@ -49,39 +52,18 @@ include_bounds = False
 if test_case in []:
 	include_bounds = True
 
-'''
-# bounds collision goal steps ditance
-reward_weights = [120, 120, 240, 0, 1]
-if test_case in ['h3', 's1']:
-	reward_weights = [220, 220, 440, 0, 1]
-if include_resolution:
-	# res1 res2 
-	if test_case in ['h4', 's2']:
-		reward_weights.append(0.25) # res1
-		reward_weights.append(0.25) # res2
-	else:
-		reward_weights.append(0.5) # res1
-		reward_weights.append(0.5) # res2
-# maxsteps
-reward_weights.append(0)
-'''
 reward_weights = []
 # bounds 
 if include_bounds:
 	reward_weights.append(20)
-# collision goal steps ditance
-reward_weights = reward_weights + [20, 20, 0, .1]
+# collision goal steps distance
+reward_weights = reward_weights + [100, 100, 1, .1]
 if include_resolution:
 	# res1 res2 
 	reward_weights.append(0.05) # res1
 	reward_weights.append(0.05) # res2
 # maxsteps
 reward_weights.append(0)
-
-# unlock vertical motion?
-vert_motion = True
-if test_case in ['h3', 's2']:
-	vert_motion = False
 
 # MLP or CNN?
 policy = 'MlpPolicy' # MLP (flattened depth map)
@@ -166,22 +148,22 @@ distance_reward = 'exp2'
 if test_case in []:
 	distance_reward = 'exp'
 
-step_reward = 'none'
+step_reward = 'constant'
 if test_case in []:
-	step_reward = 'scale2'
+	step_reward = 'scale'
 
 learning_starts = 100
 if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
-controller_type = 'Data' # Train, Debug, Drift, Evaluate Data
+controller_type = 'v' # Train, Debug, Drift, Evaluate Data
 if test_case in []:
 	controller_type = 'Debug'
 points_file_path = 'paths.p'
-eval_enviro = False
+eval_enviro = True
 if controller_type == 'Data':
-	eval_enviro = True
+	eval_enviro = False
 actor = 'Teleporter' # Teleporter Continuous
 if test_case in []:
 	actor = 'Continuous'
@@ -542,7 +524,7 @@ def create_base_components(
 		MaxSteps(
 			name = 'MaxStepsReward',
 			update_steps = True,
-			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
+			max_steps = 1_000#4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
 		rewards.append('MaxStepsReward')
 		# REWARDER
@@ -1262,6 +1244,7 @@ configuration = create_base_components(
 		include_bounds = include_bounds,
 		points_file_path = points_file_path,
 		include_actions = include_actions,
+		eval_enviro = eval_enviro,
 )
 
 # make dir to save all tello imgs to

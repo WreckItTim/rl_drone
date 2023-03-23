@@ -135,7 +135,10 @@ class GoalEnv(Environment):
 		# init state(s)
 		self._nSteps = 0 # steps this episode
 		this_step = 'step_' + str(self._nSteps)
-		self._states = {this_step:{}}
+		if state is None:
+			self._states = {this_step:{}}
+		else:
+			self._states = {this_step:state.copy()}
 		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 

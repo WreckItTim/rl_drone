@@ -38,7 +38,7 @@ class Distance(Reward):
 			value = 2 * (math.exp(math.log(0.5)*d) - 0.5)
 		if self.value_type == 'exp2':
 			#value = -1 * (math.exp(-1*d))
-			value = np.tanh(d) - 1
+			value = np.tanh(d)
 		if self.value_type == 'scale':
 			value = d
 		if self.value_type == 'scale2':
