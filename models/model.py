@@ -3,12 +3,13 @@ from component import Component
 import rl_utils as utils
 from os.path import exists
 import wandb
+import torch
 import numpy as np
 from wandb.integration.sb3 import WandbCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
 
-# derives from SB3 - so they add noise to buffer
+# custom class that derives from SB3 - so that it adds noise to replay buffer
 class NormalActionNoise2(ActionNoise):
 	def __init__(self, 
 	mean = 0, 
@@ -57,10 +58,8 @@ class NormalActionNoise2(ActionNoise):
 	def __repr__(self) -> str:
 		return f"NormalActionNoise2(mu={self._mu}, sigma={self._sigma})"
 
+# custom class taht derives from tensor callback to add whatever you want to tb log
 class TensorboardCallback(BaseCallback):
-	"""
-	Custom callback for plotting additional values in tensorboard.
-	"""
 	def __init__(self, evaluator, verbose=0):
 		super().__init__(verbose)
 		self.evaluator = evaluator
@@ -79,6 +78,7 @@ class Model(Component):
 	def __init__(self, 
 			  read_model_path=None, 
 			  read_replay_buffer_path=None, 
+			  read_weights_path=None, 
 			  _model_arguments=None
 			  ):
 		# if the model is a hyper parameter tuner, some things get handeled differently
@@ -106,6 +106,9 @@ class Model(Component):
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)
 			utils.speak('loaded replay buffer from file')
+		# load weights?
+		if self.read_weights_path is not None and exists(self.read_weights_path):
+			self.load_weights(self.read_weights_path)
 		
 			
 	# this will toggle if to checkpoint model and replay buffer
@@ -145,7 +148,17 @@ class Model(Component):
 			utils.error(f'invalid Model.load_model() path:{path}')
 		else:
 			self._sb3model = self.sb3Load(path)
-		
+
+	def save_weights(self, actor_path, critic_path):
+		torch.save(self._sb3model.actor.state_dict(), actor_path)
+		torch.save(self._sb3model.critic.state_dict(), critic_path)
+
+	def load_weights(self, actor_path, critic_path):
+		self._sb3model.actor.load_state_dict(torch.load(actor_path))
+		self._sb3model.actor_target.load_state_dict(torch.load(actor_path))
+		self._sb3model.critic.load_state_dict(torch.load(critic_path))
+		self._sb3model.critic_target.load_state_dict(torch.load(critic_path))
+
 	# load sb3 replay buffer from path
 	def load_replay_buffer(self, path):
 		if not exists(path):

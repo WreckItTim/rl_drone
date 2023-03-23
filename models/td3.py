@@ -32,6 +32,7 @@ class TD3(Model):
 			init_setup_model = True,
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
+			read_weights_path=None, 
 		):
 		if type(train_freq) == list or type(train_freq) == set:
 			train_freq = tuple(train_freq)
@@ -44,6 +45,7 @@ class TD3(Model):
 			'init_setup_model',
 			'read_model_path',
 			'read_replay_buffer_path',
+			'read_weights_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3TD3
@@ -52,5 +54,6 @@ class TD3(Model):
 		super().__init__(
 				   read_model_path=read_model_path, 
 				   read_replay_buffer_path=read_replay_buffer_path, 
+				   read_weights_path=read_weights_path, 
 				   _model_arguments=_model_arguments,
 				   )

@@ -152,7 +152,8 @@ class EvaluatorCharlie(Modifier):
 		stop = False # used to determine if we stop OUTTER TRAINING LOOP - typically shuts down entire program
 		another_set = False # used to determine if another set should run	
 		# only accept potential evaluations if all_success was triggered
-		if all_success:
+		# also only do this if we past collecting training data (controlled by the counter var)
+		if self.counter > 0 and all_success:
 			new_best = False # measures if we improved from last epochs
 
 			# are we optimizing goal distance?

@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma24'
+repo_version = 'gamma25'
 
 # ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
 
@@ -189,6 +189,11 @@ if test_case in []:
 	include_actions = True
 
 
+read_weights_path = 'local/pretrain/weights.pt'
+if test_case in []:
+	read_weights_path = None
+
+
 nTimesteps = 4 # number of timesteps to use in observation space
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
@@ -227,6 +232,7 @@ def create_base_components(
 		points_file_path = None,
 		eval_enviro = True,
 		include_actions = False,
+		read_weights_path = None,
 ):
 
 	# **** SETUP ****
@@ -992,6 +998,7 @@ def create_base_components(
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
+					read_weights_path = read_weights_path,
 					action_noise = action_noise,
 					name='Model',
 				)
@@ -1099,7 +1106,7 @@ def create_base_components(
 				frequency = checkpoint,
 				track_vars = [],
 				save_every_model = True,
-				counter = 0, # -1 offset to do an eval before any training
+				counter = -1, # -1 offset to do an eval before any training
 				name = 'Evaluator',
 			)
 		if not hyper:
@@ -1194,8 +1201,8 @@ def run_controller(configuration):
 			utils.speak(msg)
 			break
 	if 'td3' in model_name:
-		print(sb3_model.critic)
-		for name, param in sb3_model.critic.named_parameters():
+		print(sb3_model.actor)
+		for name, param in sb3_model.actor.named_parameters():
 			msg = str(name) + ' ____ ' + str(param[0])
 			utils.speak(msg)
 			break
@@ -1245,6 +1252,7 @@ configuration = create_base_components(
 		points_file_path = points_file_path,
 		include_actions = include_actions,
 		eval_enviro = eval_enviro,
+		read_weights_path = read_weights_path,
 )
 
 # make dir to save all tello imgs to
