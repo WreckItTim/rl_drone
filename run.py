@@ -524,7 +524,7 @@ def create_base_components(
 		MaxSteps(
 			name = 'MaxStepsReward',
 			update_steps = True,
-			max_steps = 1_000#4**(1+vert_motion), # base number of steps, will scale with further goal
+			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
 		)
 		rewards.append('MaxStepsReward')
 		# REWARDER
