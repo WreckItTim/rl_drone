@@ -1100,7 +1100,7 @@ def create_base_components(
 				track_vars = [],
 				save_every_model = True,
 				counter = 0, # -1 offset to do an eval before any training
-				name = 'Evaluaor',
+				name = 'Evaluator',
 			)
 		if not hyper:
 			# SAVERS
