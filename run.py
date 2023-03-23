@@ -157,7 +157,7 @@ if test_case in []:
 	learning_starts = 500
 
 # see bottom of this file which calls functions to create components and run controller
-controller_type = 'v' # Train, Debug, Drift, Evaluate Data
+controller_type = 'Train' # Train, Debug, Drift, Evaluate Data
 if test_case in []:
 	controller_type = 'Debug'
 points_file_path = 'paths.p'
