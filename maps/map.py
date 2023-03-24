@@ -26,7 +26,7 @@ class Map(Component):
 		return map_2d[xi, yi]
 
 	# uses voxels to check if position is at 3d position of an object
-	def at_object_2d(self, x, y, z):
+	def at_object_3d(self, x, y, z):
 		if self._voxels is None:
 			# no other check so far if _voxels is empty
 			return False

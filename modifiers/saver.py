@@ -45,7 +45,7 @@ class Saver(Modifier):
 	def activate(self, state=None):
 		if state is None:
 			state = {}
-		if not in state:
+		if 'activate_saver' not in state:
 			state['activate_saver'] = False
 		if state['activate_saver'] or self.check_counter(state):
 			_write_folder = self.write_folder + self._base.write_prefix()

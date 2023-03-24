@@ -47,7 +47,7 @@ class Spawn(Other):
 				in_object = self._map.at_object_2d(x, y)
 				if not in_object:
 					break
-		return x, y, z, False
+		return x, y, z
 	
 	# generate random spawn until outside of an object
 	def random_spawn(self):

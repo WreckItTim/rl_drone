@@ -37,8 +37,9 @@ vert_motion = False # s1
 if test_case in ['s2', 'm1']:
 	vert_motion = True
 
-
-controller_type = 'Data' # Train, Debug, Drift, Evaluate Data
+	
+learning_starts = 100
+controller_type = 'Train' # Train, Debug, Drift, Evaluate Data
 flat = 'big3'
 include_bottom = True
 action_noise = None
@@ -50,7 +51,6 @@ replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system w
 training_steps = 1_000_000 # roughly 250k steps a day
 distance_reward = 'tanh'
 step_reward = 'constant'
-learning_starts = 0
 actor = 'Teleporter' # Teleporter Continuous
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 # office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
@@ -297,13 +297,22 @@ def create_base_components(
 		# Create bounds to spawn in and for goal
 		from others.boundscube import BoundsCube
 		dz = 4 #distance_param/25
-		BoundsCube(
-				center = [0, 0, 0],
-				x = [-1*distance_param, distance_param],
-				y = [-1*distance_param, distance_param],
-				z = [-1*distance_param, -1],
-				name = 'MapBounds'
-				)
+		if vert_motion:
+			BoundsCube(
+					center = [0, 0, 0],
+					x = [-1*distance_param, distance_param],
+					y = [-1*distance_param, distance_param],
+					z = [-1*distance_param, -1],
+					name = 'MapBounds'
+					)
+		else:
+			BoundsCube(
+					center = [0, 0, 0],
+					x = [-1*distance_param, distance_param],
+					y = [-1*distance_param, distance_param],
+					z = [-1*dz-1, -1*dz+1],
+					name = 'MapBounds'
+					)
 
 
 		# CREATE DRONE

@@ -97,7 +97,7 @@ class RelativeGoal(Other):
 				if self.vertical:
 					z = self._map.get_roof(x, y, dz)
 				else:
-					z = dz
+					z = -1*dz
 				goal_position = np.array([x, y, z])
 				in_object = False
 				if not self.vertical:
@@ -106,7 +106,7 @@ class RelativeGoal(Other):
 					break
 				attempt += 1
 				if attempt > 1000:
-					utils.speak(f'ERR could not find goal in bounds at pos:{drone_position} and rel:{relative_position}')
+					utils.speak(f'ERR could not find goal in bounds at drone:{drone_position} and goal:{goal_position}')
 					valid_point = False
 					break
 		else:
@@ -118,7 +118,7 @@ class RelativeGoal(Other):
 			if self.vertical:
 				z = self._map.get_roof(x, y, self.static_dz)
 			else:
-				z = self.static_dz
+				z = -1*self.static_dz
 			if not self.vertical:
 				scale_x = 0.1*x
 				scale_y = 0.1*y
