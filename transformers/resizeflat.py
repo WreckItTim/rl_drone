@@ -76,6 +76,7 @@ class ResizeFlat(Transformer):
 		center_col = int(width/2)
 		if width != height:
 			print('WARNING: scale_to only works for squares')
+		mask = np.full((width, height), False)
 		# this helper function fills a square permiter at given distance from boundary
 		def fill_rect(d):
 			for r in range(height-d):
@@ -84,7 +85,6 @@ class ResizeFlat(Transformer):
 			for c in range(width-d):
 				mask[d, c] = True
 				mask[height-1-d, c] = True
-		mask = np.full((width, height), False)
 		def fill_rect(d_height, d_width):
 			d_height, d_width = int(d_height), int(d_width)
 			for r in range(d_height, height-d_height):
@@ -93,7 +93,7 @@ class ResizeFlat(Transformer):
 			for c in range(d_width, width-d_width):
 				mask[d_width, c] = True
 				mask[height-1-d_width, c] = True
-		# TODO this is hard coded a bit to a 9x9 with 0-3 levels, fix it to work for all
+		# TODO this is hard coded a bit to a 9x9 with 0-4 levels, fix it to work for all
 		# level 0 (off)
 		# level 1 (center)
 		if level >= 1:
@@ -103,7 +103,7 @@ class ResizeFlat(Transformer):
 			fill_rect(0,0)
 		# level 3+ (intermediates)
 		if level >= 3:
-			fill_rect(center_row-2, center_col-2)
+			fill_rect(center_row/2, center_col/2)
 		if level >= 4:
 			fill_rect(center_row-(2-1),center_col-(2-1))
 			fill_rect(center_row-(2+1),center_col-(2+1))

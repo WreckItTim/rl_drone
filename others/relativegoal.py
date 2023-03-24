@@ -30,6 +30,7 @@ class RelativeGoal(Other):
 				original_random_r = None,
 				original_random_dz = None,
 				original_random_yaw = None,
+				vertical = True,
 			 ):
 		if original_static_r is None:
 			self.original_static_r = static_r
@@ -89,14 +90,19 @@ class RelativeGoal(Other):
 				r = random.uniform(self.random_r[0], self.random_r[1])
 				dz = random.uniform(self.random_dz[0], self.random_dz[1])
 				yaw = random.uniform(self.random_yaw[0], self.random_yaw[1])
-				#yaw = drone_yaw + yaw
 				dx = r * np.cos(yaw)
 				dy = r * np.sin(yaw)
 				x = drone_position[0] + dx
 				y = drone_position[1] + dy
-				z = self._map.get_roof(x, y, dz)
+				if self.vertical:
+					z = self._map.get_roof(x, y, dz)
+				else:
+					z = dz
 				goal_position = np.array([x, y, z])
-				if self._bounds.check_bounds(x, y, z):
+				in_object = False
+				if not self.vertical:
+					in_object = self._map.at_object_2d(x, y)
+				if not in_object and self._bounds.check_bounds(x, y, z):
 					break
 				attempt += 1
 				if attempt > 1000:
@@ -109,7 +115,19 @@ class RelativeGoal(Other):
 			dy = self.static_r * np.sin(yaw)
 			x = drone_position[0] + dx
 			y = drone_position[1] + dy
-			z = self._map.get_roof(x, y, self.static_dz)
+			if self.vertical:
+				z = self._map.get_roof(x, y, self.static_dz)
+			else:
+				z = self.static_dz
+			if not self.vertical:
+				scale_x = 0.1*x
+				scale_y = 0.1*y
+				while(True):
+					in_object = self._map.at_object_2d(x, y)
+					if not in_object:
+						break
+					x -= scale_x
+					y -= scale_y
 			goal_position = np.array([x, y, z])
 		if valid_point:
 			self._x = goal_position[0]

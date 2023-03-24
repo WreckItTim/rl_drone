@@ -5,10 +5,6 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
-repo_version = 'gamma25'
-
-# ADJUST REPLAY BUFFER SIZE PENDING AVAILABLE RAM see replay_buffer_size bellow
-
 # grab arguments input from terminal
 args = sys.argv
 # first sys argument is test_case to run (see options below)
@@ -28,34 +24,51 @@ run_post = '_base'
 if len(args) > 3:
 	run_post = args[3]
 
+
+repo_version = 'gamma26'
+
 airsim_release = 'Blocks'
-if test_case in []:
-	airsim_release = 'AirSimNH'
+if test_case in ['s1', 'm1']:
+	airsim_release = 'AirSimNH' 
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
-if test_case in []:
-	airsim_release = 'Tello'
 
-vert_motion = True
-if test_case in ['tb']:
-	vert_motion = False
+vert_motion = False # s1
+if test_case in ['s2', 'm1']:
+	vert_motion = True
 
+
+controller_type = 'Data' # Train, Debug, Drift, Evaluate Data
+flat = 'big3'
+include_bottom = True
 action_noise = None
-if test_case in ['s2']:
-	action_noise = 'normal'
-
+policy = 'MlpPolicy' # MLP (flattened depth map)
+rl_model = 'TD3'
+read_model_path = None
+read_replay_buffer_path = None
+replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
+training_steps = 1_000_000 # roughly 250k steps a day
+distance_reward = 'tanh'
+step_reward = 'constant'
+learning_starts = 0
+actor = 'Teleporter' # Teleporter Continuous
+clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
+# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
+# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
+distance_param = 125 # distance contraint used for several calculations (see below)
+tello_goal = ''
+adjust_for_yaw = True
+include_actions = False
 include_resolution = False
-if test_case in []:
-	include_resolution = True
-
 include_bounds = False
-if test_case in []:
-	include_bounds = True
+read_weights_path = None
+nTimesteps = 4 # number of timesteps to use in observation space
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 reward_weights = []
 # bounds 
 if include_bounds:
-	reward_weights.append(20)
+	reward_weights.append(100)
 # collision goal steps distance
 reward_weights = reward_weights + [100, 100, 1, .1]
 if include_resolution:
@@ -65,46 +78,13 @@ if include_resolution:
 # maxsteps
 reward_weights.append(0)
 
-# MLP or CNN?
-policy = 'MlpPolicy' # MLP (flattened depth map)
-if test_case in []:
-	policy = 'MultiInputPolicy' # CNN (2d depth map)
+eval_enviro = True
+if controller_type == 'Data':
+	eval_enviro = False
 
-# TD3 or DQN?
-rl_model = 'TD3'
-if test_case in []:
-	rl_model = 'DQN'
-
-# read model and/or replay buffer?
-read_model_path = None
-read_replay_buffer_path = None
-if test_case in []:
-	read_model_path = 'local/models/GAMMA_model.zip'
-	run_post += '_GAMMA'
-	#read_replay_buffer_path = 'local/models/GAMMA_replay_buffer.zip'
-if test_case in []:
-	read_model_path = 'local/models/GAMMA2_model.zip'
-	run_post += '_GAMMA2'
-if test_case in []:
-	read_model_path = 'local/models/DELTA_model.zip'
-	run_post += '_DELTA'
-if test_case in []:
-	read_model_path = 'local/models/DELTA2_model.zip'
-	run_post += '_DELTA2'
-	#read_replay_buffer_path = 'local/models/DELTA_replay_buffer.zip'
-if test_case in []:
-	read_model_path = 'local/models/EPSILON_model.zip'
-	run_post += '_EPSILON'
-	#read_replay_buffer_path = 'local/models/EPSILON_replay_buffer.zip'
-
-# hyper parameter search?
 hyper = False
-if test_case in []:
-	hyper = True
 if hyper:
 	run_post += '_hyper'
-
-# which hypers to explore?
 hyper_params = []
 if test_case in []:
 	hyper_params.append('learning_rate')
@@ -128,74 +108,6 @@ if test_case in []:
 	hyper_params.append('policy_layers')
 if test_case in []:
 	hyper_params.append('policy_nodes')
-
-# how may previous steps to train on
-replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
-							 # if using an MlpPolicy this will use drastically less memory
-
-# after how many steps to stop training
-training_steps = 1_000_000 # roughly 250k steps a day
-if test_case in []:
-	training_steps = 40_000 # hyper surrogate model size
-
-flat = 'big2'
-if test_case in []:
-	flat = 'small'
-if test_case in []:
-	flat = 'big'
-
-distance_reward = 'exp2'
-if test_case in []:
-	distance_reward = 'exp'
-
-step_reward = 'constant'
-if test_case in []:
-	step_reward = 'scale'
-
-learning_starts = 100
-if test_case in []:
-	learning_starts = 500
-
-# see bottom of this file which calls functions to create components and run controller
-controller_type = 'Train' # Train, Debug, Drift, Evaluate Data
-if test_case in []:
-	controller_type = 'Debug'
-points_file_path = 'paths.p'
-eval_enviro = True
-if controller_type == 'Data':
-	eval_enviro = False
-actor = 'Teleporter' # Teleporter Continuous
-if test_case in []:
-	actor = 'Continuous'
-clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
-# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
-# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
-distance_param = 125 # distance contraint used for several calculations (see below)
-if test_case in []:
-	distance_param = 25
-tello_goal = ''
-if test_case in []:
-	tello_goal = 'Hallway1'
-adjust_for_yaw = True
-if test_case in []:
-	adjust_for_yaw = False
-
-include_bottom = True
-if test_case in []:
-	include_bottom = False
-
-include_actions = False
-if test_case in []:
-	include_actions = True
-
-
-read_weights_path = 'local/pretrain/weights.pt'
-if test_case in []:
-	read_weights_path = None
-
-
-nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 # runs some overarching base things
 def create_base_components(
@@ -229,7 +141,6 @@ def create_base_components(
 		nTimesteps = 4,
 		action_noise = None,
 		include_bounds = False,
-		points_file_path = None,
 		eval_enviro = True,
 		include_actions = False,
 		read_weights_path = None,
@@ -257,7 +168,6 @@ def create_base_components(
 		use_wandb = True, # logs tensor board and wandb
 		log_interval = 10,
 		evaluator = 'Evaluator',
-		points_file_path = points_file_path,
 		)
 
 	# SET META DATA (anything you want here, just writes to config file as a dict)
@@ -388,12 +298,12 @@ def create_base_components(
 		from others.boundscube import BoundsCube
 		dz = 4 #distance_param/25
 		BoundsCube(
-					center = [0, 0, 0],
-					x = [-1*distance_param, distance_param],
-					y = [-1*distance_param, distance_param],
-					z = [-1*distance_param, -1],
-					name = 'MapBounds'
-					)
+				center = [0, 0, 0],
+				x = [-1*distance_param, distance_param],
+				y = [-1*distance_param, distance_param],
+				z = [-1*distance_param, -1],
+				name = 'MapBounds'
+				)
 
 
 		# CREATE DRONE
@@ -457,7 +367,8 @@ def create_base_components(
 				random_r = [6,8], # relative distance for random goal from drone
 				random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
 				random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
-				#random_point_on_train = True, # random goal when training?
+				random_point_on_train = True, # random goal when training?
+				vertical = vert_motion,
 				name = 'Goal',
 			)
 
@@ -568,6 +479,7 @@ def create_base_components(
 				drone_component = 'Drone', 
 				base_x_rel = base_distance, 
 				adjust_for_yaw = adjust_for_yaw,
+				zero_thresh_abs = False, # any negative input is not move forward
 				name = 'MoveForward',
 			)
 			actions.append('MoveForward')
@@ -575,7 +487,6 @@ def create_base_components(
 			Rotate(
 				drone_component = 'Drone',  
 				base_yaw = base_yaw,
-				min_space = -1, # allows left and right rotations
 				name = 'Rotate',
 			)
 			actions.append('Rotate')
@@ -583,7 +494,6 @@ def create_base_components(
 				Move(
 					drone_component = 'Drone', 
 					base_z_rel = base_distance, 
-					min_space = -1, # allows up and down movements
 					adjust_for_yaw = adjust_for_yaw,
 					name = 'MoveVertical',
 				)
@@ -773,6 +683,8 @@ def create_base_components(
 			image_shape=(64,64) 
 		if flat == 'big2':
 			image_shape=(81,81) 
+		if flat == 'big3':
+			image_shape=(25,25) 
 		ResizeImage(
 			image_shape=image_shape,
 			name = 'ResizeImage',
@@ -848,6 +760,9 @@ def create_base_components(
 			if flat == 'big2':
 				max_cols = [9*(i+1) for i in range(9)] # splits depth map by columns
 				max_rows = [9*(i+1) for i in range(9)] # splits depth map by rows
+			if flat == 'big3':
+				max_cols = [5*(i+1) for i in range(5)] # splits depth map by columns
+				max_rows = [5*(i+1) for i in range(5)] # splits depth map by rows
 			if flat == 'small':
 				max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
 				max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
@@ -1030,6 +945,7 @@ def create_base_components(
 					bounds_component = 'MapBounds',
 					dz=dz,
 					random=True,
+					vertical = vert_motion,
 				),
 			],
 			order='post',
@@ -1046,36 +962,42 @@ def create_base_components(
 					y=0,
 					dz=dz,
 					yaw=math.radians(0),
+					vertical = vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(45),
+					vertical = vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(135),
+					vertical = vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(180),
+					vertical = vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-130),
+					vertical = vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-45),
+					vertical = vert_motion,
 					),
 			],
 			order='post',
@@ -1249,7 +1171,6 @@ configuration = create_base_components(
 		include_bottom = include_bottom,
 		action_noise = action_noise,
 		include_bounds = include_bounds,
-		points_file_path = points_file_path,
 		include_actions = include_actions,
 		eval_enviro = eval_enviro,
 		read_weights_path = read_weights_path,

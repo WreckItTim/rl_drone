@@ -20,6 +20,7 @@ class Spawn(Other):
 				 bounds_component=None,
 				 random_yaw=True,
 				 random=False,
+				 vertical = True,
 				 ):
 		super().__init__()
 
@@ -37,16 +38,20 @@ class Spawn(Other):
 
 	# uniform distribution between passed in range
 	def get_random_pos(self):
-		x, y, z = self._bounds.get_random()
-		z = self._map.get_roof(x, y, self.dz)
-		#in_object = self._map.at_object_2d(x, y)
+		if self.vertical:
+			x, y, z = self._bounds.get_random()
+			z = self._map.get_roof(x, y, self.dz)
+		else:
+			while (True):
+				x, y, z = self._bounds.get_random()
+				in_object = self._map.at_object_2d(x, y)
+				if not in_object:
+					break
 		return x, y, z, False
 	
 	# generate random spawn until outside of an object
 	def random_spawn(self):
-		in_object = True
-		while(in_object):
-			self._x, self._y, self._z, in_object = self.get_random_pos()
+		self._x, self._y, self._z = self.get_random_pos()
 		if self.random_yaw:
 			# make yaw face towards origin (with some noise)
 			# this is used to make sure drone navigates through buildings (most of the time)

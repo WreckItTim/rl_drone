@@ -69,7 +69,6 @@ def get_controller(controller_type,
 				use_wandb = True,
 				log_interval = -1,
 				evaluator = 'Evaluator',
-				points_file_path = None,
 				):
 	# create CONTROLLER - controls all components (mode)
 	controller = None
@@ -114,7 +113,6 @@ def get_controller(controller_type,
 			model_component = model_component,
 			environment_component = environment_component,
 			drone_component = drone_component,
-			points_file_path = points_file_path,
 			)
 	else:
 		from controllers.empty import Empty

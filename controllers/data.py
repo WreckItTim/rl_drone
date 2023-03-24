@@ -17,7 +17,6 @@ class Data(Controller):
 				 model_component,
 				 environment_component, # takes point at each step
 				 drone_component,
-				 points_file_path, # np file where each row is x,y,z,yaw
 				 ):
 		super().__init__()
 
@@ -35,14 +34,17 @@ class Data(Controller):
 			# path[-1][-1][:] = end point of last path
 		parent_dir = 'local/pretrain/'
 		files = [
+			'paths_horizontal_test_part0.p',
+			'paths_horizontal_val_part0.p',
+			'paths_horizontal_train_part0.p',
 			'paths_vertical_test_part0.p',
 			'paths_vertical_test_part1.p',
 			'paths_vertical_val_part0.p',
 			'paths_vertical_val_part1.p',
 			'paths_vertical_train_part0.p',
 			'paths_vertical_train_part1.p',
-			'paths_vertical_train_part2.p',
-			'paths_vertical_train_part3.p',
+			#'paths_vertical_train_part2.p',
+			#'paths_vertical_train_part3.p',
 		]
 		for fname in files:
 			file_path = parent_dir + fname
@@ -51,6 +53,7 @@ class Data(Controller):
 			#points = np.load(self.points_file_path)
 			nPaths = len(paths)
 			for path_idx in range(nPaths):
+				utils.speak(f'on path {path_idx} of {nPaths} from {fname}')
 				# get path
 				path = paths[path_idx]
 				nPoints = len(path)
