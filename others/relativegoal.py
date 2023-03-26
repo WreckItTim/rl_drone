@@ -102,9 +102,20 @@ class RelativeGoal(Other):
 				in_object = False
 				if not self.vertical:
 					in_object = self._map.at_object_2d(x, y)
+				
 				if not in_object and self._bounds.check_bounds(x, y, z):
 					break
 				attempt += 1
+				if attempt > 100:
+					scale_x = 0.1*x
+					scale_y = 0.1*y
+					while(True):
+						in_object = self._map.at_object_2d(x, y)
+						if not in_object:
+							break
+						x -= scale_x
+						y -= scale_y
+					break
 				if attempt > 1000:
 					utils.speak(f'ERR could not find goal in bounds at drone:{drone_position} and goal:{goal_position}')
 					valid_point = False
