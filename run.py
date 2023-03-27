@@ -28,13 +28,13 @@ if len(args) > 3:
 repo_version = 'gamma28'
 
 airsim_release = 'Blocks'
-if test_case in ['s1', 'm1']:
+if test_case in []:
 	airsim_release = 'AirSimNH' 
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
-vert_motion = True # s1
-if test_case in ['s2', 'm1']:
+vert_motion = True
+if test_case in ['s1']:
 	vert_motion = False
 
 	

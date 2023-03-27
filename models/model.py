@@ -208,7 +208,7 @@ class Model(Component):
 			"total_timesteps": total_timesteps,
 		}
 		run = wandb.init(
-			project="SECON23_beta",
+			project="SECON23_gamma",
 			config=config,
 			name = utils.get_global_parameter('run_name'),
 			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
