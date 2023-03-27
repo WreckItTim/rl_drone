@@ -102,7 +102,6 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
-		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
 		self._sb3model.actor.optimizer = torch.optim.Adam(
 			self._sb3model.actor.parameters(),
 			amsgrad=False,
@@ -129,6 +128,7 @@ class Model(Component):
 			maximize= False,
 			weight_decay= 1e-6,
 		)
+		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
 		# replay buffer init
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)
