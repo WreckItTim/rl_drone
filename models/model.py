@@ -102,6 +102,33 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
+		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
+		self._sb3model.actor.optimizer = torch.optim.Adam(
+			self._sb3model.actor.parameters(),
+			amsgrad=False,
+			betas= (0.9, 0.999),
+			capturable= False,
+			differentiable= False,
+			eps= 1e-8,
+			foreach= None,
+			fused= False,
+			lr= 1e-3,
+			maximize= False,
+			weight_decay= 1e-6,
+		)
+		self._sb3model.critic.optimizer = torch.optim.Adam(
+			self._sb3model.critic.parameters(),
+			amsgrad=False,
+			betas= (0.9, 0.999),
+			capturable= False,
+			differentiable= False,
+			eps= 1e-8,
+			foreach= None,
+			fused= False,
+			lr= 1e-3,
+			maximize= False,
+			weight_decay= 1e-6,
+		)
 		# replay buffer init
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)

@@ -25,7 +25,7 @@ if len(args) > 3:
 	run_post = args[3]
 
 
-repo_version = 'gamma26'
+repo_version = 'gamma28'
 
 airsim_release = 'Blocks'
 if test_case in ['s1', 'm1']:
@@ -33,9 +33,9 @@ if test_case in ['s1', 'm1']:
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
-vert_motion = False # s1
+vert_motion = True # s1
 if test_case in ['s2', 'm1']:
-	vert_motion = True
+	vert_motion = False
 
 	
 learning_starts = 100
@@ -917,6 +917,7 @@ def create_base_components(
 				TD3(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
+					policy_kwargs = {'net_arch':[32,32,32]},
 					buffer_size = replay_buffer_size,
 					learning_starts = learning_starts,
 					tensorboard_log = working_directory + 'tensorboard_log/',
