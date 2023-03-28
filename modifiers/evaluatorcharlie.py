@@ -173,7 +173,8 @@ class EvaluatorCharlie(Modifier):
 				#self._spawn_bounds.inner_radius -= self.amp_up_r
 				self._preamps += 1
 				another_set = True # evaluate again, to see if we can get even farther without more training
-				continue
+				self.set_counter += 1
+				return stop, another_set
 
 			# are we optimizing goal distance?
 			if self.phase == 'distance':
