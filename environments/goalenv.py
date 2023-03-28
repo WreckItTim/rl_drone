@@ -133,7 +133,7 @@ class GoalEnv(Environment):
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def reset(self, state = None):
-		if self.not_switched and self.episode_counter >= 10:
+		if self.not_switched and self.episode_counter >= 100:
 			self._model._sb3model.train_freq = (1, 'episode')
 			self._model._sb3model._convert_train_freq()
 		self.episode_counter += 1

@@ -37,10 +37,10 @@ vert_motion = True
 if test_case in ['s1']:
 	vert_motion = False
 
-read_model_path = 'local/pretrain/model_out.zip'
+read_model_path = 'model_out_vert.zip'
+controller_type = 'Train' # Train Debug Drift Evaluate Data
 	
 learning_starts = 100
-controller_type = 'Train' # Train, Debug, Drift, Evaluate Data
 flat = 'big3'
 include_bottom = True
 action_noise = None
@@ -940,7 +940,7 @@ def create_base_components(
 					read_replay_buffer_path = read_replay_buffer_path,
 					read_weights_path = read_weights_path,
 					action_noise = action_noise,
-					train_freq=(10, 'episode'),
+					train_freq=(100, 'episode'),
 					name='Model',
 				)
 			if rl_model == 'DQN':
