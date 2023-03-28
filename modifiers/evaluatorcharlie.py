@@ -55,6 +55,7 @@ class EvaluatorCharlie(Modifier):
 		self.connect_priority = -2 # needs other components to connect first
 		if success < 0:
 			self.success = self.nEpisodes
+		self._preamps = 0
 
 	def connect(self, state=None):
 		super().connect(state)
@@ -94,6 +95,13 @@ class EvaluatorCharlie(Modifier):
 			while(True):
 				stop, another_set = self.evaluate_set()
 				if not another_set:
+					# pre evaluation before any training
+					if self.counter <= 0:
+						# undo amp up goal distance
+						for i in range(self._preamps):
+							self._goal.static_r -= self.amp_up_r
+							self._goal.random_r[0] -= self.amp_up_r
+							self._goal.random_r[1] -= self.amp_up_r
 					break
 			# close up shop?
 			if stop:
@@ -153,8 +161,19 @@ class EvaluatorCharlie(Modifier):
 		another_set = False # used to determine if another set should run	
 		# only accept potential evaluations if all_success was triggered
 		# also only do this if we past collecting training data (controlled by the counter var)
-		if self.counter > 0 and all_success:
+		if all_success:
 			new_best = False # measures if we improved from last epochs
+
+			# pre evaluation before any training
+			if self.counter <= 0:
+				# amp up goal distance
+				self._goal.static_r += self.amp_up_r
+				self._goal.random_r[0] += self.amp_up_r
+				self._goal.random_r[1] += self.amp_up_r
+				#self._spawn_bounds.inner_radius -= self.amp_up_r
+				self._preamps += 1
+				another_set = True # evaluate again, to see if we can get even farther without more training
+				continue
 
 			# are we optimizing goal distance?
 			if self.phase == 'distance':
