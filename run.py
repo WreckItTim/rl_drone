@@ -28,16 +28,23 @@ if len(args) > 3:
 repo_version = 'gamma28'
 
 airsim_release = 'Blocks'
-if test_case in []:
+if test_case in ['h3', 'tp']:
 	airsim_release = 'AirSimNH' 
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 vert_motion = True
-if test_case in ['s1']:
+if test_case in ['s2']:
 	vert_motion = False
 
 read_model_path = 'model_out_vert.zip'
+if test_case in ['h3']:
+	read_model_path = None
+if test_case in ['s2']:
+	read_model_path = 'model_out_horz.zip'
+
+random_start = read_model_path is None
+
 controller_type = 'Train' # Train Debug Drift Evaluate Data
 	
 learning_starts = 100
@@ -144,6 +151,7 @@ def create_base_components(
 		eval_enviro = True,
 		include_actions = False,
 		read_weights_path = None,
+		random_start = True,
 ):
 
 	# **** SETUP ****
@@ -223,6 +231,7 @@ def create_base_components(
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
 			model_component='Model',
+			switched = random_start,
 			name='TrainEnvironment',
 		)
 		# CREATE EVALUATE ENVIRONMENT
@@ -234,6 +243,7 @@ def create_base_components(
 			goal_component='Goal',
 			model_component='Model',
 			is_evaluation_env=True,
+			switched = True,
 			name='EvaluateEnvironment',
 		)
 		
@@ -914,33 +924,17 @@ def create_base_components(
 		else:
 			if rl_model == 'TD3':
 				from models.td3 import TD3
-				'''
 				TD3(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
 					policy_kwargs = {'net_arch':[32,32,32]},
 					buffer_size = replay_buffer_size,
-					learning_starts = learning_starts,
+					learning_starts = learning_starts if random_start else 0,
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
 					read_weights_path = read_weights_path,
 					action_noise = action_noise,
-					name='Model',
-				)
-				'''
-				TD3(
-					environment_component = 'TrainEnvironment',
-					policy = policy,
-					policy_kwargs = {'net_arch':[32,32,32]},
-					buffer_size = replay_buffer_size,
-					learning_starts = 0,
-					tensorboard_log = working_directory + 'tensorboard_log/',
-					read_model_path = read_model_path,
-					read_replay_buffer_path = read_replay_buffer_path,
-					read_weights_path = read_weights_path,
-					action_noise = action_noise,
-					train_freq=(100, 'episode'),
 					name='Model',
 				)
 			if rl_model == 'DQN':
@@ -1200,6 +1194,7 @@ configuration = create_base_components(
 		include_actions = include_actions,
 		eval_enviro = eval_enviro,
 		read_weights_path = read_weights_path,
+		random_start = random_start,
 )
 
 # make dir to save all tello imgs to

@@ -103,8 +103,8 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
-		self._sb3model.train_freq = (100, 'episode')
-		self._sb3model._convert_train_freq()
+			self._sb3model.train_freq = (100, 'episode')
+			self._sb3model._convert_train_freq()
 		self._sb3model.actor.optimizer = torch.optim.Adam(
 			self._sb3model.actor.parameters(),
 			amsgrad=False,

@@ -11,6 +11,7 @@ class MaxSteps(Reward):
 			  max_steps=4, # initial number of max steps before episode termination (use update_steps to scale)
 			  update_steps=True, # if True, will add more steps for further distance to goal
 			  step_ratio=1, # steps added per meter of distance to goal (added to initial max_steps)
+			  max_max = 75, # the maximum number that max_steps can get as high as
 			  terminate=True, # =True will terminate episodes on collision
 			  ):
 		super().__init__()
@@ -37,4 +38,4 @@ class MaxSteps(Reward):
 			_goal_position = np.array(state['goal_position'])
 			distance_vector = _goal_position - _drone_position
 			distance = np.linalg.norm(distance_vector)
-			self._max_steps = self.max_steps + int(self.step_ratio*distance)
+			self._max_steps = min(self.max_max, self.max_steps + int(self.step_ratio*distance))

@@ -28,7 +28,7 @@ class GoalEnv(Environment):
 				 episode_counter=0, 
 				 save_counter=0,
 				 is_evaluation_env=False,
-				 not_switched = False,
+				 switched = False,
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
@@ -133,7 +133,7 @@ class GoalEnv(Environment):
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def reset(self, state = None):
-		if self.not_switched and self.episode_counter >= 100:
+		if not self.switched and self.episode_counter >= 100:
 			self._model._sb3model.train_freq = (1, 'episode')
 			self._model._sb3model._convert_train_freq()
 		self.episode_counter += 1
