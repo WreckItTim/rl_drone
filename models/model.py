@@ -8,6 +8,7 @@ import numpy as np
 from wandb.integration.sb3 import WandbCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.type_aliases import TrainFreq
 
 # custom class that derives from SB3 - so that it adds noise to replay buffer
 class NormalActionNoise2(ActionNoise):
@@ -102,6 +103,8 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
+		self._sb3model.train_freq = (100, 'episode')
+		self._sb3model._convert_train_freq()
 		self._sb3model.actor.optimizer = torch.optim.Adam(
 			self._sb3model.actor.parameters(),
 			amsgrad=False,

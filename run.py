@@ -37,6 +37,7 @@ vert_motion = True
 if test_case in ['s1']:
 	vert_motion = False
 
+read_model_path = 'local/pretrain/model_out.zip'
 	
 learning_starts = 100
 controller_type = 'Train' # Train, Debug, Drift, Evaluate Data
@@ -45,7 +46,6 @@ include_bottom = True
 action_noise = None
 policy = 'MlpPolicy' # MLP (flattened depth map)
 rl_model = 'TD3'
-read_model_path = None
 read_replay_buffer_path = None
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
 training_steps = 1_000_000 # roughly 250k steps a day
@@ -914,6 +914,7 @@ def create_base_components(
 		else:
 			if rl_model == 'TD3':
 				from models.td3 import TD3
+				'''
 				TD3(
 					environment_component = 'TrainEnvironment',
 					policy = policy,
@@ -925,6 +926,21 @@ def create_base_components(
 					read_replay_buffer_path = read_replay_buffer_path,
 					read_weights_path = read_weights_path,
 					action_noise = action_noise,
+					name='Model',
+				)
+				'''
+				TD3(
+					environment_component = 'TrainEnvironment',
+					policy = policy,
+					policy_kwargs = {'net_arch':[32,32,32]},
+					buffer_size = replay_buffer_size,
+					learning_starts = 0,
+					tensorboard_log = working_directory + 'tensorboard_log/',
+					read_model_path = read_model_path,
+					read_replay_buffer_path = read_replay_buffer_path,
+					read_weights_path = read_weights_path,
+					action_noise = action_noise,
+					train_freq=(10, 'episode'),
 					name='Model',
 				)
 			if rl_model == 'DQN':
