@@ -25,7 +25,7 @@ if len(args) > 3:
 	run_post = args[3]
 
 
-repo_version = 'gamma29'
+repo_version = 'gamma30'
 
 airsim_release = 'Blocks'
 if test_case in []:
@@ -34,7 +34,7 @@ if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
 vert_motion = False
-if test_case in ['s1']:
+if test_case in []:
 	vert_motion = True
 
 read_model_path = None
@@ -42,12 +42,11 @@ if test_case in []:
 	read_model_path = 'model_out_vert.zip'
 if test_case in []:
 	read_model_path = 'model_out_horz.zip'
-random_start = read_model_path is None
-
-use_slim = True
+random_start = True
+learning_starts = 100
+use_slim = False
 
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
-learning_starts = 100
 flat = 'big3'
 include_bottom = True
 action_noise = None
@@ -235,7 +234,7 @@ def create_base_components(
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
 			model_component='Model',
-			switched = random_start,
+			change_train_freq_after = None if random_start else learning_starts,
 			name='TrainEnvironment',
 		)
 		# CREATE EVALUATE ENVIRONMENT
@@ -247,7 +246,6 @@ def create_base_components(
 			goal_component='Goal',
 			model_component='Model',
 			is_evaluation_env=True,
-			switched = True,
 			name='EvaluateEnvironment',
 		)
 		
@@ -949,12 +947,14 @@ def create_base_components(
 					policy_kwargs = {'net_arch':[32,32,32]},
 					buffer_size = replay_buffer_size,
 					learning_starts = learning_starts if random_start else 0,
+					train_freq = (1, "episode") if random_start else (learning_starts, "episode"),
 					tensorboard_log = working_directory + 'tensorboard_log/',
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
 					read_weights_path = read_weights_path,
 					with_distillation = use_slim,
 					use_slim = use_slim,
+					convert_slim = use_slim,
 					action_noise = action_noise,
 					name='Model',
 				)

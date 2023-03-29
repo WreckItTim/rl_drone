@@ -28,7 +28,8 @@ class GoalEnv(Environment):
 				 episode_counter=0, 
 				 save_counter=0,
 				 is_evaluation_env=False,
-				 switched = False,
+				 change_train_freq_after = None,
+				 change_train_freq = (1, 'episode'),
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
@@ -135,9 +136,9 @@ class GoalEnv(Environment):
 	def reset(self, state = None):
 		#print('reset',self.is_evaluation_env, self.episode_counter)
 		#i = input()
-		if not self.switched and self.episode_counter >= 100:
-			self._model._sb3model.train_freq = (1, 'episode')
-			self._model._sb3model._convert_train_freq()
+		if self.change_train_freq_after is not None and self.episode_counter >= self.change_train_freq_after:
+			self._sb3model.train_freq = self.change_train_freq
+			self._sb3model._convert_train_freq()
 		self.episode_counter += 1
 		# init state(s)
 		self._nSteps = 0 # steps this episode

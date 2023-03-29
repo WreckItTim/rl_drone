@@ -235,6 +235,7 @@ class Model(Component):
 				_model_arguments=None,
 				with_distillation = True,
 				use_slim = False,
+				convert_slim = False,
 			):
 		# if the model is a hyper parameter tuner, some things get handeled differently
 		self._is_hyper = False
@@ -257,8 +258,6 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
-			self._sb3model.train_freq = (100, 'episode')
-			self._sb3model._convert_train_freq()
 		self._sb3model.actor.optimizer = torch.optim.Adam(
 			self._sb3model.actor.parameters(),
 			amsgrad=False,
@@ -285,20 +284,26 @@ class Model(Component):
 			maximize= False,
 			weight_decay= 1e-6,
 		)
-		if self.use_slim:
+		# load weights?
+		if self.read_weights_path is not None and exists(self.read_weights_path):
+			self.load_weights(self.read_weights_path)
+		# convert all linear modules to slim ones
+		if self.convert_slim:
 			self._sb3model.actor.mu = convert_to_slim(self._sb3model.actor.mu)
 			self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
 			self._sb3model.slim = 1
+		# use slim layers
+		if self.use_slim:
+			self._sb3model.slim = 1
+			# use distiallation with slim training
 			if self.with_distillation:
 				self._sb3model.train = train_with_distillation
+		# save init model to file
 		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
 		# replay buffer init
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)
 			utils.speak('loaded replay buffer from file')
-		# load weights?
-		if self.read_weights_path is not None and exists(self.read_weights_path):
-			self.load_weights(self.read_weights_path)
 		
 			
 	# this will toggle if to checkpoint model and replay buffer
@@ -371,7 +376,7 @@ class Model(Component):
 			"total_timesteps": total_timesteps,
 		}
 		run = wandb.init(
-			project="SECON23_delta",
+			project="SECON23_epsilon",
 			config=config,
 			name = utils.get_global_parameter('run_name'),
 			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics

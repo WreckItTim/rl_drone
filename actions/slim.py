@@ -22,6 +22,7 @@ class Slim(Action):
 		rl_output = state['rl_output'][self._idx]
 		rho = round(max(0.1, rl_output), 2)
 		self._rho = rho # give access to other components to last rho
+		self._model._sb3model.slim = rho
 		for module in self._model._sb3model.actor.modules():
 			#print(type(module))
 			if 'Slim' in str(type(module)):
