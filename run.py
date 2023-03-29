@@ -5,6 +5,7 @@ import numpy as np
 import sys
 import os
 from hyperopt import hp
+
 # grab arguments input from terminal
 args = sys.argv
 # first sys argument is test_case to run (see options below)
@@ -20,7 +21,7 @@ if len(args) > 2:
 	continue_training = args[2] in ['true', 'True']
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
 	# will assume no text to concat if no additional input
-run_post = '_base'
+run_post = '_wSlim'
 if len(args) > 3:
 	run_post = args[3]
 
@@ -44,7 +45,7 @@ if test_case in []:
 	read_model_path = 'model_out_horz.zip'
 random_start = True
 learning_starts = 100
-use_slim = False
+use_slim = True
 
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
 flat = 'big3'

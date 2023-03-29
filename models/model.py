@@ -15,6 +15,7 @@ from stable_baselines3.common.utils import polyak_update
 import torch.nn as nn
 from torch import Tensor
 import copy
+import functools
 
 # CUSTOM SLIM LAYERS
 class Slim(nn.Linear):
@@ -46,7 +47,9 @@ class Slim(nn.Linear):
 # modifies a TD3 train() to add distillation for slimming
 # ASSUMES custom Slim layers
 def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) -> None:
-	utils.speak('BEGIN TRAIN')
+	#utils.speak('BEGIN TRAIN with distill')
+	#for param in self.actor_target.parameters():
+	#	print(param.device)
 	# Switch to train mode (this affects batch norm / dropout)
 	self.policy.set_training_mode(True)
 
@@ -105,7 +108,7 @@ def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) ->
 					if 'Slim' in str(type(module)):
 						module.slim = slim
 				p2 = self.actor(replay_data.observations)
-				loss = criterion(p2, p)
+				loss = F.mse_loss(p2, p)
 				loss.backward(retain_graph=True)
 			# UNSLIM
 			for module in self.actor.modules():
@@ -130,7 +133,7 @@ def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) ->
 	for module in self.actor.modules():
 		if 'Slim' in str(type(module)):
 			module.slim = self.slim
-	utils.speak('END TRAIN')
+	#utils.speak('END TRAIN with distill')
 
 # custom class that derives from SB3 - so that it adds noise to replay buffer
 class NormalActionNoise2(ActionNoise):
@@ -236,6 +239,7 @@ class Model(Component):
 				with_distillation = True,
 				use_slim = False,
 				convert_slim = False,
+				use_cuda = True,
 			):
 		# if the model is a hyper parameter tuner, some things get handeled differently
 		self._is_hyper = False
@@ -290,14 +294,26 @@ class Model(Component):
 		# convert all linear modules to slim ones
 		if self.convert_slim:
 			self._sb3model.actor.mu = convert_to_slim(self._sb3model.actor.mu)
-			self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
+			#self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
 			self._sb3model.slim = 1
 		# use slim layers
 		if self.use_slim:
 			self._sb3model.slim = 1
 			# use distiallation with slim training
 			if self.with_distillation:
-				self._sb3model.train = train_with_distillation
+				self._sb3model.train = functools.partial(train_with_distillation, self._sb3model)
+		if self.use_cuda:
+			device = torch.device("cuda")
+			self._sb3model.actor.cuda()
+			self._sb3model.actor_target.cuda()
+			self._sb3model.critic.cuda()
+			self._sb3model.critic_target.cuda()
+		else:
+			device = torch.device("cpu")
+			self._sb3model.actor.cpu()
+			self._sb3model.actor_target.cpu()
+			self._sb3model.critic.cpu()
+			self._sb3model.critic_target.cpu()
 		# save init model to file
 		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
 		# replay buffer init
@@ -330,10 +346,14 @@ class Model(Component):
 		if self._sb3model.action_noise is not None:
 			temp = self._sb3model.action_noise._progress_calculator
 			self._sb3model.action_noise._progress_calculator = None
+		@if self.with_distillation:
+			self._sb3model.train = None
 		self._sb3model.save(path)
 		# SB3 has built in serialization which can not handle a custom class
 		if self._sb3model.action_noise is not None:
 			self._sb3model.action_noise._progress_calculator = temp
+		if self.with_distillation:
+			self._sb3model.train = functools.partial(train_with_distillation, self._sb3model)
 	def save_replay_buffer(self, path):
 		self._sb3model.save_replay_buffer(path)
 
