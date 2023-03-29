@@ -346,7 +346,7 @@ class Model(Component):
 		if self._sb3model.action_noise is not None:
 			temp = self._sb3model.action_noise._progress_calculator
 			self._sb3model.action_noise._progress_calculator = None
-		@if self.with_distillation:
+		if self.with_distillation:
 			self._sb3model.train = None
 		self._sb3model.save(path)
 		# SB3 has built in serialization which can not handle a custom class
