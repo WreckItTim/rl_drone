@@ -200,7 +200,7 @@ class EvaluatorCharlie(Modifier):
 					self._goal.random_r[0] += self.amp_up_r
 					self._goal.random_r[1] += self.amp_up_r
 					#self._spawn_bounds.inner_radius -= self.amp_up_r
-					another_set = True # evaluate again, to see if we can get even farther without more training
+					#another_set = True # evaluate again, to see if we can get even farther without more training
 
 			# are we optimizing reward?
 			elif self.phase == 'reward':
@@ -226,7 +226,7 @@ class EvaluatorCharlie(Modifier):
 			# are we optimizing noise?
 			elif self.phase == 'noise':
 				new_best = True # as long as we reached all_success then we are improving
-				another_set = True # evaluate again, to see if we can achieve goal with more noise
+				#another_set = True # evaluate again, to see if we can achieve goal with more noise
 				self.best_noise += 1
 				self._model._best_score = -10_000 * (self.best_noise) # need to minimize if hyper learning
 				# amp up noise levels 

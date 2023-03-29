@@ -9,6 +9,128 @@ from wandb.integration.sb3 import WandbCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.type_aliases import TrainFreq
+import torch as th
+from torch.nn import functional as F
+from stable_baselines3.common.utils import polyak_update
+import torch.nn as nn
+from torch import Tensor
+import copy
+
+# CUSTOM SLIM LAYERS
+class Slim(nn.Linear):
+	def __init__(self, max_in_features: int, max_out_features: int, bias: bool = True,
+				 device=None, dtype=None,
+				slim_in=True, slim_out=True) -> None:
+		factory_kwargs = {'device': device, 'dtype': dtype}
+		super().__init__(max_in_features, max_out_features, bias, device, dtype)
+		self.max_in_features = max_in_features
+		self.max_out_features = max_out_features
+		self.slim_in = slim_in
+		self.slim_out = slim_out
+		self.slim = 1
+		
+	def forward(self, input: Tensor) -> Tensor:
+		if self.slim_in:
+			self.in_features = int(self.slim * self.max_in_features)
+		if self.slim_out:
+			self.out_features = int(self.slim * self.max_out_features)
+		weight = self.weight[:self.out_features, :self.in_features]
+		if self.bias is not None:
+			bias = self.bias[:self.out_features]
+		else:
+			bias = self.bias
+		y = F.linear(input, weight, bias)
+		#utils.speak(f'RHO:{self.slim} IN:{weight.shape} OUT:{y.shape}')
+		return y
+
+# modifies a TD3 train() to add distillation for slimming
+# ASSUMES custom Slim layers
+def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) -> None:
+	utils.speak('BEGIN TRAIN')
+	# Switch to train mode (this affects batch norm / dropout)
+	self.policy.set_training_mode(True)
+
+	# Update learning rate according to lr schedule
+	self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
+
+	# UNSLIM (code added from original SB3 train() method )
+	actor_losses, critic_losses = [], []
+	for module in self.actor.modules():
+		if 'Slim' in str(type(module)):
+			module.slim = 1
+	for _ in range(gradient_steps):
+		self._n_updates += 1
+		# Sample replay buffer
+		replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+
+		with th.no_grad():
+			# Select action according to policy and add clipped noise
+			noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
+			noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
+			next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+
+			# Compute the next Q-values: min over all critics targets
+			next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+			next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
+			target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+
+		# Get current Q-values estimates for each critic network
+		current_q_values = self.critic(replay_data.observations, replay_data.actions)
+
+		# Compute critic loss
+		critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
+		critic_losses.append(critic_loss.item())
+
+		# Optimize the critics
+		self.critic.optimizer.zero_grad()
+		critic_loss.backward()
+		self.critic.optimizer.step()
+
+		# Delayed policy updates
+		if self._n_updates % self.policy_delay == 0:
+			# Compute actor loss
+			actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+			actor_losses.append(actor_loss.item())
+
+			# Optimize the actor
+			self.actor.optimizer.zero_grad()
+			actor_loss.backward(retain_graph=True)
+
+			# DISTILL (code added from original SB3 train() method )
+			p = self.actor(replay_data.observations)
+			sample_slim = np.random.uniform(low=0.1, high=1, size=2)
+			slim_samples = [0.1] + list(sample_slim)
+			for slim in slim_samples:
+				for module in self.actor.modules():
+					if 'Slim' in str(type(module)):
+						module.slim = slim
+				p2 = self.actor(replay_data.observations)
+				loss = criterion(p2, p)
+				loss.backward(retain_graph=True)
+			# UNSLIM
+			for module in self.actor.modules():
+				if 'Slim' in str(type(module)):
+					module.slim = 1
+
+			# step
+			self.actor.optimizer.step()
+
+			polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
+			polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
+			# Copy running stats, see GH issue #996
+			polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
+			polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
+
+	self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+	if len(actor_losses) > 0:
+		self.logger.record("train/actor_loss", np.mean(actor_losses))
+	self.logger.record("train/critic_loss", np.mean(critic_losses))
+
+	# RESET SLIM - to value set from previous action
+	for module in self.actor.modules():
+		if 'Slim' in str(type(module)):
+			module.slim = self.slim
+	utils.speak('END TRAIN')
 
 # custom class that derives from SB3 - so that it adds noise to replay buffer
 class NormalActionNoise2(ActionNoise):
@@ -72,16 +194,48 @@ class TensorboardCallback(BaseCallback):
 		best_noise = self.evaluator.best_noise
 		self.logger.record("best_noise", best_noise)
 
+def convert_to_slim(model):
+	#after calling, set as such: new_model = copy.deepcopy(model) ..
+	nLinearLayers = 0
+	for module in model.modules():
+		if 'Linear' in str(type(module)):
+			nLinearLayers += 1
+	modules = []
+	onLinear = 0
+	for module in model.modules():
+		if 'Sequential' in str(type(module)):
+			continue
+		elif 'Linear' in str(type(module)):
+			onLinear += 1
+			max_in_features = module.in_features
+			max_out_features = module.out_features
+			bias = module.bias is not None
+			slim_in, slim_out = True, True
+			if onLinear == 1:
+				slim_in = False
+			if onLinear == nLinearLayers:
+				slim_out = False
+			new_module = Slim(max_in_features, max_out_features,
+							bias=bias, slim_in=slim_in, slim_out=slim_out)
+			modules.append(new_module)
+		else:
+			modules.append(module)
+	new_model = nn.Sequential(*modules)
+	new_model.load_state_dict(copy.deepcopy(model.state_dict()))
+	return new_model
+
 class Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
 		# child init also needs to save the training environment (make environment_component a constructor parameter)
 	# NOTE: env=None as training and evaluation enivornments are handeled by controller
 	def __init__(self, 
-			  read_model_path=None, 
-			  read_replay_buffer_path=None, 
-			  read_weights_path=None, 
-			  _model_arguments=None
-			  ):
+				read_model_path=None, 
+				read_replay_buffer_path=None, 
+				read_weights_path=None, 
+				_model_arguments=None,
+				with_distillation = True,
+				use_slim = False,
+			):
 		# if the model is a hyper parameter tuner, some things get handeled differently
 		self._is_hyper = False
 		if _model_arguments['action_noise'] == 'normal':
@@ -131,6 +285,12 @@ class Model(Component):
 			maximize= False,
 			weight_decay= 1e-6,
 		)
+		if self.use_slim:
+			self._sb3model.actor.mu = convert_to_slim(self._sb3model.actor.mu)
+			self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
+			self._sb3model.slim = 1
+			if self.with_distillation:
+				self._sb3model.train = train_with_distillation
 		self.save_model(utils.get_global_parameter('working_directory') + 'model_in.zip')
 		# replay buffer init
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
@@ -211,7 +371,7 @@ class Model(Component):
 			"total_timesteps": total_timesteps,
 		}
 		run = wandb.init(
-			project="SECON23_gamma",
+			project="SECON23_delta",
 			config=config,
 			name = utils.get_global_parameter('run_name'),
 			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics

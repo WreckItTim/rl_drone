@@ -25,28 +25,28 @@ if len(args) > 3:
 	run_post = args[3]
 
 
-repo_version = 'gamma28'
+repo_version = 'gamma29'
 
 airsim_release = 'Blocks'
-if test_case in ['h3', 'tp']:
+if test_case in []:
 	airsim_release = 'AirSimNH' 
 if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 
-vert_motion = True
-if test_case in ['s2']:
-	vert_motion = False
+vert_motion = False
+if test_case in ['s1']:
+	vert_motion = True
 
-read_model_path = 'model_out_vert.zip'
-if test_case in ['h3']:
-	read_model_path = None
-if test_case in ['s2']:
+read_model_path = None
+if test_case in []:
+	read_model_path = 'model_out_vert.zip'
+if test_case in []:
 	read_model_path = 'model_out_horz.zip'
-
 random_start = read_model_path is None
 
-controller_type = 'Train' # Train Debug Drift Evaluate Data
-	
+use_slim = True
+
+controller_type = 'Train' # Train Debug Drift Evaluate Data	
 learning_starts = 100
 flat = 'big3'
 include_bottom = True
@@ -73,6 +73,9 @@ nTimesteps = 4 # number of timesteps to use in observation space
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 reward_weights = []
+# slim 
+if use_slim:
+	reward_weights.append(4)
 # bounds 
 if include_bounds:
 	reward_weights.append(100)
@@ -152,6 +155,7 @@ def create_base_components(
 		include_actions = False,
 		read_weights_path = None,
 		random_start = True,
+		use_slim = False,
 ):
 
 	# **** SETUP ****
@@ -396,6 +400,13 @@ def create_base_components(
 		
 		# REWARDS
 		rewards = []
+		if use_slim:
+			from rewards.slim import Slim
+			Slim(
+				slim_component='SlimAction',
+				name='SlimReward',
+			)
+			rewards.append('SlimReward')
 		# heavy penalty out of bounds
 		if include_bounds:
 			from rewards.bounds import Bounds
@@ -461,6 +472,7 @@ def create_base_components(
 			name = 'MaxStepsReward',
 			update_steps = True,
 			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
+			max_max = 50,
 		)
 		rewards.append('MaxStepsReward')
 		# REWARDER
@@ -473,6 +485,13 @@ def create_base_components(
 
 		# ACTIONS
 		actions = []
+		if use_slim:
+			from actions.slim import Slim
+			Slim(
+				model_component = 'Model',
+				name = 'SlimAction'
+			) 
+			actions.append('SlimAction')
 		if include_resolution:
 			from actions.resolution import Resolution 
 			Resolution(
@@ -934,6 +953,8 @@ def create_base_components(
 					read_model_path = read_model_path,
 					read_replay_buffer_path = read_replay_buffer_path,
 					read_weights_path = read_weights_path,
+					with_distillation = use_slim,
+					use_slim = use_slim,
 					action_noise = action_noise,
 					name='Model',
 				)
@@ -1195,6 +1216,7 @@ configuration = create_base_components(
 		eval_enviro = eval_enviro,
 		read_weights_path = read_weights_path,
 		random_start = random_start,
+		use_slim = use_slim,
 )
 
 # make dir to save all tello imgs to
