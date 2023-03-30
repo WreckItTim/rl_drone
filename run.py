@@ -68,7 +68,7 @@ if test_case == 's1':
 	airsim_release = 'Blocks'
 	vert_motion = True
 	random_start = False
-	read_model_path = 'model_out_horz.zip'
+	read_model_path = 'model_out_vert.zip'
 if test_case == 's2':
 	project_name = 'SECON_slim'
 	run_name = 'Slim_Blocks_Vert_Rando' + test_case + '_' + repo_version
@@ -79,18 +79,18 @@ if test_case == 's2':
 	read_model_path = None
 if test_case == 'm1':
 	project_name = 'SECON_navi'
-	run_name = 'Navi_AirSimNH_Horz_Rando' + test_case + '_' + repo_version
+	run_name = 'Navi_AirSimNH_Vert_Rando' + test_case + '_' + repo_version
 	use_slim = False
 	airsim_release = 'AirSimNH'
-	vert_motion = False
+	vert_motion = True
 	random_start = True
 	read_model_path = None
 if test_case == 'pc':
 	project_name = 'SECON_navi'
-	run_name = 'Navi_CityEnviron_Horz_Rando' + test_case + '_' + repo_version
+	run_name = 'Navi_CityEnviron_Vert_Rando' + test_case + '_' + repo_version
 	use_slim = False
 	airsim_release = 'CityEnviron'
-	vert_motion = False
+	vert_motion = True
 	random_start = True
 	read_model_path = None
 run_name += run_post
@@ -920,7 +920,7 @@ def create_base_components(
 		vector_length += 1
 		if vert_motion:
 			vector_sensors.append('GoalAltitude')
-			vector_length += 1 # 1 for GoalAltitude
+			vector_length += 1
 		if policy == 'MlpPolicy':
 			vector_sensors.append('FlattenedDepth')
 			vector_length += len(max_cols) * len(max_rows) # several more vector elements
