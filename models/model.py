@@ -101,8 +101,8 @@ def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) ->
 
 			# DISTILL (code added from original SB3 train() method )
 			p = self.actor(replay_data.observations)
-			sample_slim = np.random.uniform(low=0.1, high=1, size=2)
-			slim_samples = [0.1] + list(sample_slim)
+			sample_slim = np.random.uniform(low=0.1251, high=0.9999, size=2)
+			slim_samples = [0.125] + list(sample_slim)
 			for slim in slim_samples:
 				for module in self.actor.modules():
 					if 'Slim' in str(type(module)):
@@ -257,8 +257,13 @@ class Model(Component):
 		# create model object
 		if self.read_model_path is not None and exists(self.read_model_path):
 			utils.speak(f'reading model from path {self.read_model_path}')
-			self.load_model(self.read_model_path)
+			self.load_model(self.read_model_path,
+				tensorboard_log = self._model_arguments['tensorboard_log'],
+			)
 			self._sb3model.set_env(self._model_arguments['env'])
+			self._sb3model.learning_starts = self._model_arguments['learning_starts']
+			self._sb3model.train_freq = self._model_arguments['train_freq']
+			self._sb3model._convert_train_freq()
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
@@ -358,11 +363,11 @@ class Model(Component):
 		self._sb3model.save_replay_buffer(path)
 
 	# load sb3 model from path, must set sb3Load from child
-	def load_model(self, path):
+	def load_model(self, path, tensorboard_log=None):
 		if not exists(path):
 			utils.error(f'invalid Model.load_model() path:{path}')
 		else:
-			self._sb3model = self.sb3Load(path)
+			self._sb3model = self.sb3Load(path, tensorboard_log=tensorboard_log)
 
 	def save_weights(self, actor_path, critic_path):
 		torch.save(self._sb3model.actor.state_dict(), actor_path)
@@ -377,7 +382,7 @@ class Model(Component):
 	# load sb3 replay buffer from path
 	def load_replay_buffer(self, path):
 		if not exists(path):
-			utils.error(f'invalid Model.load_replay_buffer() path:{path}')
+			utils.error(f'invalid Model.load_replay_buffer() path:{train_freqpath}')
 		elif self._has_replay_buffer:
 			self._sb3model.load_replay_buffer(path)
 		else:
@@ -390,21 +395,22 @@ class Model(Component):
 		log_interval = -1,
 		reset_num_timesteps = False,
 		evaluator=None,
+		project_name = 'void',
 		):
 		config = {
 			"policy_type": self.policy,
 			"total_timesteps": total_timesteps,
 		}
-		run = wandb.init(
-			project="SECON23_epsilon",
-			config=config,
-			name = utils.get_global_parameter('run_name'),
-			sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-			monitor_gym=False,  # auto-upload the videos of agents playing the game
-			save_code=False,  # optional
-		)
 		callback = None
 		if use_wandb:
+			run = wandb.init(
+				project=project_name,
+				config=config,
+				name = utils.get_global_parameter('run_name'),
+				sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+				monitor_gym=False,  # auto-upload the videos of agents playing the game
+				save_code=False,  # optional
+			)
 			callback = [
 				TensorboardCallback(evaluator),
 				WandbCallback(
@@ -425,3 +431,11 @@ class Model(Component):
 	def predict(self, rl_input):
 		rl_output, next_state = self._sb3model.predict(rl_input, deterministic=True)
 		return rl_output
+
+	# reset slim factors
+	def reset(self, state = None):
+		if self.use_slim:
+			for module in self._sb3model.actor.modules():
+				if 'Slim' in str(type(module)):
+					module.slim = 1
+			self._sb3model.slim = 1

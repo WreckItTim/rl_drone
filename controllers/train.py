@@ -9,14 +9,15 @@ class Train(Controller):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
-				 model_component,
-				 environment_component,
-				 evaluator_component,
-				 continue_training=True,
-				 total_timesteps = 1_000_000,
-				 use_wandb = True,
-				 log_interval = -1,
-				 ):
+				model_component,
+				environment_component,
+				evaluator_component,
+				continue_training=True,
+				total_timesteps = 1_000_000,
+				use_wandb = True,
+				log_interval = -1,
+				project_name = 'void',
+		):
 		super().__init__()
 
 	# runs control on components
@@ -45,4 +46,5 @@ class Train(Controller):
 			use_wandb = self.use_wandb,
 			reset_num_timesteps = not self.continue_training,
 			evaluator = self._evaluator,
+			project_name = self.project_name,
 			)

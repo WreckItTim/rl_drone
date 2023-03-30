@@ -69,6 +69,7 @@ def get_controller(controller_type,
 				use_wandb = True,
 				log_interval = -1,
 				evaluator = 'Evaluator',
+				project_name = 'void',
 				):
 	# create CONTROLLER - controls all components (mode)
 	controller = None
@@ -92,6 +93,7 @@ def get_controller(controller_type,
 			use_wandb = use_wandb,
 			log_interval = log_interval,
 			continue_training = continue_training,
+			project_name = project_name,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
 	elif controller_type == 'Evaluate':

@@ -15,8 +15,10 @@ class Slim(Reward):
 		super().__init__()
 	# calculates rewards from agent's current state (call to when taking a step)
 	def step(self, state):
-		rho = self._slim._rho
-
+		if 'slim' in state:
+			rho = state['slim']
+		else:
+			rho = self._slim._rho
 		if self.value_type == 'scale':
 			value = -1 * rho
 

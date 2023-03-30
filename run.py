@@ -21,32 +21,83 @@ if len(args) > 2:
 	continue_training = args[2] in ['true', 'True']
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
 	# will assume no text to concat if no additional input
-run_post = '_wSlim'
+run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
 
 repo_version = 'gamma30'
 
-airsim_release = 'Blocks'
-if test_case in []:
-	airsim_release = 'AirSimNH' 
-if test_case in ['pc']:
-	airsim_release = 'CityEnviron'
 
-vert_motion = False
-if test_case in []:
-	vert_motion = True
-
-read_model_path = None
-if test_case in []:
-	read_model_path = 'model_out_vert.zip'
-if test_case in []:
+if test_case == 'tp':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_Blocks_Horz_Rando' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'Blocks'
+	vert_motion = False
+	random_start = True
+	read_model_path = None
+if test_case == 'h3':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_Blocks_Horz_Pre' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'Blocks'
+	vert_motion = False
+	random_start = False
 	read_model_path = 'model_out_horz.zip'
-random_start = True
-learning_starts = 100
-use_slim = True
+if test_case == 'h4':
+	project_name = 'SECON_slim'
+	run_name = 'Slim_Blocks_Horz_Rando' + test_case + '_' + repo_version
+	use_slim = True
+	airsim_release = 'Blocks'
+	vert_motion = False
+	random_start = True
+	read_model_path = None
+if test_case == 'tb':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_Blocks_Vert_Rando' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'Blocks'
+	vert_motion = True
+	random_start = True
+	read_model_path = None
+if test_case == 's1':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_Blocks_Vert_Pre' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'Blocks'
+	vert_motion = True
+	random_start = False
+	read_model_path = 'model_out_horz.zip'
+if test_case == 's2':
+	project_name = 'SECON_slim'
+	run_name = 'Slim_Blocks_Vert_Rando' + test_case + '_' + repo_version
+	use_slim = True
+	airsim_release = 'Blocks'
+	vert_motion = True
+	random_start = True
+	read_model_path = None
+if test_case == 'm1':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_AirSimNH_Horz_Rando' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'AirSimNH'
+	vert_motion = False
+	random_start = True
+	read_model_path = None
+if test_case == 'pc':
+	project_name = 'SECON_navi'
+	run_name = 'Navi_CityEnviron_Horz_Rando' + test_case + '_' + repo_version
+	use_slim = False
+	airsim_release = 'CityEnviron'
+	vert_motion = False
+	random_start = True
+	read_model_path = None
+run_name += run_post
 
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+use_wandb = True
+learning_starts = 100
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
 flat = 'big3'
 include_bottom = True
@@ -70,17 +121,16 @@ include_resolution = False
 include_bounds = False
 read_weights_path = None
 nTimesteps = 4 # number of timesteps to use in observation space
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 
 reward_weights = []
-# slim 
-if use_slim:
-	reward_weights.append(4)
 # bounds 
 if include_bounds:
 	reward_weights.append(100)
 # collision goal steps distance
 reward_weights = reward_weights + [100, 100, 1, .1]
+# slim 
+if use_slim:
+	reward_weights.append(4)
 if include_resolution:
 	# res1 res2 
 	reward_weights.append(0.05) # res1
@@ -156,13 +206,12 @@ def create_base_components(
 		read_weights_path = None,
 		random_start = True,
 		use_slim = False,
+		use_wandb = True,
+		project_name = 'void',
+		run_name = 'run',
 ):
 
 	# **** SETUP ****
-	run_name = airsim_release + '_' + str(vert_motion) + '_' + policy
-	if run_post != '':
-		run_name += '_' + run_post
-
 	# get OS, set file IO paths
 	OS = utils.setup(
 		write_parent = 'local/runs/',
@@ -177,9 +226,10 @@ def create_base_components(
 		continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
 		model_component = 'Model', # if using train, set model
 		environment_component = 'TrainEnvironment', # if using train, set train environment
-		use_wandb = True, # logs tensor board and wandb
+		use_wandb = use_wandb, # logs tensor board and wandb
 		log_interval = 10,
 		evaluator = 'Evaluator',
+		project_name = project_name,
 		)
 
 	# SET META DATA (anything you want here, just writes to config file as a dict)
@@ -399,13 +449,6 @@ def create_base_components(
 		
 		# REWARDS
 		rewards = []
-		if use_slim:
-			from rewards.slim import Slim
-			Slim(
-				slim_component='SlimAction',
-				name='SlimReward',
-			)
-			rewards.append('SlimReward')
 		# heavy penalty out of bounds
 		if include_bounds:
 			from rewards.bounds import Bounds
@@ -450,6 +493,15 @@ def create_base_components(
 			include_z = True if vert_motion else False, # includes z in distance calculations
 			name = 'DistanceReward',
 		)
+		rewards.append('DistanceReward')
+		# penalize computational complexity
+		if use_slim:
+			from rewards.slim import Slim
+			Slim(
+				slim_component='SlimAction',
+				name='SlimReward',
+			)
+			rewards.append('SlimReward')
 		# penalty for higher resolutions
 		if include_resolution:
 			from rewards.resolution import Resolution
@@ -464,7 +516,6 @@ def create_base_components(
 					name = 'ResolutionReward2',
 				)
 				rewards.append('ResolutionReward2')
-		rewards.append('DistanceReward')
 		# do not exceed this many steps
 		from rewards.maxsteps import MaxSteps
 		MaxSteps(
@@ -1218,6 +1269,9 @@ configuration = create_base_components(
 		read_weights_path = read_weights_path,
 		random_start = random_start,
 		use_slim = use_slim,
+		use_wandb = use_wandb,
+		project_name = project_name,
+		run_name = run_name,
 )
 
 # make dir to save all tello imgs to

@@ -36,6 +36,7 @@ class GoalEnv(Environment):
 		self._all_states = {}
 		self._observations = {}
 		self._track_save = False
+		self._freq_changed = False
 		
 	# this will toggle if keep track of observations and states
 	# note this is expensive, so must dump using save() from time to time
@@ -101,6 +102,9 @@ class GoalEnv(Environment):
 			rl_output += self._model._model_arguments['action_noise']._noise
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
+		# check complexity
+		if self._model.use_slim:
+			self._states[this_step]['slim'] = self._model._sb3model.slim
 		# take action
 		self._actor.step(self._states[this_step])
 		# save state kinematics
@@ -134,12 +138,15 @@ class GoalEnv(Environment):
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def reset(self, state = None):
-		#print('reset',self.is_evaluation_env, self.episode_counter)
-		#i = input()
-		if self.change_train_freq_after is not None and self.episode_counter >= self.change_train_freq_after:
-			self._sb3model.train_freq = self.change_train_freq
-			self._sb3model._convert_train_freq()
 		self.episode_counter += 1
+		#print('reset',self.is_evaluation_env, self.episode_counter)
+		if self.change_train_freq_after is not None and not self._freq_changed and self.episode_counter >= self.change_train_freq_after-1:
+			#print('train_freq b4', self._model._sb3model.train_freq)
+			self._model._sb3model.train_freq = self.change_train_freq
+			self._model._sb3model._convert_train_freq()
+			#print('changed train_freq to', self._model._sb3model.train_freq)
+			self._freq_changed = True
+		#i = input()
 		# init state(s)
 		self._nSteps = 0 # steps this episode
 		this_step = 'step_' + str(self._nSteps)
@@ -152,6 +159,7 @@ class GoalEnv(Environment):
 
 		# reset drone and goal components, several reset() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
+		self._model.reset(self._states[this_step])
 		self._drone.reset(self._states[this_step])
 		if state is not None and 'spawn_to' in state:
 			self._drone.teleport(*state['spawn_to'], ignore_collision=True)
