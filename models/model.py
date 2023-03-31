@@ -139,7 +139,7 @@ def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) ->
 class NormalActionNoise2(ActionNoise):
 	def __init__(self, 
 	mean = 0, 
-	sigma = 0.05, 
+	sigma = 0.1, 
 	clip = 0.2, 
 	exploration_fraction = 0.5, 
 	start_proba = 1.0, 
@@ -192,10 +192,10 @@ class TensorboardCallback(BaseCallback):
 	def _on_step(self) -> bool:
 		best_distance = self.evaluator.best_distance
 		self.logger.record("best_distance", best_distance)
-		best_reward = self.evaluator.best_reward
-		self.logger.record("best_reward", best_reward)
-		best_noise = self.evaluator.best_noise
-		self.logger.record("best_noise", best_noise)
+		#best_reward = self.evaluator.best_reward
+		#self.logger.record("best_reward", best_reward)
+		#best_noise = self.evaluator.best_noise
+		#self.logger.record("best_noise", best_noise)
 
 def convert_to_slim(model):
 	#after calling, set as such: new_model = copy.deepcopy(model) ..
@@ -236,7 +236,7 @@ class Model(Component):
 				read_replay_buffer_path=None, 
 				read_weights_path=None, 
 				_model_arguments=None,
-				with_distillation = True,
+				with_distillation = False,
 				use_slim = False,
 				convert_slim = False,
 				use_cuda = True,
@@ -248,6 +248,7 @@ class Model(Component):
 		self._model_arguments = _model_arguments
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
+		self._is_slim = False
 
 	def connect(self):
 		super().connect()
@@ -298,15 +299,19 @@ class Model(Component):
 			self.load_weights(self.read_weights_path)
 		# convert all linear modules to slim ones
 		if self.convert_slim:
+			self._is_slim = True
 			self._sb3model.actor.mu = convert_to_slim(self._sb3model.actor.mu)
 			#self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
 			self._sb3model.slim = 1
 		# use slim layers
 		if self.use_slim:
+			self._is_slim = True
 			self._sb3model.slim = 1
-			# use distiallation with slim training
-			if self.with_distillation:
-				self._sb3model.train = functools.partial(train_with_distillation, self._sb3model)
+		# use distiallation with slim training
+		if self.with_distillation:
+			self._is_slim = True
+			self._sb3model.slim = 1
+			self._sb3model.train = functools.partial(train_with_distillation, self._sb3model)
 		if self.use_cuda:
 			device = torch.device("cuda")
 			self._sb3model.actor.cuda()
@@ -434,7 +439,7 @@ class Model(Component):
 
 	# reset slim factors
 	def reset(self, state = None):
-		if self.use_slim:
+		if self._is_slim:
 			for module in self._sb3model.actor.modules():
 				if 'Slim' in str(type(module)):
 					module.slim = 1

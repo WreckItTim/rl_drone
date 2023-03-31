@@ -10,7 +10,6 @@ class Slim(Reward):
 	@_init_wrapper
 	def __init__(self,
 			slim_component, # get slim-factor rho from action
-			value_type = 'scale', 
 		):
 		super().__init__()
 	# calculates rewards from agent's current state (call to when taking a step)
@@ -19,7 +18,7 @@ class Slim(Reward):
 			rho = state['slim']
 		else:
 			rho = self._slim._rho
-		if self.value_type == 'scale':
-			value = -1 * rho
+		
+		value = -1 * rho
 
 		return value, False

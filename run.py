@@ -26,200 +26,96 @@ if len(args) > 3:
 	run_post = args[3]
 
 
-repo_version = 'gamma30'
-
-
-if test_case == 'tp':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_Blocks_Horz_Rando' + test_case + '_' + repo_version
+repo_version = 'gamma31'
+parent_project = 'SECON2'
+airsim_release = 'Blocks'
+action_noise = None
+# pre1 = A*, pre2 = blocks horz, pre3 = blocks vert
+if test_case == 'm9':
+	child_project = 'Navi'
 	use_slim = False
-	airsim_release = 'Blocks'
+	use_res = False
 	vert_motion = False
+	init_type = 'Rand'
 	random_start = True
 	read_model_path = None
-if test_case == 'h3':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_Blocks_Horz_Pre' + test_case + '_' + repo_version
-	use_slim = False
-	airsim_release = 'Blocks'
-	vert_motion = False
-	random_start = False
-	read_model_path = 'model_out_horz.zip'
-if test_case == 'h4':
-	project_name = 'SECON_slim'
-	run_name = 'Slim_Blocks_Horz_Rando' + test_case + '_' + repo_version
-	use_slim = True
-	airsim_release = 'Blocks'
-	vert_motion = False
-	random_start = True
-	read_model_path = None
-if test_case == 'tb':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_Blocks_Vert_Rando' + test_case + '_' + repo_version
-	use_slim = False
-	airsim_release = 'Blocks'
-	vert_motion = True
-	random_start = True
-	read_model_path = None
-if test_case == 's1':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_Blocks_Vert_Pre' + test_case + '_' + repo_version
-	use_slim = False
-	airsim_release = 'Blocks'
-	vert_motion = True
-	random_start = False
-	read_model_path = 'model_out_vert.zip'
-if test_case == 's2':
-	project_name = 'SECON_slim'
-	run_name = 'Slim_Blocks_Vert_Rando' + test_case + '_' + repo_version
-	use_slim = True
-	airsim_release = 'Blocks'
-	vert_motion = True
-	random_start = True
-	read_model_path = None
+	action_noise = 'normal'
+	run_post += 'Noise'
 if test_case == 'm1':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_AirSimNH_Vert_Rando' + test_case + '_' + repo_version
+	child_project = 'Navi'
 	use_slim = False
-	airsim_release = 'AirSimNH'
-	vert_motion = True
+	use_res = False
+	vert_motion = False
+	init_type = 'Rand'
 	random_start = True
 	read_model_path = None
-if test_case == 'pc':
-	project_name = 'SECON_navi'
-	run_name = 'Navi_CityEnviron_Vert_Rando' + test_case + '_' + repo_version
-	use_slim = False
-	airsim_release = 'CityEnviron'
-	vert_motion = True
-	random_start = True
-	read_model_path = None
-run_name += run_post
+project_name = parent_project + '_' + child_project
+run_name = child_project + '_' + airsim_release 
+run_name += '_Vert' if vert_motion else '_Horz' 
+run_name += '_' + init_type + '_' + test_case + '_' + repo_version
+if run_post != '': 
+	run_name += '_' + run_post
 
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 use_wandb = True
 learning_starts = 100
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
-flat = 'big3'
-include_bottom = True
-action_noise = None
-policy = 'MlpPolicy' # MLP (flattened depth map)
-rl_model = 'TD3'
 read_replay_buffer_path = None
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
 training_steps = 1_000_000 # roughly 250k steps a day
-distance_reward = 'tanh'
-step_reward = 'constant'
-actor = 'Teleporter' # Teleporter Continuous
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
-# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
-# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
 distance_param = 125 # distance contraint used for several calculations (see below)
-tello_goal = ''
-adjust_for_yaw = True
-include_actions = False
 include_resolution = False
-include_bounds = False
-read_weights_path = None
 nTimesteps = 4 # number of timesteps to use in observation space
 
-reward_weights = []
-# bounds 
-if include_bounds:
-	reward_weights.append(100)
-# collision goal steps distance
-reward_weights = reward_weights + [100, 100, 1, .1]
-# slim 
-if use_slim:
-	reward_weights.append(4)
-if include_resolution:
-	# res1 res2 
-	reward_weights.append(0.05) # res1
-	reward_weights.append(0.05) # res2
-# maxsteps
-reward_weights.append(0)
+# collision goal steps distance slim res1 res2 max_steps
+if child_project == 'Navi':
+	reward_weights = [200, 200, 2, .1, 0, 0, 0, 0] # nav
+if child_project == 'Slim':
+	reward_weights = [200, 200, 2, .1, 3, 0, 0, 0] # slim
+if child_project == 'Res':
+	reward_weights = [200, 200, 2, .1, 0, 0.5, 0.5, 0] # res
+if child_project == 'Fuse':
+	reward_weights = [200, 200, 2, .1, 3, 0.5, 0.5, 0] # slim and res
 
-eval_enviro = True
-if controller_type == 'Data':
-	eval_enviro = False
-
-hyper = False
-if hyper:
-	run_post += '_hyper'
-hyper_params = []
-if test_case in []:
-	hyper_params.append('learning_rate')
-if test_case in []:
-	hyper_params.append('learning_starts')
-if test_case in []:
-	hyper_params.append('buffer_size')
-if test_case in []:
-	hyper_params.append('tau')
-if test_case in []:
-	hyper_params.append('batch_size')
-if test_case in []:
-	hyper_params.append('train_freq')
-if test_case in []:
-	hyper_params.append('policy_delay')
-if test_case in []:
-	hyper_params.append('target_policy_noise')
-if test_case in []:
-	hyper_params.append('target_noise_clip')
-if test_case in []:
-	hyper_params.append('policy_layers')
-if test_case in []:
-	hyper_params.append('policy_nodes')
 
 # runs some overarching base things
 def create_base_components(
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
-		policy = 'MlpPolicy', # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
-		rl_model = 'TD3', # which SB3 RL model to use - TD3 DQN (see models folder for others)
-		hyper = False,
 		replay_buffer_size = 1_000_000, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
-		actor = 'Teleporter', # Teleporter Continuous
-		clock_speed = 10, # airsim clock speed (increasing this will alsovalue_typevalue_typee
-		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
-		flat = 'big', # determines size of flattened depth sensor array 
-		distance_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
-		step_reward = 'scale2', # reward function that penalizes longer episode length
-		run_post = '', # optionally add text to generated run name (such as run2, retry, etc...)
-		hyper_params = [], # which hyper parameters to hyper tune if model is type hyper
-		read_model_path = None, # load pretrained model?
-		read_replay_buffer_path = None, # load prebuilt replay buffer?
-		include_d = True, # inculde little d=distance/start_distance in sensors
-		reward_weights = [1,1,1], # reward weights in order: goal, collision, steps
-		learning_starts = 100, # how many steps to collect in buffer before training starts
-		tello_goal = '',
-		adjust_for_yaw = True,
-		include_resolution = True,
-		include_bottom = False,
+		clock_speed = 10, # airsim clock speed (increasing this will alsovalue_typevalue_type
 		training_steps = 50_000_000,
 		distance_param = 125,
 		nTimesteps = 4,
+		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
+		distance_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
+		step_reward = 'scale2', # reward function that penalizes longer episode length
+		read_model_path = None, # load pretrained model?
+		read_replay_buffer_path = None, # load prebuilt replay buffer?
+		reward_weights = [1]*7, # reward weights in order: goal, collision, steps
+		learning_starts = 100, # how many steps to collect in buffer before training starts
+		include_resolution = True,
 		action_noise = None,
-		include_bounds = False,
-		eval_enviro = True,
-		include_actions = False,
-		read_weights_path = None,
 		random_start = True,
 		use_slim = False,
+		use_res = False,
 		use_wandb = True,
 		project_name = 'void',
 		run_name = 'run',
 ):
 
 	# **** SETUP ****
-	# get OS, set file IO paths
 	OS = utils.setup(
 		write_parent = 'local/runs/',
-		run_prefix = repo_version + '_' + run_name,
+		run_prefix = run_name,
 		)
 	working_directory = utils.get_global_parameter('working_directory')
 
-	# CREATE CONTROLLER
+
+	## CONTROLLER
 	controller = utils.get_controller(
 		controller_type = controller_type,
 		total_timesteps = training_steps, # optional if using train - all other hypers set from model instance
@@ -230,8 +126,7 @@ def create_base_components(
 		log_interval = 10,
 		evaluator = 'Evaluator',
 		project_name = project_name,
-		)
-
+	)
 	# SET META DATA (anything you want here, just writes to config file as a dict)
 	meta = {
 		'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
@@ -244,7 +139,7 @@ def create_base_components(
 		}
 
 
-	# READ CONFIGURATION
+	# READ CONFIGURATION?
 	read_configuration_path = working_directory + 'configuration.json'
 	update_meta = True
 	if continue_training:
@@ -260,11 +155,10 @@ def create_base_components(
 		_model.read_replay_buffer_path = read_replay_buffer_path
 
 
-	# or CREATE CONFIGURATION
+	# NEW CONFIGURATION?
 	else:
-		# will add components to this configuration automatically
-		# can switch which configuration is active to add to different once
-		# I almost always just use 1 configuration per run
+
+		## CONFIGURATION 
 		configuration = Configuration(
 			meta, 
 			controller, 
@@ -276,7 +170,7 @@ def create_base_components(
 		# **** CREATE COMPONENTS ****
 
 
-		# CREATE TRAIN ENVIRONMENT
+		## TRAIN ENVIRONMENT
 		from environments.goalenv import GoalEnv
 		GoalEnv(
 			drone_component='Drone', 
@@ -288,7 +182,7 @@ def create_base_components(
 			change_train_freq_after = None if random_start else learning_starts,
 			name='TrainEnvironment',
 		)
-		# CREATE EVALUATE ENVIRONMENT
+		## EVALUATE ENVIRONMENT
 		GoalEnv(
 			drone_component='Drone', 
 			actor_component='Actor', 
@@ -301,165 +195,98 @@ def create_base_components(
 		)
 		
 
-		# CREATE MAP
-		if airsim_release == 'Tello':
-			from maps.field import Field
-			Field(
-				name = 'Map',
-			)
+		## MAP
+		from maps.airsimmap import AirSimMap
+		# get airsim release to launch
+		release_path = None
+		if utils.get_global_parameter('OS') == 'windows':
+			if airsim_release == 'Blocks':
+				release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
+			if airsim_release == 'AirSimNH':
+				release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.exe'
+			if airsim_release == 'CityEnviron':
+				release_path = 'local/airsim_maps/CityEnviron/WindowsNoEditor/CityEnviron.exe'
+		if utils.get_global_parameter('OS') == 'linux':
+			if airsim_release == 'Blocks':
+				release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
+			if airsim_release == 'AirSimNH':
+				release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
+		# add console flags
+		console_flags = []
+		# render screen? This should be false if SSH-ing from remote
+		render_screen = utils.get_global_parameter('render_screen')
+		if render_screen:
+			console_flags.append('-Windowed')
 		else:
-			from maps.airsimmap import AirSimMap
-			# get airsim release to launch
-			release_path = None
-			if utils.get_global_parameter('OS') == 'windows':
-				if airsim_release == 'Blocks':
-					release_path = 'local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe'
-				if airsim_release == 'AirSimNH':
-					release_path = 'local/airsim_maps/AirSimNH/WindowsNoEditor/AirSimNH.exe'
-				if airsim_release == 'CityEnviron':
-					release_path = 'local/airsim_maps/CityEnviron/WindowsNoEditor/CityEnviron.exe'
-			if utils.get_global_parameter('OS') == 'linux':
-				if airsim_release == 'Blocks':
-					release_path = 'local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
-				if airsim_release == 'AirSimNH':
-					release_path = 'local/airsim_maps/AirSimNH/LinuxNoEditor/AirSimNH.sh'
-			# add console flags
-			console_flags = []
-			# render screen? This should be false if SSH-ing from remote
-			render_screen = utils.get_global_parameter('render_screen')
-			if render_screen:
-				console_flags.append('-Windowed')
-			else:
-				console_flags.append('-RenderOffscreen')
-			# create airsim map object
-			AirSimMap(
-				voxels_component='Voxels',
-				release_path = release_path,
-				settings = {
-					'ClockSpeed': clock_speed,
-					},
-				setting_files = [
-					'lightweight', # see maps/airsim_settings
-					],
-				console_flags = console_flags.copy(),
-				name = 'Map',
+			console_flags.append('-RenderOffscreen')
+		# create airsim map object
+		AirSimMap(
+			voxels_component='Voxels',
+			release_path = release_path,
+			settings = {
+				'ClockSpeed': clock_speed,
+				},
+			setting_files = [
+				'lightweight', # see maps/airsim_settings
+				],
+			console_flags = console_flags.copy(),
+			name = 'Map',
+		)
+		# voxels grabs locations of objects from airsim map
+		# used to validate spawn and goal points (not inside an object)
+		# also used to visualize flight paths
+		from others.voxels import Voxels
+		Voxels(
+			relative_path = working_directory + 'map_voxels.binvox',
+			map_component = 'Map',
+			x_length = 2 * distance_param, # total x-axis meters (split around center)
+			y_length = 2 * distance_param, # total y-axis  meters (split around center)
+			z_length = 2 * distance_param, # total z-axis  meters (split around center)
+			name = 'Voxels',
 			)
-			# voxels grabs locations of objects from airsim map
-			# used to validate spawn and goal points (not inside an object)
-			# also used to visualize flight paths
-			from others.voxels import Voxels
-			Voxels(
-				relative_path = working_directory + 'map_voxels.binvox',
-				map_component = 'Map',
-				x_length = 2 * distance_param, # total x-axis meters (split around center)
-				y_length = 2 * distance_param, # total y-axis  meters (split around center)
-				z_length = 2 * distance_param, # total z-axis  meters (split around center)
-				name = 'Voxels',
-				)
 
-		# Create bounds to spawn in and for goal
+		# MAP BOUNDS
 		from others.boundscube import BoundsCube
 		dz = 4 #distance_param/25
-		if vert_motion:
-			BoundsCube(
-					center = [0, 0, 0],
-					x = [-1*distance_param, distance_param],
-					y = [-1*distance_param, distance_param],
-					z = [-1*distance_param, -1],
-					name = 'MapBounds'
-					)
-		else:
-			BoundsCube(
-					center = [0, 0, 0],
-					x = [-1*distance_param, distance_param],
-					y = [-1*distance_param, distance_param],
-					z = [-1*dz-1, -1*dz+1],
-					name = 'MapBounds'
-					)
+		BoundsCube(
+				center = [0, 0, 0],
+				x = [-1*distance_param, distance_param],
+				y = [-1*distance_param, distance_param],
+				z = [-40, -1],
+				name = 'MapBounds'
+				)
 
 
-		# CREATE DRONE
-		if airsim_release == 'Tello':
-			from drones.tello import Tello
-			Tello(
-				name = 'Drone',
-			)
-		else:
-			from drones.airsimdrone import AirSimDrone
-			AirSimDrone(
-				airsim_component = 'Map',
-				name='Drone',
-			)
+		#  DRONE
+		from drones.airsimdrone import AirSimDrone
+		AirSimDrone(
+			airsim_component = 'Map',
+			name='Drone',
+		)
 
 		
+		## GOAL
+		# dynamic goal will spawn in bounds - randomly for train, static for evaluate
+		# goal distance will increase, "amp up", with curriculum learning
 		from others.relativegoal import RelativeGoal
-		if airsim_release == 'Tello':
-			# office-lab 35x22 tiles which are 30x30 cm squares, 10.5 max meters
-			# halls... h1:5x14 h2:5x60 h3:5x76 l1:13x19 h4:6x22, 22.8 max meters
-			# origin at (3 3) - offset 3 tiles from walls in hallway 1 corner
-			if tello_goal == 'Hallway1':
-				RelativeGoal(
-					drone_component = 'Drone',
-					map_component = 'Map',
-					static_point = [2.7, 0, 0],
-					name = 'Goal',
-					)
-			if tello_goal == 'Hallway2':
-				RelativeGoal(
-					drone_component = 'Drone',
-					map_component = 'Map',
-					static_point = [2.7, -16.8, 0],
-					name = 'Goal',
-					)
-			if tello_goal == 'Hallway3':
-				RelativeGoal(
-					drone_component = 'Drone',
-					map_component = 'Map',
-					static_point = [-19.6, -16.8, 0],
-					name = 'Goal',
-					)
-			if tello_goal == 'hallway4':
-				RelativeGoal(
-					drone_component = 'Drone',
-					map_component = 'Map',
-					static_point = [-20.8, -10.2, 0],
-					name = 'Goal',
-					)
-		else:
-			# CREATE GOAL
-			# dynamic goal will spawn in bounds - randomly for train, static for evaluate
-			# goal distance will increase, "amp up", with curriculum learning
-			RelativeGoal(
-				drone_component = 'Drone',
-				map_component = 'Map',
-				bounds_component = 'MapBounds',
-				static_r = 6, # relative distance for static goal from drone
-				static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
-				static_yaw = 0, # relative yaw for static goal from drone
-				random_r = [6,8], # relative distance for random goal from drone
-				random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
-				random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
-				random_point_on_train = True, # random goal when training?
-				vertical = vert_motion,
-				name = 'Goal',
-			)
+		RelativeGoal(
+			drone_component = 'Drone',
+			map_component = 'Map',
+			bounds_component = 'MapBounds',
+			static_r = 6, # relative distance for static goal from drone
+			static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
+			static_yaw = 0, # relative yaw for static goal from drone
+			random_r = [6,8], # relative distance for random goal from drone
+			random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
+			random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
+			random_point_on_train = True, # random goal when training?
+			vertical = vert_motion,
+			name = 'Goal',
+		)
 
-		# CREATE REWARDS AND TERMINATORS
 
-		
-		# REWARDS
+		## REWARDS
 		rewards = []
-		# heavy penalty out of bounds
-		if include_bounds:
-			from rewards.bounds import Bounds
-			Bounds(
-				drone_component = 'Drone',
-				x_bounds = [-1*distance_param, distance_param],
-				y_bounds = [-1*distance_param, distance_param],
-				z_bounds = [-1*distance_param, 0],
-				name = 'BoundsReward',
-			)
-			rewards.append('BoundsReward')
 		# heavy penalty for collision
 		from rewards.collision import Collision
 		Collision(
@@ -472,7 +299,7 @@ def create_base_components(
 		Goal(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
-			include_z = True if vert_motion else False, # includes z in distance calculations
+			include_z = True, # includes z in distance calculations
 			tolerance = 0 if airsim_release == 'Tello' else 4,
 			name = 'GoalReward',
 		)
@@ -481,7 +308,6 @@ def create_base_components(
 		from rewards.steps import Steps
 		Steps(
 			name = 'StepsReward',
-			value_type = step_reward,
 		)
 		rewards.append('StepsReward')
 		# increasing reward as approaches goal
@@ -489,33 +315,29 @@ def create_base_components(
 		Distance(
 			drone_component = 'Drone',
 			goal_component = 'Goal',
-			value_type = distance_reward,
-			include_z = True if vert_motion else False, # includes z in distance calculations
+			include_z = True, # includes z in distance calculations
 			name = 'DistanceReward',
 		)
 		rewards.append('DistanceReward')
 		# penalize computational complexity
-		if use_slim:
-			from rewards.slim import Slim
-			Slim(
-				slim_component='SlimAction',
-				name='SlimReward',
-			)
-			rewards.append('SlimReward')
-		# penalty for higher resolutions
-		if include_resolution:
-			from rewards.resolution import Resolution
-			Resolution(
-				resolution_component = 'FlattenedDepthResolution',
-				name = 'ResolutionReward',
-			)
-			rewards.append('ResolutionReward')
-			if include_bottom:
-				Resolution(
-					resolution_component = 'FlattenedDepthResolution2',
-					name = 'ResolutionReward2',
-				)
-				rewards.append('ResolutionReward2')
+		from rewards.slim import Slim
+		Slim(
+			slim_component='SlimAction',
+			name='SlimReward',
+		)
+		rewards.append('SlimReward')
+		# penalty for higher resolutions=
+		from rewards.resolution import Resolution
+		Resolution(
+			resolution_component = 'FlattenedDepthResolution',
+			name = 'ResolutionReward',
+		)
+		rewards.append('ResolutionReward')
+		Resolution(
+			resolution_component = 'FlattenedDepthResolution2',
+			name = 'ResolutionReward2',
+		)
+		rewards.append('ResolutionReward2')
 		# do not exceed this many steps
 		from rewards.maxsteps import MaxSteps
 		MaxSteps(
@@ -533,263 +355,103 @@ def create_base_components(
 			name = 'Rewarder',
 		)
 
-		# ACTIONS
-		actions = []
-		if use_slim:
-			from actions.slim import Slim
-			Slim(
-				model_component = 'Model',
-				name = 'SlimAction'
-			) 
-			actions.append('SlimAction')
-		if include_resolution:
-			from actions.resolution import Resolution 
-			Resolution(
-				scales_components = [
-					'ResizeFlat',
-				],
-				name = 'FlattenedDepthResolution',
-			)
-			actions.append('FlattenedDepthResolution')
-			if include_bottom:
-				Resolution(
-					scales_components = [
-						'ResizeFlat2',
-					],
-					name = 'FlattenedDepthResolution2',
-				)
-				actions.append('FlattenedDepthResolution2')
-		if rl_model in ['TD3']:
-			base_distance = 10 # meters, will multiply rl_output by this value
-			base_yaw = math.pi # degrees, will multiply rl_output by this value
-			from actions.move import Move 
-			Move(
-				drone_component = 'Drone', 
-				base_x_rel = base_distance, 
-				adjust_for_yaw = adjust_for_yaw,
-				zero_thresh_abs = False, # any negative input is not move forward
-				name = 'MoveForward',
-			)
-			actions.append('MoveForward')
-			from actions.rotate import Rotate 
-			Rotate(
-				drone_component = 'Drone',  
-				base_yaw = base_yaw,
-				name = 'Rotate',
-			)
-			actions.append('Rotate')
-			if vert_motion:
-				Move(
-					drone_component = 'Drone', 
-					base_z_rel = base_distance, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'MoveVertical',
-				)
-				actions.append('MoveVertical')
-		if rl_model in ['DQN']:
-			from actions.fixedmove import FixedMove 
-			FixedMove(
-				drone_component = 'Drone', 
-				x_speed = 1, 
-				adjust_for_yaw = adjust_for_yaw,
-				name = 'FixedForward1',
-			)
-			FixedMove(
-				drone_component = 'Drone', 
-				x_speed = 5, 
-				adjust_for_yaw = adjust_for_yaw,
-				name = 'FixedForward2',
-			)
-			FixedMove(
-				drone_component = 'Drone', 
-				x_speed = 10, 
-				adjust_for_yaw = adjust_for_yaw,
-				name = 'FixedForward3',
-			)
-			from actions.fixedrotate import FixedRotate 
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = math.pi / 16,
-				name = 'FixedRotate1',
-			)
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = math.pi / 8,
-				name = 'FixedRotate2',
-			)
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = math.pi / 2,
-				name = 'FixedRotate3',
-			)
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = -1 * math.pi / 16,
-				name = 'FixedRotate4',
-			)
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = -1 * math.pi / 8,
-				name = 'FixedRotate5',
-			)
-			FixedRotate(
-				drone_component = 'Drone',  
-				yaw_rate = -1 * math.pi / 2,
-				name = 'FixedRotate6',
-			)
-			actions.append('FixedForward1')
-			actions.append('FixedForward2')
-			actions.append('FixedForward3')
-			actions.append('FixedRotate1')
-			actions.append('FixedRotate2')
-			actions.append('FixedRotate3')
-			actions.append('FixedRotate4')
-			actions.append('FixedRotate5')
-			actions.append('FixedRotate6')
-			if vert_motion:
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = -1, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedUp1',
-				)
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = -5, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedUp2',
-				)
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = -10, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedUp3',
-				)
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = 1, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedDown1',
-				)
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = 5, 
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedDown2',
-				)
-				FixedMove(
-					drone_component = 'Drone', 
-					z_speed = 10,
-					adjust_for_yaw = adjust_for_yaw,
-					name = 'FixedDown3',
-				)
-				actions.append('FixedUp1')
-				actions.append('FixedUp2')
-				actions.append('FixedUp3')
-				actions.append('FixedDown1')
-				actions.append('FixedDown2')
-				actions.append('FixedDown3')
 
-		# ACTOR
-		if rl_model in ['TD3']:
-			if actor == 'Continuous':
-				from actors.continuousactor import ContinuousActor
-				ContinuousActor(
-					actions_components = actions,
-					name='Actor',
-				)
-			if actor == 'Teleporter':
-				from actors.teleporter import Teleporter
-				Teleporter(
-					drone_component = 'Drone',
-					actions_components = actions,
-					name='Actor',
-				)
-		if rl_model in ['DQN']:
-			from actors.discreteactor import DiscreteActor
-			DiscreteActor(
-				actions_components = actions,
-				name='Actor',
-			)
+		## ACTIONS
+		actions = []			
+		base_distance = 10 # meters, will multiply rl_output by this value
+		base_yaw = math.pi # degrees, will multiply rl_output by this value
+		from actions.move import Move 
+		Move(
+			drone_component = 'Drone', 
+			base_x_rel = base_distance, 
+			adjust_for_yaw = True,
+			zero_thresh_abs = False, # any negative input is not move forward
+			name = 'MoveForward',
+		)
+		actions.append('MoveForward')
+		from actions.rotate import Rotate 
+		Rotate(
+			drone_component = 'Drone',  
+			base_yaw = base_yaw,
+			name = 'Rotate',
+		)
+		actions.append('MoveVertical')
+		from actions.slim import Slim
+		Slim(
+			model_component = 'Model',
+			active = use_slim,
+			name = 'SlimAction'
+		) 
+		actions.append('Rotate')
+		Move(
+			drone_component = 'Drone', 
+			base_z_rel = base_distance, 
+			adjust_for_yaw = True,
+			active = vert_motion,
+			name = 'MoveVertical',
+		)
+		actions.append('SlimAction')
+		from actions.resolution import Resolution 
+		Resolution(
+			scales_components = [
+				'ResizeFlat',
+			],
+			active = use_res,
+			name = 'FlattenedDepthResolution',
+		)
+		actions.append('FlattenedDepthResolution')
+		Resolution(
+			scales_components = [
+				'ResizeFlat2',
+			],
+			active = use_res,
+			name = 'FlattenedDepthResolution2',
+		)
+		actions.append('FlattenedDepthResolution2')
 
-		# CREATE OBSERVATION SPACE
-		distance_epsilon = distance_param/1000 # below this error sensor
+
+		## ACTOR
+		from actors.teleporter import Teleporter
+		Teleporter(
+			drone_component = 'Drone',
+			actions_components = actions,
+			name='Actor',
+		)
+
+
+		## OBSERVATION SPACE
 		# TRANSFORMERS
+		distance_epsilon = distance_param/1000 # outputs a senosr-value of zero for values below this
 		from transformers.gaussiannoise import GaussianNoise
 		GaussianNoise(
 			deviation = 0, # start at 0 radians in noise
 			deviation_amp = math.radians(1), # amp up noise by 1 degree
 			name = 'OrientationNoise',
 		)
-		if include_bounds:
-			GaussianNoise(
-				deviation = 0, # start at 0  meters in noise
-				deviation_amp = 0.1, # amp up noise by 0.1 meters
-				name = 'PositionNoise',
-			)
 		GaussianNoise(
 			deviation = 0, # start at 0  meters in noise
-			deviation_amp = 0.1, # amp up noise by 0.1 meters
+			deviation_amp = 0.2, # amp up noise during phase 3
 			name = 'DistanceNoise',
 		)
-		from transformers.gaussianblur import GaussianBlur
-		GaussianBlur(
-			sigma = 0, # start at 0 noise
-			sigma_amp = 0.1, # amp up noise by .1 sigma
-			name = 'DepthNoise',
-		)
 		from transformers.normalize import Normalize
-		Normalize(
-			max_input = distance_param, # max depth
-			min_output = 1, # SB3 uses 0-255 pixel values
-			max_output = 255, # SB3 uses 0-255 pixel values
-			name = 'NormalizeDepth',
-		)
 		Normalize(
 			max_input = 2*math.pi, # max angle
 			name = 'NormalizeOrientation',
 		)
-		if include_bounds:
-			Normalize(
-				min_input = -1*distance_param-distance_epsilon, # min position (below this is erroneous)
-				max_input = distance_param, # max position
-				name = 'NormalizePosition',
-			)
 		Normalize(
 			min_input = distance_epsilon, # min depth (below this is erroneous)
 			max_input = distance_param, # max depth
 			left = 0, # set all values below range to this
 			name = 'NormalizeDistance',
 		)
-		Normalize(
-			max_input = 255, # MonoDepth2 outputs pixels from 0 to 255
-			name = 'NormalizeMD2',
-		)
 		from transformers.resizeimage import ResizeImage
-		image_shape=(84,84) 
-		if flat == 'big':
-			image_shape=(64,64) 
-		if flat == 'big2':
-			image_shape=(81,81) 
-		if flat == 'big3':
-			image_shape=(25,25) 
+		image_shape=(25,25)
 		ResizeImage(
 			image_shape=image_shape,
 			name = 'ResizeImage',
 		)
-		if airsim_release == 'Tello':
-			from transformers.monodepth2 import MonoDepth2
-			MonoDepth2(
-				name = 'MonoDepth2'
-			)
 		# SENSORS
-		# keep track of recent past actions
-		from sensors.actions import Actions
-		Actions(
-			actor_component = 'Actor',
-			name = 'ActionsSensor',
-			)
-		# sense linear distance to goal
+		# sense horz distance to goal
 		from sensors.distance import Distance
 		Distance(
 			misc_component = 'Drone',
@@ -814,217 +476,99 @@ def create_base_components(
 				],
 			name = 'GoalOrientation',
 		)
-		if vert_motion:
-			# sense altitude distance to goal
-			Distance(
-				misc_component = 'Drone',
-				misc2_component = 'Goal',
-				include_x = False,
-				include_y = False,
-				prefix = 'drone_to_goal',
-				transformers_components = [
-					'DistanceNoise',
-					'NormalizeDistance',
-					],
-				name = 'GoalAltitude',
-			)
-		# sense position on map
-		if include_bounds:
-			from sensors.position import Position
-			Position(
-				misc_component = 'Drone',
-				transformers_components = [
-					'PositionNoise',
-					'NormalizePosition',
-					],
-				name = 'DronePosition',
-			)
+		# sense vert distance to goal
+		Distance(
+			misc_component = 'Drone',
+			misc2_component = 'Goal',
+			include_x = False,
+			include_y = False,
+			prefix = 'drone_to_goal',
+			transformers_components = [
+				'DistanceNoise',
+				'NormalizeDistance',
+				],
+			name = 'GoalAltitude',
+		)
 		from sensors.airsimcamera import AirSimCamera
-		if policy == 'MlpPolicy':
-			# get flattened depth map (obsfucated front facing distance sensors)
-			from transformers.resizeflat import ResizeFlat
-			max_cols = [8*(i+1) for i in range(8)] # splits depth map by columns
-			max_rows = [8*(i+1) for i in range(8)] # splits depth map by rows
-			if flat == 'big2':
-				max_cols = [9*(i+1) for i in range(9)] # splits depth map by columns
-				max_rows = [9*(i+1) for i in range(9)] # splits depth map by rows
-			if flat == 'big3':
-				max_cols = [5*(i+1) for i in range(5)] # splits depth map by columns
-				max_rows = [5*(i+1) for i in range(5)] # splits depth map by rows
-			if flat == 'small':
-				max_cols = [16, 32, 52, 68, 84] # splits depth map by columns
-				max_rows = [21, 42, 63, 84] if vert_motion else [42] # splits depth map by rows
-			ResizeFlat(
-				max_cols = max_cols,
-				max_rows = max_rows,
-				name = 'ResizeFlat',
-			)
-			ResizeFlat(
-				max_cols = max_cols,
-				max_rows = max_rows,
-				name = 'ResizeFlat2',
-			)
-			if airsim_release == 'Tello':
-				from sensors.portcamera import PortCamera
-				PortCamera(
-					transformers_components = [
-						'MonoDepth2',
-						'ResizeImage',
-						'ResizeFlat',
-						'NormalizeMD2',
-						],
-					name = 'FlattenedDepth',
-				)
-			else:
-				AirSimCamera(
-					airsim_component = 'Map',
-					transformers_components = [
-						'ResizeImage',
-						#'DepthNoise',
-						'ResizeFlat',
-						'DistanceNoise',
-						'NormalizeDistance',
-						],
-					name = 'FlattenedDepth',
-					)
-				if include_bottom:
-					AirSimCamera(
-						airsim_component = 'Map',
-						camera_view='3', 
-						transformers_components = [
-							'ResizeImage',
-							#'DepthNoise',
-							'ResizeFlat2',
-							'DistanceNoise',
-							'NormalizeDistance',
-							],
-						name = 'FlattenedDepth2',
-						)
-
+		# get flattened depth map (obsfucated front facing distance sensors)
+		from transformers.resizeflat import ResizeFlat
+		max_cols = [5*(i+1) for i in range(5)] # splits depth map by columns
+		max_rows = [5*(i+1) for i in range(5)] # splits depth map by rows
+		ResizeFlat(
+			max_cols = max_cols,
+			max_rows = max_rows,
+			name = 'ResizeFlat',
+		)
+		ResizeFlat(
+			max_cols = max_cols,
+			max_rows = max_rows,
+			name = 'ResizeFlat2',
+		)
+		AirSimCamera(
+			airsim_component = 'Map',
+			transformers_components = [
+				'ResizeImage',
+				'ResizeFlat',
+				'DistanceNoise',
+				'NormalizeDistance',
+				],
+			name = 'FlattenedDepth',
+		)
+		AirSimCamera(
+			airsim_component = 'Map',
+			camera_view='3', 
+			transformers_components = [
+				'ResizeImage',
+				'ResizeFlat2',
+				'DistanceNoise',
+				'NormalizeDistance',
+				],
+			name = 'FlattenedDepth2',
+		)
 		# OBSERVER
 		# currently must count vector size of sensor output (TODO: automate this)
 		vector_sensors = []
 		vector_length = 0
-		if include_bounds:
-			vector_sensors.append('DronePosition')
-			vector_length += 3
-		if include_actions:
-			vector_sensors.append('ActionsSensor')
-			if rl_model in ['DQN']:
-				vector_length += 1 # DQN adds only one action for ActionSensor
-			if rl_model in ['TD3']:
-				vector_length += len(actions) # TD3 adds multiple actions for ActionSensor
+		vector_sensors.append('FlattenedDepth')
+		vector_length += len(max_cols) * len(max_rows) # several more vector elements
+		vector_sensors.append('FlattenedDepth2')
+		vector_length += len(max_cols) * len(max_rows) # several more vector elements
 		vector_sensors.append('GoalDistance')
 		vector_length += 1
 		vector_sensors.append('GoalOrientation')
 		vector_length += 1
-		if vert_motion:
-			vector_sensors.append('GoalAltitude')
-			vector_length += 1
-		if policy == 'MlpPolicy':
-			vector_sensors.append('FlattenedDepth')
-			vector_length += len(max_cols) * len(max_rows) # several more vector elements
-			if include_bottom:
-				vector_sensors.append('FlattenedDepth2')
-				vector_length += len(max_cols) * len(max_rows) # several more vector elements
+		vector_sensors.append('GoalAltitude')
+		vector_length += 1
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
 			vector_length = vector_length,
 			nTimesteps = nTimesteps,
-			name = 'Observer' if policy == 'MlpPolicy' else 'ObserverVector',
+			name = 'Observer',
 		)
-		if policy == 'MultiInputPolicy':
-			Single(
-				sensors_components = ['DepthMap'], 
-				is_image = True,
-				image_height = 84, 
-				image_width = 84,
-				image_bands = 1,
-				nTimesteps = nTimesteps,
-				name = 'ObserverImage',
-			)
-			from observers.multi import Multi
-			Multi(
-				vector_observer_component = 'ObserverVector',
-				image_observer_component = 'ObserverImage',
-				name = 'Observer',
-				)
-
-		# MODEL
-		if hyper:
-			_space = {}
-			if 'learning_rate' in hyper_params:
-				_space['learning_rate'] = hp.quniform('learning_rate', 1, 8, 1)
-			if 'learning_starts'in hyper_params:
-				_space['learning_starts'] = hp.quniform('learning_starts', 100, 5_000, 100)
-			if 'tau'in hyper_params:
-				_space['tau'] = hp.uniform('tau', 0, 1)
-			if 'buffer_size'in hyper_params:
-				_space['buffer_size'] = hp.quniform('buffer_size', 1_000, replay_buffer_size, 1_000)
-			if 'gamma' in hyper_params:
-				_space['gamma'] = hp.quniform('gamma', 1, 8, 1)
-			if 'batch_size'in hyper_params:
-				_space['batch_size'] = hp.quniform('batch_size', 10, 400, 10)
-			if 'train_freq'in hyper_params:
-				_space['train_freq'] = hp.quniform('train_freq', 1, 6, 1)
-			if 'policy_delay'in hyper_params:
-				_space['policy_delay'] = hp.quniform('policy_delay', 1, 8, 1)
-			if 'target_policy_noise'in hyper_params:
-				_space['target_policy_noise'] = hp.uniform('target_policy_noise', 0, 1)
-			if 'target_noise_clip'in hyper_params:
-				_space['target_noise_clip'] = hp.uniform('target_noise_clip', 0, 1)
-			if 'policy_layers'in hyper_params:
-				_space['policy_layers'] = hp.quniform('policy_layers', 1, 4, 1)
-			if 'policy_nodes'in hyper_params:
-				_space['policy_nodes'] = hp.quniform('policy_nodes', 10, 400, 10)
-			from models.hyper import Hyper
-			Hyper(
-				environment_component = 'TrainEnvironment',
-				_space = _space,
-				model_type = rl_model,
-				default_params= {
-					'policy': policy,
-					'buffer_size': replay_buffer_size,
-					'tensorboard_log': working_directory + 'tensorboard_log/',
-				},
-				name='Model',
-			)
-		else:
-			if rl_model == 'TD3':
-				from models.td3 import TD3
-				TD3(
-					environment_component = 'TrainEnvironment',
-					policy = policy,
-					policy_kwargs = {'net_arch':[32,32,32]},
-					buffer_size = replay_buffer_size,
-					learning_starts = learning_starts if random_start else 0,
-					train_freq = (1, "episode") if random_start else (learning_starts, "episode"),
-					tensorboard_log = working_directory + 'tensorboard_log/',
-					read_model_path = read_model_path,
-					read_replay_buffer_path = read_replay_buffer_path,
-					read_weights_path = read_weights_path,
-					with_distillation = use_slim,
-					use_slim = use_slim,
-					convert_slim = use_slim,
-					action_noise = action_noise,
-					name='Model',
-				)
-			if rl_model == 'DQN':
-				from models.dqn import DQN
-				DQN(
-					environment_component = 'TrainEnvironment',
-					policy = policy,
-					buffer_size = replay_buffer_size,
-					learning_starts = learning_starts,
-					tensorboard_log = working_directory + 'tensorboard_log/',
-					read_model_path = read_model_path,
-					read_replay_buffer_path = read_replay_buffer_path,
-					name='Model',
-				)
 
 
-		# CREATE MODIFIERS
+		## MODEL
+		from models.td3 import TD3
+		TD3(
+			environment_component = 'TrainEnvironment',
+			policy = 'MlpPolicy',
+			policy_kwargs = {'net_arch':[64,32,32]},
+			buffer_size = replay_buffer_size,
+			learning_starts = learning_starts if random_start else 0,
+			train_freq = (1, "episode") if random_start else (learning_starts, "episode"),
+			tensorboard_log = working_directory + 'tensorboard_log/',
+			read_model_path = read_model_path,
+			read_replay_buffer_path = read_replay_buffer_path,
+			convert_slim = True,
+			with_distillation = True,
+			use_slim = use_slim,
+			action_noise = action_noise,
+			name='Model',
+		)
+
+
+		## MODIFIERS
 		# SPAWNER
 		from modifiers.spawner import Spawner
 		from others.spawn import Spawn
@@ -1098,104 +642,71 @@ def create_base_components(
 			name='EvaluateSpawner',
 		)
 		# EVALUATOR
-		nEvalEpisodes = 1 if airsim_release == 'Tello' else 6
-		if eval_enviro:
-			from modifiers.evaluatorcharlie import EvaluatorCharlie
-			noises_components = [
-				'OrientationNoise', 
-				'DistanceNoise', 
-				]
-			if include_bounds:
-				noises_components.append('PositionNoise')
-			# Evaluate model after each epoch (checkpoint)
-			EvaluatorCharlie(
-				base_component = 'TrainEnvironment',
-				parent_method = 'reset',
-				order = 'pre',
-				evaluate_environment_component = 'EvaluateEnvironment',
-				goal_component = 'Goal',
-				model_component = 'Model',
-				noises_components = noises_components,
-				spawn_bounds_component = 'MapBounds',
-				nEpisodes = nEvalEpisodes,
-				frequency = checkpoint,
-				track_vars = [],
-				save_every_model = True,
-				counter = -1, # -1 offset to do an eval before any training
-				name = 'Evaluator',
-			)
-		if not hyper:
-			# SAVERS
-			from modifiers.saver import Saver
-			# save Train states and observations after each epoch (checkpoint)
-			Saver(
-				base_component = 'TrainEnvironment',
-				parent_method = 'end',
-				track_vars = [
-							'observations', 
-							'states',
-							],
-				order = 'post',
-				save_config = True,
-				save_benchmarks = True,
-				frequency = checkpoint,
-				name='TrainEnvSaver',
-			)
-			# save model after each epoch (checkpoint)
-			# environment does not have access to model
-			Saver(
-				base_component = 'Model',
-				parent_method = 'end',
-				track_vars = [
-							'model', 
-							'replay_buffer',
-							],
-				order = 'post',
-				frequency = nEvalEpisodes,
-				name='ModelSaver',
-			)
-			# save Evlaluate states and observations after each epoch (checkpoint)
-			Saver(
-				base_component = 'EvaluateEnvironment',
-				parent_method = 'end',
-				track_vars = [
-							'observations', 
-							'states',
-							],
-				order = 'post',
-				frequency = nEvalEpisodes,
-				name='EvalEnvSaver',
-			)
-		# TRACKER - tracks resources on local computer
-		'''
-		from modifiers.tracker import Tracker
-		Tracker(
+		nEvalEpisodes = 6
+		from modifiers.evaluatorcharlie import EvaluatorCharlie
+		noises_components = [
+			'OrientationNoise', 
+			'DistanceNoise', 
+		]
+		# Evaluate model after each epoch (checkpoint)
+		EvaluatorCharlie(
 			base_component = 'TrainEnvironment',
 			parent_method = 'reset',
+			order = 'pre',
+			evaluate_environment_component = 'EvaluateEnvironment',
+			goal_component = 'Goal',
+			model_component = 'Model',
+			noises_components = noises_components,
+			spawn_bounds_component = 'MapBounds',
+			nEpisodes = nEvalEpisodes,
+			frequency = checkpoint,
+			track_vars = [],
+			save_every_model = True,
+			counter = -1, # -1 offset to do an eval before any training
+			name = 'Evaluator',
+		)
+		# SAVERS
+		from modifiers.saver import Saver
+		# save Train states and observations after each epoch (checkpoint)
+		Saver(
+			base_component = 'TrainEnvironment',
+			parent_method = 'end',
 			track_vars = [
-						'gpu', 
-						'ram',
-						'cpu',
-						'proc',
+						'observations', 
+						'states',
 						],
 			order = 'post',
-			save_every = checkpoint,
-			frequency = 1,
-			name='Tracker',
+			save_config = True,
+			save_benchmarks = True,
+			frequency = checkpoint,
+			name='TrainEnvSaver',
 		)
-		'''
-		if not vert_motion and actor != 'Teleporter':
-			# ALTITUDE ADJUSTER (for horizontal motion, 
-				# since moving forward naturally adds upward drift up)
-			from modifiers.altadjust import AltAdjust
-			AltAdjust(
-				base_component = 'Actor',
-				parent_method = 'step',
-				drone_component = 'Drone',
-				order = 'post',
-				name = 'Evaluator',
-			)
-
+		# save model after each epoch (checkpoint)
+		# environment does not have access to model
+		Saver(
+			base_component = 'Model',
+			parent_method = 'end',
+			track_vars = [
+						'model', 
+						'replay_buffer',
+						],
+			order = 'post',
+			frequency = nEvalEpisodes,
+			name='ModelSaver',
+		)
+		# save Evlaluate states and observations after each epoch (checkpoint)
+		Saver(
+			base_component = 'EvaluateEnvironment',
+			parent_method = 'end',
+			track_vars = [
+						'observations', 
+						'states',
+						],
+			order = 'post',
+			frequency = nEvalEpisodes,
+			name='EvalEnvSaver',
+		)
+	
 	return configuration
 
 
@@ -1208,19 +719,11 @@ def run_controller(configuration):
 	# view neural net archetecture
 	model_name = str(configuration.get_component('Model')._child())
 	sb3_model = configuration.get_component('Model')._sb3model
-	print('MODEL NAME', model_name)
-	if 'dqn' in model_name:
-		print(sb3_model.q_net)
-		for name, param in sb3_model.q_net.named_parameters():
-			msg = str(name) + ' ____ ' + str(param[0])
-			utils.speak(msg)
-			break
-	if 'td3' in model_name:
-		print(sb3_model.actor)
-		for name, param in sb3_model.actor.named_parameters():
-			msg = str(name) + ' ____ ' + str(param[0])
-			utils.speak(msg)
-			break
+	print(sb3_model.actor)
+	for name, param in sb3_model.actor.named_parameters():
+		msg = str(name) + ' ____ ' + str(param[0])
+		utils.speak(msg)
+		break
 	utils.speak('all components connected. Send any key to continue...')
 	x = input()
 
@@ -1237,51 +740,31 @@ def run_controller(configuration):
 configuration = create_base_components(
 		airsim_release = airsim_release, # name of airsim release to use, see maps.arisimmap
 		vert_motion = vert_motion, # allowed to move on z-axis? False will restrict motion to horizontal plane
-		policy = policy, # MultiInputPolicy MlpPolicy - which neural net for RL model to use 
-		rl_model = rl_model, # which SB3 RL model to use - TD3 DQN (see models folder for others)
 		replay_buffer_size = replay_buffer_size, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = continue_training, # set to true if continuing training from checkpoint
 		controller_type = controller_type, # Train, Debug, Drift, Evaluate
-		actor = actor, # Teleporter Continuous
 		clock_speed = clock_speed, # airsim clock speed (increasing this will also decerase sim-quality)
 		training_steps = training_steps, # max number of training steps 
 		distance_param = distance_param, # distance contraint used for several calculations (see below)
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
-		run_post = run_post, # optionally add text to generated run name (such as run2, retry, etc...)
-		distance_reward = distance_reward, # reward function that penalizes distance to goal (large positive fore reaching)
-		step_reward = step_reward, # reward function that penalizes longer episode length
-		flat = flat, # determines size of flattened depth sensor array 
-		hyper = hyper, # optional hyper search over specified parameters using a Gaussian process
-		hyper_params = hyper_params, # which hyper parameters to hyper tune if model is type hyper
 		read_model_path = read_model_path, # load pretrained model?
 		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
 		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
 		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
-		tello_goal = tello_goal,
-		adjust_for_yaw = adjust_for_yaw,
 		include_resolution = include_resolution,
-		include_bottom = include_bottom,
 		action_noise = action_noise,
-		include_bounds = include_bounds,
-		include_actions = include_actions,
-		eval_enviro = eval_enviro,
-		read_weights_path = read_weights_path,
 		random_start = random_start,
 		use_slim = use_slim,
+		use_res = use_res,
 		use_wandb = use_wandb,
 		project_name = project_name,
 		run_name = run_name,
 )
 
-# make dir to save all tello imgs to
-tell_img_path = utils.get_global_parameter('working_directory') + 'tello_imgs/'
-if airsim_release == 'Tello' and not os.path.exists(tell_img_path):
-	os.makedirs(tell_img_path)
-
 # create any other components
 if not continue_training:
-	# add components here
+	# ---* add components here *--- #
 	pass
 
 # run baby run

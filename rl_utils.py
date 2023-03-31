@@ -21,7 +21,7 @@ def get_timestamp():
 
 def setup(write_parent, run_prefix):
 	read_global_parameters()
-	run_name = run_prefix + '_' + get_global_parameter('instance_name')
+	run_name = run_prefix # + '_' + get_global_parameter('instance_name')
 	set_global_parameter('run_name',  run_name)
 	working_directory = write_parent + run_name + '/'
 	set_read_write_paths(working_directory = working_directory)

@@ -8,7 +8,6 @@ class Steps(Reward):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			  value_type='scale2', # see if statements in step() function
 			  ):
 		super().__init__()
 
@@ -16,10 +15,6 @@ class Steps(Reward):
 	def step(self, state):
 		nSteps = state['nSteps']
 
-		value = 0
-		if self.value_type == 'constant':
-			value = -1
-		if self.value_type == 'scale':
-			value = -1 * nSteps
+		value = -1
 
 		return value, False

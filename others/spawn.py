@@ -44,6 +44,7 @@ class Spawn(Other):
 		else:
 			while (True):
 				x, y, z = self._bounds.get_random()
+				z = -1*self.dz
 				in_object = self._map.at_object_2d(x, y)
 				if not in_object:
 					break

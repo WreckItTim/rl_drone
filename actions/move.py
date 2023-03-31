@@ -21,11 +21,14 @@ class Move(Action):
 				min_space = -1, # will scale base values by this range from rl_output
 				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 				adjust_for_yaw = False,
+				active = True, # False will just return default behavior
 			):
 		pass
 		
 	# move at input rate
 	def step(self, state, execute=True):
+		if not self.active:
+			return {}
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
 		if self.zero_thresh_abs:

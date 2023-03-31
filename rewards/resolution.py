@@ -19,7 +19,6 @@ class Resolution(Reward):
 		max_level = self._resolution.max_level
 		l = level / max_level
 
-		if self.value_type == 'scale2':
-			value = -1 * l
+		value = -1 * l
 
 		return value, False

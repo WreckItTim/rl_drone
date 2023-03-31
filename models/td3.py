@@ -33,7 +33,7 @@ class TD3(Model):
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
 			read_weights_path=None, 
-			with_distillation = True,
+			with_distillation = False,
 			use_slim = False,
 			convert_slim = False,
 			use_cuda = True,
