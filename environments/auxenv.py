@@ -23,7 +23,7 @@ class AuxEnv(Environment):
 				model_component, # aux model for rho-preds
 				navi_component, # goalenv environment for navigation
 				is_evaluation_env=False,
-				start = 4, # turn off noise
+				start = 100, # turn off noise
 		):
 		super().__init__()
 
@@ -72,7 +72,6 @@ class AuxEnv(Environment):
 	def reset(self, state = None):
 		self.episode_counter += 1
 		if not self.is_evaluation_env and self.episode_counter > self.start:
-			print('noise off')
 			self._model._sb3model.action_noise = None 
 		# reset navi env
 		navi_obs = self._navi.reset()

@@ -27,7 +27,8 @@ if len(args) > 3:
 
 random_start = True
 action_noise = None
-if test_case in ['m1', 'tp', 'h3']:
+use_cuda = True
+if test_case in ['m1', 'tp', 'h3', 'pc']:
 	action_noise = 'one'
 	random_start = False
 if test_case in ['m9', 's1']:
@@ -36,14 +37,16 @@ if test_case in ['m9', 's1']:
 if test_case in ['tb', 's2']:
 	action_noise = None
 	random_start = True
+if test_cast in ['pc']:
+	airsim_release = 'CityEnviron'
+	use_cuda = False
 
 
 use_wandb = True
 use_slim = True
 use_res = False
 repo_version = 'gamma32'
-parent_project = 'SECON3'
-airsim_release = 'Blocks'
+parent_project = 'SECON4'
 navi_path = 'best_actor.pt'
 child_project = 'slim'
 vert_motion = False
@@ -106,6 +109,7 @@ def create_base_components(
 		project_name = 'void',
 		run_name = 'run',
 		navi_path = None,
+		use_cuda = True,
 ):
 
 	# **** SETUP ****
@@ -288,7 +292,7 @@ def create_base_components(
 			drone_component = 'Drone',
 			map_component = 'Map',
 			bounds_component = 'MapBounds',
-			static_r = 100, # relative distance for static goal from drone
+			static_r = 6, # relative distance for static goal from drone
 			static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
 			static_yaw = 0, # relative yaw for static goal from drone
 			random_r = [6,8], # relative distance for random goal from drone
@@ -585,6 +589,7 @@ def create_base_components(
 			convert_slim = False,
 			with_distillation = False,
 			use_slim = False,
+			use_cuda = use_cuda,
 			action_noise = action_noise,
 			name='AuxModel',
 		)
@@ -596,6 +601,7 @@ def create_base_components(
 			read_weights_path = navi_path,
 			convert_slim = True,
 			use_slim = use_slim,
+			use_cuda = use_cuda,
 			name='NaviModel',
 		)
 
@@ -794,6 +800,7 @@ configuration = create_base_components(
 		project_name = project_name,
 		run_name = run_name,
 		navi_path = navi_path,
+		use_cuda = use_cuda,
 )
 
 # create any other components
