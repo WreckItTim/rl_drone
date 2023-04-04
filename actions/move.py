@@ -33,10 +33,10 @@ class Move(Action):
 		# check for true zero
 		if self.zero_thresh_abs:
 			if abs(rl_output) <= self.zero_threshold:
-				return {}
+				return {'x':0, 'y':0, 'z':0}
 		else:
 			if rl_output <= self.zero_threshold:
-				return {}
+				return {'x':0, 'y':0, 'z':0}
 		# calculate rate from rl_output
 		if self.adjust_for_yaw:
 			# must orient self with yaw

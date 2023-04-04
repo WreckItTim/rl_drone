@@ -37,6 +37,12 @@ class GoalEnv(Environment):
 		self._observations = {}
 		self._track_save = False
 		self._freq_changed = False
+
+	def connect(self, state=None):
+		super().connect()
+		# even though we do not directly use the observation or action space, these fields are necesary for sb3
+		self.observation_space = self._observer.get_space()
+		self.action_space = self._actor.get_space()
 		
 	# this will toggle if keep track of observations and states
 	# note this is expensive, so must dump using save() from time to time
@@ -89,24 +95,24 @@ class GoalEnv(Environment):
 			return rl_output.astype(float).tolist()
 
 	# activate needed components
-	def step(self, rl_output):
+	def step(self, rl_output, state=None):
 		# next step
 		self._nSteps += 1 # total number of steps
 		self.step_counter += 1 # total number of steps
 		this_step = 'step_' + str(self._nSteps)
-		self._states[this_step] = {}
+		if state is None:
+			self._states[this_step] = {}
+		else:
+			self._states[this_step] = state.copy()
 		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
-		# check complexity
-		if self._model.use_slim:
-			self._states[this_step]['slim'] = self._model._sb3model.slim
 		# take action
 		self._actor.step(self._states[this_step])
 		# save state kinematics
 		self._states[this_step]['drone_position'] = self._drone.get_position()
-		self._states[this_step]['yaw'] = self._drone.get_yaw() 
+		self._states[this_step]['yaw'] = self._drone.get_yaw()
 		# get observation
 		self._states[this_step]['observation_name'] = self._last_observation_name
 		observation_data, observation_name = self._observer.step(self._states[this_step])

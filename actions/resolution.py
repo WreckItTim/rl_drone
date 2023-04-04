@@ -31,4 +31,4 @@ class Resolution(Action):
 		# tell each resolution-based component to scale
 		for scale in self._scales:
 			scale.scale_to(level)
-		return {f'scale:{level}'}
+		return {self._name:level}

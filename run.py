@@ -25,40 +25,42 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
-
-repo_version = 'gamma31'
-parent_project = 'SECON2'
-airsim_release = 'Blocks'
+random_start = True
 action_noise = None
-# pre1 = A*, pre2 = blocks horz, pre3 = blocks vert
-if test_case == 'm9':
-	child_project = 'Navi'
-	use_slim = False
-	use_res = False
-	vert_motion = False
-	init_type = 'Rand'
-	random_start = True
-	read_model_path = None
+if test_case in ['m1', 'tp', 'h3']:
+	action_noise = 'one'
+	random_start = False
+if test_case in ['m9', 's1']:
 	action_noise = 'normal'
-	run_post += 'Noise'
-if test_case == 'm1':
-	child_project = 'Navi'
-	use_slim = False
-	use_res = False
-	vert_motion = False
-	init_type = 'Rand'
 	random_start = True
-	read_model_path = None
+if test_case in ['tb', 's2']:
+	action_noise = None
+	random_start = True
+
+
+use_wandb = True
+use_slim = True
+use_res = False
+repo_version = 'gamma32'
+parent_project = 'SECON3'
+airsim_release = 'Blocks'
+navi_path = 'best_actor.pt'
+child_project = 'slim'
+vert_motion = False
+# rand = random_init, pre1 = A*
+init_type = 'pre1'
+read_model_path = None
 project_name = parent_project + '_' + child_project
 run_name = child_project + '_' + airsim_release 
-run_name += '_Vert' if vert_motion else '_Horz' 
+run_name += '_vert' if vert_motion else '_horz' 
+run_name += '_' + str(action_noise)
 run_name += '_' + init_type + '_' + test_case + '_' + repo_version
 if run_post != '': 
 	run_name += '_' + run_post
 
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
-use_wandb = True
 learning_starts = 100
+
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
 read_replay_buffer_path = None
 replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
@@ -69,13 +71,13 @@ include_resolution = False
 nTimesteps = 4 # number of timesteps to use in observation space
 
 # collision goal steps distance slim res1 res2 max_steps
-if child_project == 'Navi':
+if child_project == 'navi':
 	reward_weights = [200, 200, 2, .1, 0, 0, 0, 0] # nav
-if child_project == 'Slim':
+if child_project == 'slim':
 	reward_weights = [200, 200, 2, .1, 3, 0, 0, 0] # slim
-if child_project == 'Res':
+if child_project == 'res':
 	reward_weights = [200, 200, 2, .1, 0, 0.5, 0.5, 0] # res
-if child_project == 'Fuse':
+if child_project == 'fuse':
 	reward_weights = [200, 200, 2, .1, 3, 0.5, 0.5, 0] # slim and res
 
 
@@ -91,11 +93,9 @@ def create_base_components(
 		distance_param = 125,
 		nTimesteps = 4,
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
-		distance_reward = 'scale2', # # reward function that penalizes distance to goal (large positive fore reaching)
-		step_reward = 'scale2', # reward function that penalizes longer episode length
 		read_model_path = None, # load pretrained model?
 		read_replay_buffer_path = None, # load prebuilt replay buffer?
-		reward_weights = [1]*7, # reward weights in order: goal, collision, steps
+		reward_weights = [1]*8, # reward weights in order: goal, collision, steps
 		learning_starts = 100, # how many steps to collect in buffer before training starts
 		include_resolution = True,
 		action_noise = None,
@@ -105,6 +105,7 @@ def create_base_components(
 		use_wandb = True,
 		project_name = 'void',
 		run_name = 'run',
+		navi_path = None,
 ):
 
 	# **** SETUP ****
@@ -120,8 +121,8 @@ def create_base_components(
 		controller_type = controller_type,
 		total_timesteps = training_steps, # optional if using train - all other hypers set from model instance
 		continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
-		model_component = 'Model', # if using train, set model
-		environment_component = 'TrainEnvironment', # if using train, set train environment
+		model_component = 'AuxModel', # if using train, set model
+		environment_component = 'AuxTrainEnvironment', # if using train, set train environment
 		use_wandb = use_wandb, # logs tensor board and wandb
 		log_interval = 10,
 		evaluator = 'Evaluator',
@@ -148,9 +149,9 @@ def create_base_components(
 		if update_meta:
 			configuration.update_meta(meta)
 		# load model weights and replay buffer
-		read_model_path = working_directory + 'Model/model.zip'
-		read_replay_buffer_path = working_directory + 'Model/replay_buffer.zip'
-		_model = configuration.get_component('Model')
+		read_model_path = working_directory + 'AuxModel/model.zip'
+		read_replay_buffer_path = working_directory + 'AuxModel/replay_buffer.zip'
+		_model = configuration.get_component('AuxModel')
 		_model.read_model_path = read_model_path
 		_model.read_replay_buffer_path = read_replay_buffer_path
 
@@ -174,24 +175,38 @@ def create_base_components(
 		from environments.goalenv import GoalEnv
 		GoalEnv(
 			drone_component='Drone', 
-			actor_component='Actor', 
+			actor_component='NaviActor', 
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
-			model_component='Model',
+			model_component='NaviModel',
 			change_train_freq_after = None if random_start else learning_starts,
-			name='TrainEnvironment',
+			name='NaviTrainEnvironment',
+		)
+		from environments.auxenv import AuxEnv
+		AuxEnv(
+			actor_component='AuxActor', 
+			model_component='AuxModel',
+			navi_component='NaviTrainEnvironment',
+			name='AuxTrainEnvironment',
 		)
 		## EVALUATE ENVIRONMENT
 		GoalEnv(
 			drone_component='Drone', 
-			actor_component='Actor', 
+			actor_component='NaviActor', 
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
-			model_component='Model',
+			model_component='NaviModel',
 			is_evaluation_env=True,
-			name='EvaluateEnvironment',
+			name='NaviEvaluateEnvironment',
+		)
+		AuxEnv(
+			actor_component='AuxActor', 
+			model_component='AuxModel',
+			navi_component='NaviEvaluateEnvironment',
+			is_evaluation_env=True,
+			name='AuxEvaluateEnvironment',
 		)
 		
 
@@ -273,7 +288,7 @@ def create_base_components(
 			drone_component = 'Drone',
 			map_component = 'Map',
 			bounds_component = 'MapBounds',
-			static_r = 6, # relative distance for static goal from drone
+			static_r = 100, # relative distance for static goal from drone
 			static_dz = dz, # relative z for static goal from drone (this is dz above roof or floor)
 			static_yaw = 0, # relative yaw for static goal from drone
 			random_r = [6,8], # relative distance for random goal from drone
@@ -357,7 +372,7 @@ def create_base_components(
 
 
 		## ACTIONS
-		actions = []			
+		navi_actions = []			
 		base_distance = 10 # meters, will multiply rl_output by this value
 		base_yaw = math.pi # degrees, will multiply rl_output by this value
 		from actions.move import Move 
@@ -368,21 +383,7 @@ def create_base_components(
 			zero_thresh_abs = False, # any negative input is not move forward
 			name = 'MoveForward',
 		)
-		actions.append('MoveForward')
-		from actions.rotate import Rotate 
-		Rotate(
-			drone_component = 'Drone',  
-			base_yaw = base_yaw,
-			name = 'Rotate',
-		)
-		actions.append('MoveVertical')
-		from actions.slim import Slim
-		Slim(
-			model_component = 'Model',
-			active = use_slim,
-			name = 'SlimAction'
-		) 
-		actions.append('Rotate')
+		navi_actions.append('MoveForward')
 		Move(
 			drone_component = 'Drone', 
 			base_z_rel = base_distance, 
@@ -390,7 +391,23 @@ def create_base_components(
 			active = vert_motion,
 			name = 'MoveVertical',
 		)
-		actions.append('SlimAction')
+		navi_actions.append('MoveVertical')
+		from actions.rotate import Rotate 
+		Rotate(
+			drone_component = 'Drone',  
+			base_yaw = base_yaw,
+			name = 'Rotate',
+		)
+		navi_actions.append('Rotate')
+
+		aux_actions = []	
+		from actions.slim import Slim
+		Slim(
+			model_component = 'NaviModel',
+			active = use_slim,
+			name = 'SlimAction'
+		) 
+		aux_actions.append('SlimAction')
 		from actions.resolution import Resolution 
 		Resolution(
 			scales_components = [
@@ -399,7 +416,7 @@ def create_base_components(
 			active = use_res,
 			name = 'FlattenedDepthResolution',
 		)
-		actions.append('FlattenedDepthResolution')
+		aux_actions.append('FlattenedDepthResolution')
 		Resolution(
 			scales_components = [
 				'ResizeFlat2',
@@ -407,15 +424,20 @@ def create_base_components(
 			active = use_res,
 			name = 'FlattenedDepthResolution2',
 		)
-		actions.append('FlattenedDepthResolution2')
+		aux_actions.append('FlattenedDepthResolution2')
 
 
 		## ACTOR
 		from actors.teleporter import Teleporter
 		Teleporter(
 			drone_component = 'Drone',
-			actions_components = actions,
-			name='Actor',
+			actions_components = navi_actions,
+			name='NaviActor',
+		)
+		from actors.continuousactor import ContinuousActor
+		ContinuousActor(
+			actions_components = aux_actions,
+			name='AuxActor',
 		)
 
 
@@ -489,7 +511,6 @@ def create_base_components(
 				],
 			name = 'GoalAltitude',
 		)
-		from sensors.airsimcamera import AirSimCamera
 		# get flattened depth map (obsfucated front facing distance sensors)
 		from transformers.resizeflat import ResizeFlat
 		max_cols = [5*(i+1) for i in range(5)] # splits depth map by columns
@@ -504,6 +525,7 @@ def create_base_components(
 			max_rows = max_rows,
 			name = 'ResizeFlat2',
 		)
+		from sensors.airsimcamera import AirSimCamera
 		AirSimCamera(
 			airsim_component = 'Map',
 			transformers_components = [
@@ -551,20 +573,30 @@ def create_base_components(
 		## MODEL
 		from models.td3 import TD3
 		TD3(
-			environment_component = 'TrainEnvironment',
+			environment_component = 'AuxTrainEnvironment',
 			policy = 'MlpPolicy',
-			policy_kwargs = {'net_arch':[64,32,32]},
+			policy_kwargs = {'net_arch':[32,32]},
 			buffer_size = replay_buffer_size,
 			learning_starts = learning_starts if random_start else 0,
 			train_freq = (1, "episode") if random_start else (learning_starts, "episode"),
 			tensorboard_log = working_directory + 'tensorboard_log/',
 			read_model_path = read_model_path,
 			read_replay_buffer_path = read_replay_buffer_path,
-			convert_slim = True,
-			with_distillation = True,
-			use_slim = use_slim,
+			convert_slim = False,
+			with_distillation = False,
+			use_slim = False,
 			action_noise = action_noise,
-			name='Model',
+			name='AuxModel',
+		)
+		TD3(
+			environment_component = 'NaviTrainEnvironment',
+			policy = 'MlpPolicy',
+			policy_kwargs = {'net_arch':[64, 32, 32]},
+			buffer_size = 1,
+			read_weights_path = navi_path,
+			convert_slim = True,
+			use_slim = use_slim,
+			name='NaviModel',
 		)
 
 
@@ -650,17 +682,18 @@ def create_base_components(
 		]
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
-			base_component = 'TrainEnvironment',
+			base_component = 'AuxTrainEnvironment',
 			parent_method = 'reset',
 			order = 'pre',
-			evaluate_environment_component = 'EvaluateEnvironment',
+			evaluate_environment_component = 'AuxEvaluateEnvironment',
 			goal_component = 'Goal',
-			model_component = 'Model',
+			model_component = 'AuxModel',
 			noises_components = noises_components,
 			spawn_bounds_component = 'MapBounds',
 			nEpisodes = nEvalEpisodes,
 			frequency = checkpoint,
 			track_vars = [],
+			success = 4,
 			save_every_model = True,
 			counter = -1, # -1 offset to do an eval before any training
 			name = 'Evaluator',
@@ -669,7 +702,7 @@ def create_base_components(
 		from modifiers.saver import Saver
 		# save Train states and observations after each epoch (checkpoint)
 		Saver(
-			base_component = 'TrainEnvironment',
+			base_component = 'NaviTrainEnvironment',
 			parent_method = 'end',
 			track_vars = [
 						'observations', 
@@ -684,7 +717,7 @@ def create_base_components(
 		# save model after each epoch (checkpoint)
 		# environment does not have access to model
 		Saver(
-			base_component = 'Model',
+			base_component = 'AuxModel',
 			parent_method = 'end',
 			track_vars = [
 						'model', 
@@ -696,7 +729,7 @@ def create_base_components(
 		)
 		# save Evlaluate states and observations after each epoch (checkpoint)
 		Saver(
-			base_component = 'EvaluateEnvironment',
+			base_component = 'NaviEvaluateEnvironment',
 			parent_method = 'end',
 			track_vars = [
 						'observations', 
@@ -717,8 +750,8 @@ def run_controller(configuration):
 	configuration.connect_all()
 
 	# view neural net archetecture
-	model_name = str(configuration.get_component('Model')._child())
-	sb3_model = configuration.get_component('Model')._sb3model
+	model_name = str(configuration.get_component('AuxModel')._child())
+	sb3_model = configuration.get_component('AuxModel')._sb3model
 	print(sb3_model.actor)
 	for name, param in sb3_model.actor.named_parameters():
 		msg = str(name) + ' ____ ' + str(param[0])
@@ -760,6 +793,7 @@ configuration = create_base_components(
 		use_wandb = use_wandb,
 		project_name = project_name,
 		run_name = run_name,
+		navi_path = navi_path,
 )
 
 # create any other components

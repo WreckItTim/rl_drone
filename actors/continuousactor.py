@@ -21,7 +21,7 @@ class ContinuousActor(Actor):
 		for idx, action in enumerate(self._actions):
 			action._idx = idx # tell action which index it is
 			transcribed.update(action.step(state)) # take action
-		state['transcribed_action'] = str(transcribed)
+		state['transcribed_action'] = transcribed.copy()
 		
 	# randomly sample RL output from action space unless specified
 	def debug(self, state=None):

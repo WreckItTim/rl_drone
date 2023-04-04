@@ -16,6 +16,7 @@ import torch.nn as nn
 from torch import Tensor
 import copy
 import functools
+from numpy.typing import DTypeLike
 
 # CUSTOM SLIM LAYERS
 class Slim(nn.Linear):
@@ -35,6 +36,7 @@ class Slim(nn.Linear):
 			self.in_features = int(self.slim * self.max_in_features)
 		if self.slim_out:
 			self.out_features = int(self.slim * self.max_out_features)
+		#print(f'B4-shape:{self.weight.shape}')
 		weight = self.weight[:self.out_features, :self.in_features]
 		if self.bias is not None:
 			bias = self.bias[:self.out_features]
@@ -103,6 +105,7 @@ def train_with_distillation(self, gradient_steps: int, batch_size: int = 100) ->
 			p = self.actor(replay_data.observations)
 			sample_slim = np.random.uniform(low=0.1251, high=0.9999, size=2)
 			slim_samples = [0.125] + list(sample_slim)
+			print(f'distilling:{slim_samples}')
 			for slim in slim_samples:
 				for module in self.actor.modules():
 					if 'Slim' in str(type(module)):
@@ -184,6 +187,17 @@ class NormalActionNoise2(ActionNoise):
 	def __repr__(self) -> str:
 		return f"NormalActionNoise2(mu={self._mu}, sigma={self._sigma})"
 
+# Alwas gives action of +1
+class AlwaysOne(ActionNoise):
+	def __init__(self):
+		super().__init__()
+
+	def __call__(self) -> np.ndarray:
+		return 2
+
+	def __repr__(self) -> str:
+		return f"AlwaysOne()"
+
 # custom class taht derives from tensor callback to add whatever you want to tb log
 class TensorboardCallback(BaseCallback):
 	def __init__(self, evaluator, verbose=0):
@@ -245,6 +259,8 @@ class Model(Component):
 		self._is_hyper = False
 		if _model_arguments['action_noise'] == 'normal':
 			_model_arguments['action_noise'] = NormalActionNoise2()
+		if _model_arguments['action_noise'] == 'one':
+			_model_arguments['action_noise'] = AlwaysOne()
 		self._model_arguments = _model_arguments
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
@@ -268,6 +284,7 @@ class Model(Component):
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
+		print('ACTION NOISE:', self._sb3model.action_noise)
 		self._sb3model.actor.optimizer = torch.optim.Adam(
 			self._sb3model.actor.parameters(),
 			amsgrad=False,
@@ -294,15 +311,15 @@ class Model(Component):
 			maximize= False,
 			weight_decay= 1e-6,
 		)
-		# load weights?
-		if self.read_weights_path is not None and exists(self.read_weights_path):
-			self.load_weights(self.read_weights_path)
 		# convert all linear modules to slim ones
 		if self.convert_slim:
 			self._is_slim = True
 			self._sb3model.actor.mu = convert_to_slim(self._sb3model.actor.mu)
 			#self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
 			self._sb3model.slim = 1
+		# load weights?
+		if self.read_weights_path is not None:
+			self.load_weights(self.read_weights_path)
 		# use slim layers
 		if self.use_slim:
 			self._is_slim = True
@@ -353,14 +370,14 @@ class Model(Component):
 			self.save_replay_buffer(write_folder + 'replay_buffer.zip')
 	def save_model(self, path):
 		# SB3 has built in serialization which can not handle a custom class
-		if self._sb3model.action_noise is not None:
+		if self._model_arguments['action_noise'] == 'normal':
 			temp = self._sb3model.action_noise._progress_calculator
 			self._sb3model.action_noise._progress_calculator = None
 		if self.with_distillation:
 			self._sb3model.train = None
 		self._sb3model.save(path)
 		# SB3 has built in serialization which can not handle a custom class
-		if self._sb3model.action_noise is not None:
+		if self._model_arguments['action_noise'] == 'normal':
 			self._sb3model.action_noise._progress_calculator = temp
 		if self.with_distillation:
 			self._sb3model.train = functools.partial(train_with_distillation, self._sb3model)
@@ -378,11 +395,16 @@ class Model(Component):
 		torch.save(self._sb3model.actor.state_dict(), actor_path)
 		torch.save(self._sb3model.critic.state_dict(), critic_path)
 
-	def load_weights(self, actor_path, critic_path):
-		self._sb3model.actor.load_state_dict(torch.load(actor_path))
-		self._sb3model.actor_target.load_state_dict(torch.load(actor_path))
-		self._sb3model.critic.load_state_dict(torch.load(critic_path))
-		self._sb3model.critic_target.load_state_dict(torch.load(critic_path))
+	def load_weights(self, actor_path):
+		state_dict = torch.load(actor_path)
+		#smart_keys = list(state_dict.keys())
+		#for key in smart_keys:
+		#	dumb_key = 'mu.'
+		if actor_path is not None and exists(actor_path):
+			print(self._sb3model.actor.mu.load_state_dict(copy.deepcopy(state_dict)))
+			self._sb3model.actor_target.mu.load_state_dict(copy.deepcopy(state_dict))
+		#self._sb3model.critic.load_state_dict(torch.load(critic_path))
+		#self._sb3model.critic_target.load_state_dict(torch.load(critic_path))
 
 	# load sb3 replay buffer from path
 	def load_replay_buffer(self, path):

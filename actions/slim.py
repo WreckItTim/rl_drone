@@ -33,4 +33,4 @@ class Slim(Action):
 			if 'Slim' in str(type(module)):
 				module.slim = rho
 		#utils.speak(f'set slim:{rho}')
-		return {f'slim:{rho}'}
+		return {'slim':rho}

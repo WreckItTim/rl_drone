@@ -27,11 +27,8 @@ class Environment(gym.Env, Component):
 	def __init__(self):
 		pass
 
-	def connect(self):
+	def connect(self, state=None):
 		super().connect()
-		# even though we do not directly use the observation or action space, these fields are necesary for sb3
-		self.observation_space = self._observer.get_space()
-		self.action_space = self._actor.get_space()
 
 	## methods that are expected to be defined and called from OpenAI Gym and Stable_Baselines3
 

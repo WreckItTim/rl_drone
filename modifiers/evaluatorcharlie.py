@@ -65,7 +65,7 @@ class EvaluatorCharlie(Modifier):
 			if not os.path.exists(self.write_folder):
 				os.makedirs(self.write_folder)
 		# give noise component visiblity of progress in learning loop
-		if self._model._model_arguments['action_noise'] is not None:
+		if self._model._model_arguments['action_noise'] == 'normal':
 			self._model._model_arguments['action_noise'].set_progress_calculator(self)
 
 	# returns progress of learning loop
@@ -102,6 +102,7 @@ class EvaluatorCharlie(Modifier):
 							self._goal.static_r -= self.amp_up_r
 							self._goal.random_r[0] -= self.amp_up_r
 							self._goal.random_r[1] -= self.amp_up_r
+						self._preamps = 0
 					break
 			# close up shop?
 			if stop:
@@ -147,7 +148,7 @@ class EvaluatorCharlie(Modifier):
 			this_success, this_reward = self.evaluate_episode()
 			total_success += this_success
 			total_reward += this_reward
-		all_success = total_success >= self.success
+		all_success = total_success >= self.success or self.set_counter % 20 == 0
 		mean_reward = total_reward / self.nEpisodes
 
 		if self.verbose > 0:
@@ -178,11 +179,11 @@ class EvaluatorCharlie(Modifier):
 
 			# are we optimizing goal distance?
 			if self.phase == 'distance':
-				new_best = True # as long as we reached all_success then we are improving
 				this_distance = self._goal.static_r
 				self._model._best_score = -1 * this_distance # need to minimize if hyper learning
 				self.best_distance = this_distance
-				if this_distance >= self.distance_max:
+				new_best = True # as long as we reached all_success then we are improving
+				if self.best_distance >= self.distance_max:
 					# save final best here (otherwise will be lost when switching phases)
 					if 'model' in self.track_vars:
 						self._model.save_model(self.write_folder + 'best_model_distance.zip')
