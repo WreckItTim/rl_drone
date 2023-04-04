@@ -28,6 +28,7 @@ if len(args) > 3:
 random_start = True
 action_noise = None
 use_cuda = True
+airsim_release = 'Blocks'
 if test_case in ['m1', 'tp', 'h3', 'pc']:
 	action_noise = 'one'
 	random_start = False
@@ -37,7 +38,7 @@ if test_case in ['m9', 's1']:
 if test_case in ['tb', 's2']:
 	action_noise = None
 	random_start = True
-if test_cast in ['pc']:
+if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 	use_cuda = False
 
