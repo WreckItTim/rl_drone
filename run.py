@@ -25,32 +25,42 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
-random_start = True
-action_noise = None
-use_cuda = True
-airsim_release = 'Blocks'
-if test_case in ['m1', 'tp', 'h3', 'pc']:
-	action_noise = 'one'
-	random_start = False
-if test_case in ['m9', 's1']:
-	action_noise = 'normal'
-	random_start = True
-if test_case in ['tb', 's2']:
-	action_noise = None
-	random_start = True
-if test_case in ['pc']:
-	airsim_release = 'CityEnviron'
-	use_cuda = False
+if test_case in ['h4']:
+	use_slim = True
+	use_res = False
+	vert_motion = False
+	navi_path = 'NaviSlim_horz.pt'
+	child_project = 'slim'
+if test_case in ['m9']:
+	use_slim = True
+	use_res = False
+	vert_motion = True
+	navi_path = 'NaviSlim_vert.pt'
+	child_project = 'slim'
+if test_case in ['tb']:
+	use_slim = False
+	use_res = True
+	vert_motion = False
+	navi_path = 'NaviRes_horz.pt'
+	child_project = 'res'
+if test_case in ['m1']:
+	use_slim = False
+	use_res = True
+	vert_motion = True
+	navi_path = 'NaviRes_vert.pt'
+	child_project = 'res'
 
-
-use_wandb = True
-use_slim = True
+# navi with no slim or res
+use_slim = False
 use_res = False
+use_wandb = False
+
+action_noise = None
+airsim_release = 'Blocks'
+use_cuda = True
+random_start = True
 repo_version = 'gamma32'
 parent_project = 'SECON4'
-navi_path = 'best_actor.pt'
-child_project = 'slim'
-vert_motion = False
 # rand = random_init, pre1 = A*
 init_type = 'pre1'
 read_model_path = None

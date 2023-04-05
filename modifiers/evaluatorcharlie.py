@@ -162,6 +162,7 @@ class EvaluatorCharlie(Modifier):
 		another_set = False # used to determine if another set should run	
 		# only accept potential evaluations if all_success was triggered
 		# also only do this if we past collecting training data (controlled by the counter var)
+		all_success = True
 		if all_success:
 			new_best = False # measures if we improved from last epochs
 
