@@ -1,3 +1,4 @@
+from pickle import FALSE
 import rl_utils as utils
 from configuration import Configuration
 import math
@@ -30,6 +31,12 @@ use_cuda = True
 action_noise = None
 use_wandb = True
 random_start = True
+
+navi_path = 'NaviSlim_horz.pt'
+use_slim = True
+use_res = False
+child_project = 'slim'
+vert_motion = False
 if test_case in ['m9']:
 	navi_path = 'NaviSlim_vert.pt'
 	use_slim = True
@@ -61,15 +68,13 @@ if test_case in ['tb']:
 	child_project = 'fuse'
 	vert_motion = False
 if test_case in ['pc']:
-	navi_path = 'NaviSlim_vert.pt'
-	use_slim = True
-	use_res = False
-	child_project = 'slim'
-	vert_motion = True
+	navi_path = 'NaviRes_horz.pt'
+	use_slim = False
+	use_res = True
+	child_project = 'res'
+	vert_motion = False
 	airsim_release = 'CityEnviron'
 	use_cuda = False
-	random_start = False
-	action_noise = 'one'
 
 # navi with no slim or res
 #use_slim = False
