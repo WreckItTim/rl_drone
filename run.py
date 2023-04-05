@@ -25,40 +25,57 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
-if test_case in ['h4']:
-	use_slim = True
-	use_res = False
-	vert_motion = False
-	navi_path = 'NaviSlim_horz.pt'
-	child_project = 'slim'
-if test_case in ['m9']:
-	use_slim = True
-	use_res = False
-	vert_motion = True
-	navi_path = 'NaviSlim_vert.pt'
-	child_project = 'slim'
-if test_case in ['tb']:
-	use_slim = False
-	use_res = True
-	vert_motion = False
-	navi_path = 'NaviRes_horz.pt'
-	child_project = 'res'
-if test_case in ['m1']:
-	use_slim = False
-	use_res = True
-	vert_motion = True
-	navi_path = 'NaviRes_vert.pt'
-	child_project = 'res'
-
-# navi with no slim or res
-use_slim = False
-use_res = False
-use_wandb = False
-
-action_noise = None
 airsim_release = 'Blocks'
 use_cuda = True
+action_noise = None
+use_wandb = True
 random_start = True
+if test_case in ['m9']:
+	navi_path = 'NaviSlim_vert.pt'
+	use_slim = True
+	use_res = False
+	child_project = 'slim'
+	vert_motion = True
+if test_case in ['m1']:
+	navi_path = 'NaviRes_vert.pt'
+	use_slim = False
+	use_res = True
+	child_project = 'res'
+	vert_motion = True
+if test_case in ['h4']:
+	navi_path = 'NaviFuse_vert.pt'
+	use_slim = True
+	use_res = True
+	child_project = 'fuse'
+	vert_motion = True
+if test_case in ['tp']:
+	navi_path = 'NaviRes_horz.pt'
+	use_slim = False
+	use_res = True
+	child_project = 'res'
+	vert_motion = False
+if test_case in ['tb']:
+	navi_path = 'NaviFuse_horz.pt'
+	use_slim = True
+	use_res = True
+	child_project = 'fuse'
+	vert_motion = False
+if test_case in ['pc']:
+	navi_path = 'NaviSlim_vert.pt'
+	use_slim = True
+	use_res = False
+	child_project = 'slim'
+	vert_motion = True
+	airsim_release = 'CityEnviron'
+	use_cuda = False
+	random_start = False
+	action_noise = 'one'
+
+# navi with no slim or res
+#use_slim = False
+#use_res = False
+#use_wandb = False
+
 repo_version = 'gamma32'
 parent_project = 'SECON4'
 # rand = random_init, pre1 = A*
