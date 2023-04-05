@@ -80,6 +80,7 @@ if test_case in ['pc']:
 #use_slim = False
 #use_res = False
 #use_wandb = False
+#run_post = 'mdl'
 
 repo_version = 'gamma32'
 parent_project = 'SECON4'

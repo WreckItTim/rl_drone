@@ -23,6 +23,8 @@ class AuxEnv(Environment):
 				model_component, # aux model for rho-preds
 				navi_component, # goalenv environment for navigation
 				is_evaluation_env=False,
+				step_counter=0, 
+				episode_counter=0, 
 				start = 100, # turn off noise
 		):
 		super().__init__()
