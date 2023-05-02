@@ -120,8 +120,8 @@ class EvaluatorCharlie(Modifier):
 
 	# steps through one evaluation episode
 	def evaluate_episode(self):
-		# reset environment, returning first observation
-		observation_data = self._evaluate_environment.reset()
+		# start environment, returning first observation
+		observation_data = self._evaluate_environment.start()
 		# start episode
 		done = False
 		total_reward = 0
@@ -129,7 +129,8 @@ class EvaluatorCharlie(Modifier):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
 			# take next step
-			observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
+			#observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
+			observation_data, reward, done = self._evaluate_environment.step(rl_output)
 			total_reward += reward
 		# call end for modifiers
 		self._model.end()
@@ -148,7 +149,7 @@ class EvaluatorCharlie(Modifier):
 			this_success, this_reward = self.evaluate_episode()
 			total_success += this_success
 			total_reward += this_reward
-		all_success = total_success >= self.success or self.set_counter % 20 == 0
+		all_success = total_success >= self.success
 		mean_reward = total_reward / self.nEpisodes
 
 		if self.verbose > 0:
@@ -201,7 +202,6 @@ class EvaluatorCharlie(Modifier):
 					self._goal.static_r += self.amp_up_r
 					self._goal.random_r[0] += self.amp_up_r
 					self._goal.random_r[1] += self.amp_up_r
-					#self._spawn_bounds.inner_radius -= self.amp_up_r
 					#another_set = True # evaluate again, to see if we can get even farther without more training
 
 			# are we optimizing reward?

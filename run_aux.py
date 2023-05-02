@@ -76,14 +76,8 @@ if test_case in ['pc']:
 	airsim_release = 'CityEnviron'
 	use_cuda = False
 
-# navi with no slim or res
-#use_slim = False
-#use_res = False
-#use_wandb = False
-#run_post = 'mdl'
-
-repo_version = 'gamma32'
-parent_project = 'SECON4'
+repo_version = 'delta1'
+parent_project = 'eecs298'
 # rand = random_init, pre1 = A*
 init_type = 'pre1'
 read_model_path = None
@@ -152,7 +146,7 @@ def create_base_components(
 		run_prefix = run_name,
 		)
 	working_directory = utils.get_global_parameter('working_directory')
-
+	
 
 	## CONTROLLER
 	controller = utils.get_controller(
@@ -211,6 +205,7 @@ def create_base_components(
 
 		## TRAIN ENVIRONMENT
 		from environments.goalenv import GoalEnv
+		from environments.auxenv import AuxEnv
 		GoalEnv(
 			drone_component='Drone', 
 			actor_component='NaviActor', 
@@ -221,7 +216,6 @@ def create_base_components(
 			change_train_freq_after = None if random_start else learning_starts,
 			name='NaviTrainEnvironment',
 		)
-		from environments.auxenv import AuxEnv
 		AuxEnv(
 			actor_component='AuxActor', 
 			model_component='AuxModel',
@@ -646,7 +640,7 @@ def create_base_components(
 		from others.spawn import Spawn
 		Spawner(
 			base_component = 'Drone',
-			parent_method = 'reset',
+			parent_method = 'start',
 			drone_component = 'Drone',
 			spawns_components=[
 				Spawn(
@@ -663,7 +657,7 @@ def create_base_components(
 		)
 		Spawner(
 			base_component = 'Drone',
-			parent_method = 'reset',
+			parent_method = 'start',
 			drone_component = 'Drone',
 			spawns_components=[
 				Spawn(
@@ -723,7 +717,7 @@ def create_base_components(
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
 			base_component = 'AuxTrainEnvironment',
-			parent_method = 'reset',
+			parent_method = 'start',
 			order = 'pre',
 			evaluate_environment_component = 'AuxEvaluateEnvironment',
 			goal_component = 'Goal',

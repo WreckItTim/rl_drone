@@ -3,7 +3,7 @@ from models.model import Model
 from stable_baselines3 import SAC as sb3SAC
 from component import _init_wrapper
 
-class SAC(Model):
+class SBSAC(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self,

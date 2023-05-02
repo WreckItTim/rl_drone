@@ -65,7 +65,7 @@ class Data(Controller):
 				# get goal
 				goal_point = path[-2].copy()
 				# reset env
-				self._environment.reset(state={
+				self._environment.start(state={
 					'spawn_to':list(last_point.copy()),
 					'goal_at':list(goal_point.copy()),
 					'fname':fname,
@@ -86,7 +86,8 @@ class Data(Controller):
 						yaw += 2*math.pi
 					forward = np.linalg.norm(distance_vector[:2])
 					rl_output = np.array([forward/10, yaw/math.pi, distance_vector[2]/10], dtype=float)
-					obs, reward, done, info = self._environment.step(rl_output)
+					#obs, reward, done, info = self._environment.step(rl_output)
+					obs, reward, done = self._environment.step(rl_output)
 					last_point = this_point.copy()
 					if done:
 						self._environment.end()

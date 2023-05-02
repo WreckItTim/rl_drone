@@ -5,7 +5,6 @@ from sensors.sensor import Sensor
 from observations.image import Image
 from transformers.transformer import Transformer
 import numpy as np
-from gym import spaces
 
 class Multi(Observer):
 	
@@ -30,10 +29,12 @@ class Multi(Observer):
 			}
 		return data_dict, vector_name + '__' + image_name
 
-	def reset(self, state=None):
-		self._vector_observer.reset()
-		self._image_observer.reset()
+	def start(self, state=None):
+		self._vector_observer.start()
+		self._image_observer.start()
 
+	'''
+	from gym import spaces
 	# returns dict space with proper dimensions
 	def get_space(self):
 		space_dict = spaces.Dict(
@@ -43,3 +44,4 @@ class Multi(Observer):
 				}
 			)
 		return space_dict
+	'''

@@ -26,7 +26,7 @@ class AirSimDrone(Drone):
 		return has_collided 
 
 	# resets on episode
-	def reset(self, state=None):
+	def start(self, state=None):
 		#self._airsim._client.pause(True)
 		self._airsim._client.reset()
 		self._airsim._client.enableApiControl(True)

@@ -111,5 +111,5 @@ class ResizeFlat(Transformer):
 
 
 	# reset to starting values
-	def reset(self, state = None):
+	def start(self, state = None):
 		self._mask = np.full((self._height, self._width), True)

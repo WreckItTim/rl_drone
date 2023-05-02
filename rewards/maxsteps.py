@@ -32,7 +32,7 @@ class MaxSteps(Reward):
 		return value, done and self.terminate
 
 	# update max steps based on goal distance
-	def reset(self, state):
+	def start(self, state):
 		if self.update_steps:
 			_drone_position = np.array(state['drone_position'])
 			_goal_position = np.array(state['goal_position'])

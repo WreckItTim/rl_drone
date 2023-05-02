@@ -25,7 +25,7 @@ class AirSimChecks(Controller):
 				part += 1
 			utils.speak(f'on run {r} ...')
 			results[r] = {}
-			self._drone._airsim._client.reset()
+			self._drone._airsim._client.start()
 			self._drone._airsim._client.enableApiControl(True)
 			self._drone._airsim._client.armDisarm(True)
 			self._drone._airsim._client.takeoff()

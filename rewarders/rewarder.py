@@ -13,6 +13,6 @@ class Rewarder(Component):
 	def connect(self):
 		super().connect()
 
-	def reset(self, state=None):
+	def start(self, state=None):
 		for reward in self._rewards:
-			reward.reset(state)
+			reward.start(state)

@@ -4,7 +4,7 @@ from component import _init_wrapper
 # trains a reinforcment learning algorithm
 # launches learn() from the mdoel object
 	# which links to the train environment
-	# learn() calls step() and reset()
+	# learn() calls step() and start()
 class Train(Controller):
 	# constructor
 	@_init_wrapper

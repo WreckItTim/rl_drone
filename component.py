@@ -223,8 +223,8 @@ class Component():
 	def step(self, state=None):
 		pass
 
-	# resets at the beginning of an episode to prepare for next
-	def reset(self, state=None):
+	# called at the beginning of an episode to prepare for next
+	def start(self, state=None):
 		pass
 
 	# called at the end of an episode to clean up

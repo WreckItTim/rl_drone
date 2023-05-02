@@ -11,7 +11,7 @@ import os
 # hyper optimiztion, uses hyperopt lib for gaussian search
 # this hyper search optimizes max goal ditance traveled
 # adjust best_score for your needs
-class Hyper(Model):
+class SBHyper(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 

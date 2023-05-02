@@ -132,7 +132,7 @@ class AirSimMap(Map):
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)
-		self.reset() # this seems repetitive but needed to reset state info
+		self.start() # this seems repetitive but needed to reset state info
 
 	# close airsim map
 	def disconnect(self):

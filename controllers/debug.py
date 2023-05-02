@@ -25,7 +25,7 @@ class Debug(Controller):
 				for idx, component_name in enumerate(component_names):
 					print(idx, ':', component_name)
 			elif user_input == 'reset':
-				self._drone.reset()
+				self._drone.start()
 			elif user_input == 'move':
 				user_input = input()
 				x, y, z, yaw = [float(_) for _ in user_input.split(' ')]

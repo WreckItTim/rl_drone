@@ -1,5 +1,6 @@
 from component import Component
 from environments.environment import Environment
+from aienvironments.aienvironment import AIEnvironment
 import inspect
 
 # wrapper method to modify a base method
@@ -33,7 +34,7 @@ class Modifier(Component):
 
 	# increments counter and checks if we activate
 	def check_counter(self, state=None):
-		if isinstance(self._base, Environment):
+		if isinstance(self._base, Environment) or isinstance(self._base, AIEnvironment):
 			if state is None:
 				state = {}
 			state['is_evaluation_env'] = self._base.is_evaluation_env
@@ -62,9 +63,9 @@ class Modifier(Component):
 		if self.parent_method == 'step':
 			self.activate(state)
 			
-	# resets at the beginning of an episode to prepare for next
-	def reset(self, state=None):
-		if self.parent_method == 'reset':
+	# called at the beginning of an episode to prepare for next
+	def start(self, state=None):
+		if self.parent_method == 'start':
 			self.activate(state)
 
 	# called at the end of an episode to clean up

@@ -1,27 +1,30 @@
 # abstract class used to handle RL model
 from models.model import Model
-from stable_baselines3 import A2C as sb3A2C
+from stable_baselines3 import DQN as sb3DQN
 from component import _init_wrapper
-from os.path import exists
 
-class A2C(Model):
+class SBDQN(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
 			environment_component,
 			policy = 'MlpPolicy',
-			learning_rate = 7e-4,
-			n_steps = 5,
+			learning_rate = 1e-4,
+			buffer_size = 1_000_000,
+			learning_starts = 50000,
+			batch_size = 32,
+			tau = 1.0,
 			gamma = 0.99,
-			gae_lambda = 1.0,
-			ent_coef = 0.0,
-			vf_coef = 0.5,
-			max_grad_norm = 0.5,
-			rms_prop_eps = 1e-5,
-			use_rms_prop = True,
-			use_sde = False,
-			sde_sample_freq = -1,
-			normalize_advantage = False,
+			train_freq = 4,
+			gradient_steps = 1,
+			replay_buffer_class = None,
+			replay_buffer_kwargs = None,
+			optimize_memory_usage = False,
+			target_update_interval = 10000,
+			exploration_fraction = 0.1,
+			exploration_initial_eps = 1.0,
+			exploration_final_eps = 0.05,
+			max_grad_norm = 10,
 			tensorboard_log = None,
 			policy_kwargs = None,
 			verbose = 0,
@@ -41,9 +44,9 @@ class A2C(Model):
 			'read_replay_buffer_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
-		self.sb3Type = sb3A2C
-		self.sb3Load = sb3A2C.load
-		self._has_replay_buffer = False
+		self.sb3Type = sb3DQN
+		self.sb3Load = sb3DQN.load
+		self._has_replay_buffer = True
 		super().__init__(
 				   read_model_path=read_model_path, 
 				   read_replay_buffer_path=read_replay_buffer_path, 

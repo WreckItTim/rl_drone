@@ -38,5 +38,5 @@ class Distance(Reward):
 		self._last_distance = this_distance
 		return value, False
 
-	def reset(self, state):
+	def start(self, state):
 		self._last_distance = self.get_distance()

@@ -1,14 +1,17 @@
-from environments.environment import Environment
+from aienvironments.aienvironment import AIEnvironment
 from component import _init_wrapper
 import numpy as np
 import rl_utils as utils
 import os
+from stable_baselines3.common.type_aliases import TrainFreq
 
 # an environment is the heart of RL algorithms
 # the Goal flavor wants the drone to go to Point A to Point B
 # steps until termination then resets
 # if a saver modifier is used, will write observations and states
-class GoalEnv(Environment):
+class AIGoalEnv(AIEnvironment):
+	# even though we do not render, this field is necesary for sb3
+	metadata = {"render.modes": ["rgb_array"]}
 
 	# constructor
 	# if continuing training, step_counter and episode_counter will likely be > 0
@@ -25,12 +28,21 @@ class GoalEnv(Environment):
 				 episode_counter=0, 
 				 save_counter=0,
 				 is_evaluation_env=False,
+				 change_train_freq_after = None,
+				 change_train_freq = (1, 'episode'),
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
 		self._all_states = {}
 		self._observations = {}
 		self._track_save = False
+		self._freq_changed = False
+
+	def connect(self, state=None):
+		super().connect()
+		# even though we do not directly use the observation or action space, these fields are necesary for sb3
+		self.observation_space = self._observer.get_space()
+		self.action_space = self._actor.get_space()
 		
 	# this will toggle if keep track of observations and states
 	# note this is expensive, so must dump using save() from time to time
@@ -45,6 +57,7 @@ class GoalEnv(Environment):
 			  ):
 		self._track_save = track_save
 		self._track_vars = track_vars.copy()
+
 
 	# if reset learning loop
 	def reset_learning(self):
@@ -73,6 +86,13 @@ class GoalEnv(Environment):
 			np.savez(path, **self._observations)
 			self._observations = {}
 		self.save_counter += 1
+	
+	# just makes the rl_output from SB3 more readible
+	def clean_rl_output(self, rl_output):
+		if np.issubdtype(rl_output.dtype, np.integer):
+			return int(rl_output)
+		if np.issubdtype(rl_output.dtype, np.floating):
+			return rl_output.astype(float).tolist()
 
 	# activate needed components
 	def step(self, rl_output, state=None):
@@ -112,14 +132,27 @@ class GoalEnv(Environment):
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.end(self._states[this_step])
+			#print('TERMINATION STATE', self._states[this_step])
+			#input()
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done
+		return observation_data, total_reward, done, self._states[this_step].copy()
+
+	def start(self, state=None):
+		return self.reset(state)
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
-	def start(self, state = None):
+	def reset(self, state = None):
 		self.episode_counter += 1
+		#print('reset',self.is_evaluation_env, self.episode_counter)
+		if self.change_train_freq_after is not None and not self._freq_changed and self.episode_counter >= self.change_train_freq_after-1:
+			#print('train_freq b4', self._model._sb3model.train_freq)
+			self._model._sb3model.train_freq = self.change_train_freq
+			self._model._sb3model._convert_train_freq()
+			#print('changed train_freq to', self._model._sb3model.train_freq)
+			self._freq_changed = True
+		#i = input()
 		# init state(s)
 		self._nSteps = 0 # steps this episode
 		this_step = 'step_' + str(self._nSteps)
@@ -160,6 +193,9 @@ class GoalEnv(Environment):
 		if self._track_save and 'observations' in self._track_vars:
 			self._observations[observation_name] = observation_data.copy()
 
+		#print(self._name, self.episode_counter, self._states[this_step])
+		#p = 'E' if self.is_evaluation_env else 'T'
+		#print(p + str(self.episode_counter), end=' ')
 		return observation_data
 
 	# called at the end of each episode for any clean up, when done=True

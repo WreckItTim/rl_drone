@@ -1,26 +1,27 @@
 # abstract class used to handle RL model
 from models.model import Model
-from stable_baselines3 import DDPG as sb3DDPG
+from stable_baselines3 import A2C as sb3A2C
 from component import _init_wrapper
+from os.path import exists
 
-class DDPG(Model):
+class SBA2C(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
 			environment_component,
 			policy = 'MlpPolicy',
-			learning_rate = 1e-3,
-			buffer_size = 1_000_000,
-			learning_starts = 100,
-			batch_size = 100,
-			tau = 0.005,
+			learning_rate = 7e-4,
+			n_steps = 5,
 			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
-			action_noise = None,
-			replay_buffer_class = None,
-			replay_buffer_kwargs = None,
-			optimize_memory_usage = False,
+			gae_lambda = 1.0,
+			ent_coef = 0.0,
+			vf_coef = 0.5,
+			max_grad_norm = 0.5,
+			rms_prop_eps = 1e-5,
+			use_rms_prop = True,
+			use_sde = False,
+			sde_sample_freq = -1,
+			normalize_advantage = False,
 			tensorboard_log = None,
 			policy_kwargs = None,
 			verbose = 0,
@@ -30,9 +31,6 @@ class DDPG(Model):
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
 		):
-		if type(train_freq) == list or type(train_freq) == set:
-			train_freq = tuple(train_freq)
-
 		kwargs = locals()
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
 			'self', 
@@ -43,9 +41,9 @@ class DDPG(Model):
 			'read_replay_buffer_path',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
-		self.sb3Type = sb3DDPG
-		self.sb3Load = sb3DDPG.load
-		self._has_replay_buffer = True
+		self.sb3Type = sb3A2C
+		self.sb3Load = sb3A2C.load
+		self._has_replay_buffer = False
 		super().__init__(
 				   read_model_path=read_model_path, 
 				   read_replay_buffer_path=read_replay_buffer_path, 

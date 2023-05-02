@@ -72,7 +72,7 @@ class RelativeGoal(Other):
 		return math.atan2(position[1], position[0])
 
 	# need to recalculate relative point at each reset
-	def reset(self, state):
+	def start(self, state):
 		is_evaluation = state['is_evaluation_env']
 		drone_position = self._drone.get_position()
 		drone_yaw = self._drone.get_yaw()
@@ -145,4 +145,4 @@ class RelativeGoal(Other):
 			self._y = goal_position[1]
 			self._z = goal_position[2]
 		if not valid_point:
-			self.reset(state)
+			self.start(state)
