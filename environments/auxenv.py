@@ -21,7 +21,6 @@ class AuxEnv(Environment):
 				is_evaluation_env=False,
 				step_counter=0, 
 				episode_counter=0, 
-				start = 100, # turn off noise
 		):
 		super().__init__()
 
@@ -54,8 +53,6 @@ class AuxEnv(Environment):
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def start(self, state = None):
 		self.episode_counter += 1
-		if not self.is_evaluation_env and self.episode_counter > self.start:
-			self._model._sb3model.action_noise = None 
 		# reset navi env
 		navi_obs = self._navi.start()
 		self._navi_obs = navi_obs.copy()

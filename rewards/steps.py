@@ -13,7 +13,6 @@ class Steps(Reward):
 
 	# calculates rewards from agent's current state (call to when taking a step)
 	def step(self, state):
-		nSteps = state['nSteps']
 
 		value = -1
 

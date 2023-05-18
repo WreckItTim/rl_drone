@@ -21,7 +21,7 @@ def get_timestamp():
 
 def setup(write_parent, run_prefix):
 	read_global_parameters()
-	run_name = run_prefix # + '_' + get_global_parameter('instance_name')
+	run_name = run_prefix 
 	set_global_parameter('run_name',  run_name)
 	working_directory = write_parent + run_name + '/'
 	set_read_write_paths(working_directory = working_directory)
@@ -51,6 +51,7 @@ def set_read_write_paths(working_directory):
 	working_directory = fix_directory(working_directory)
 	if not os.path.exists(working_directory):
 		os.makedirs(working_directory)
+	# copy over evaluation notebook to directory (just for easy access)
 	shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
 	# save working directory path to global_parameters to be visible by all 
 	set_global_parameter('working_directory', working_directory) # relative to repo
@@ -59,66 +60,46 @@ def set_read_write_paths(working_directory):
 
 # set up controller to run configuration on
 def get_controller(controller_type, 
-				total_timesteps = 1_000_000,
-				continue_training = True,
-				model_component = 'Model',
-				environment_component = 'TrainEnvironment',
-				drone_component = 'Drone',
-				evaluator_component = 'Evaluator',
-				actor_component = 'Actor',
-				use_wandb = True,
-				log_interval = -1,
-				evaluator = 'Evaluator',
-				project_name = 'void',
+				controller_params,
 				):
 	# create CONTROLLER - controls all components (mode)
-	controller = None
-	speak(f'CONTROLLER = {controller_type}')
+	controller_type = controller_type.lower()
 	# debug mode will prompt user input for which component(s) to debug
-	if controller_type == 'Debug':
+	if controller_type == 'debug':
 		from controllers.debug import Debug
 		controller = Debug(
-			drone_component=drone_component,
+			**controller_params,
 			)
 	# train will create a new or read in a previously trained model
 	# set continue_training=True to pick up where learning loop last saved
 	# or set continue_training=False to keep weights but start new learning loop
-	elif controller_type == 'Train':
+	elif controller_type == 'train':
 		from controllers.train import Train
 		controller = Train(
-			model_component = model_component,
-			environment_component = environment_component,
-			evaluator_component = evaluator_component,
-			total_timesteps = total_timesteps,
-			use_wandb = use_wandb,
-			log_interval = log_interval,
-			continue_training = continue_training,
-			project_name = project_name,
+			**controller_params,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
-	elif controller_type == 'Evaluate':
+	elif controller_type == 'evaluate':
 		from controllers.evaluate import Evaluate
 		controller = Evaluate(
-			evaluator_component = evaluator_component,
+			**controller_params,
 			)
 	# checks will run drift checks
-	elif controller_type == 'AirSimChecks':
+	elif controller_type == 'airsimchecks':
 		from controllers.airsimchecks import AirSimChecks
 		controller = AirSimChecks(
-			drone_component = drone_component,
-			actor_component = actor_component,
+			**controller_params,
 			)
 	# will teleport drone to specified points and collect data
-	elif controller_type == 'Data':
+	elif controller_type == 'data':
 		from controllers.data import Data
 		controller = Data(
-			model_component = model_component,
-			environment_component = environment_component,
-			drone_component = drone_component,
+			**controller_params,
 			)
 	else:
 		from controllers.empty import Empty
 		controller = Empty()
+	speak(f'created controller of type = {type(controller)}')
 	return controller
 
 

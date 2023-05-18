@@ -1,145 +1,124 @@
 # abstract class used to handle RL model
 from models.model import Model
 from component import _init_wrapper
+import rl_utils as utils
 
 class TD3(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			_actor,
-			_critics,
-			_actor_target = None,
-			_critics_target = None,
-			actor_path = None,
-			critics_path = None,
-			environment_component,
-			buffer_size = 1_000_000,
-			learning_starts = 100,
-			batch_size = 100,
-			tau = 0.005,
-			gamma = 0.99,
-			train_freq = (1, "episode"),
-			policy_delay = 2,
-			target_policy_noise = 0.2,
-			target_noise_clip = 0.5,
-			device = "cpu",
-			read_path=None,
-			with_distillation = False,
-			use_slim = False,
-			convert_slim = False,
+
+			# parent params
+			train_environment_component,
+			actor,
+			actor_target,
+			critics,
+			critics_target,
+			obs_shape,
+			act_shape,
+			write_dir,
+			save_init_model = True,
+			save_init_buffer = False,
+			replay_buffer = None, # str to read from file, None for new, numpy for exact
+			buffer_size = 1_000_000, # number of recent samples to keep in replaybuffer
+			device = 'cpu', # torch device, i.e. cpu or gpu
+			obs_dtype = 'float32',
+			act_dtype = 'float32',
+			rew_dtype = 'float32',
+			slim = 1, # current slim factor of actor (1 is full)
+			end_buffer = 0, # index of last filled row in replay buffer
+			rev_buffer = 0, # revolving index of next row to fill in replaybuffer
+			nTrain = 0, # number of total train iters
+			nSteps = 0, # number of sampling steps
+			nEpisodes = 0, # number of sampling episodes
+
+			# child params
+			tau = 0.005, # polyak update coeff
+			gamma = 0.99, # discount factor
+			policy_delay = 2, # train iter delay netween updates
+			noise_std = 0.2, # standard deviation of added action noise during train
+			noise_max = 0.5, # max abs value of added action noise during train
 		):
-		pass
+		self._is_hyper = False
+		super().__init__()
 
-	# runs learning loop on model
-	def learn(self, 
-		total_timesteps=10_000,
-		use_wandb = True,
-		log_interval = -1,
-		reset_num_timesteps = False,
-		evaluator=None,
-		project_name = 'void',
+	# adapted base code from psuedo @ https://spinningup.openai.com/en/latest/algorithms/td3.html
+	def train(self,
+			nIters=1,
+			batch_size=100,
+			with_distillation=False,
+			low=0.125, size=2, # distill params
 		):
-		
-		for timestep in range(total_timesteps):
-			# reset environment, returning first observation
-			observation_data = self._train_environment.start()
-			# start episode
-			done = False
-			while(not done):
-				# get rl output
-				rl_output = self.predict(observation_data)
-				# take next step
-				#observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
-				observation_data, reward, done = self._evaluate_environment.step(rl_output)
-			# call end for modifiers
-			self.end()
 
-	def train(self, gradient_steps, batch_size = 100):
-		#utils.speak('BEGIN TRAIN with distill')
-		#for param in self.actor_target.parameters():
-		#	print(param.device)
-		# Switch to train mode (this affects batch norm / dropout)
-		self.policy.set_training_mode(True)
-
-		# Update learning rate according to lr schedule
-		self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
-
-		# UNSLIM (code added from original SB3 train() method )
-		actor_losses, critic_losses = [], []
+		# UNSLIM (if no net modules are slim, then does nothing)
 		for module in self.actor.modules():
 			if 'Slim' in str(type(module)):
 				module.slim = 1
-		for _ in range(gradient_steps):
-			self._n_updates += 1
-			# Sample replay buffer
-			replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-			with th.no_grad():
-				# Select action according to policy and add clipped noise
-				noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
-				noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-				next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+		# do nIters many updates
+		for itr in range(nIters):
+			# sample replay buffer (actions are clones)
+			obs, obs_next, act, rew, end = self.sample_buffer(batch_size)
 
-				# Compute the next Q-values: min over all critics targets
-				next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
-				next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
-				target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+			# sample next data from neural nets but do not calculate gradients
+			with torch.no_grad():
+				# sample next actions
+				act_next = self.actor_target(obs_next)
+				# add noise to next actions
+				noise = torch.normal(0, self.noise_std, size=act_next.size())
+				noise = torch.clamp(noise, min=-1*self.noise_max, max=self.noise_max)
+				act_next = torch.clamp(act_next + noise, min=-1, max=1)
+				# sample next q-vals and calculate target
+				q_next = self.critic(obs_next, act_next, return_min=True)
+				q_target = rew + (1 - end) * self.gamma * q_next
 
-			# Get current Q-values estimates for each critic network
-			current_q_values = self.critic(replay_data.observations, replay_data.actions)
+			# update each critic
+			obs_act = torch.cat([obs, act], 1)
+			for critic in self._critics:
+				# calc q values from current observations and actions
+				q_vals = critic(obs_act)
+				# calc critic loss
+				critic_loss = torch.nn.functional.mse_loss(q_vals, q_target)
+				# calc gradient in critic
+				critic.optimizer.zero_grad()
+				critic_loss.backward()
+				# update weights in critic
+				critic.optimizer.step()
 
-			# Compute critic loss
-			critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
-			critic_losses.append(critic_loss.item())
-
-			# Optimize the critics
-			self.critic.optimizer.zero_grad()
-			critic_loss.backward()
-			self.critic.optimizer.step()
-
-			# Delayed policy updates
-			if self._n_updates % self.policy_delay == 0:
-				# Compute actor loss
-				actor_loss = -self.critic.q1_forward(replay_data.oactor_targetbservations, self.actor(replay_data.observations)).mean()
-				actor_losses.append(actor_loss.item())
-
-				# Optimize the actor
+			self.nTrain += 1
+			# update actor and target networks?
+			if self.nTrain % self.policy_delay == 0:
+				# compute actor loss w.r.t. first critic
+				obs_act = torch.cat([obs, self.actor(obs)], 1)
+				# maximize mean q-value from batch
+                actor_loss = -self._critics[0](obs_act).mean()
+				# calc gradient in actor
 				self.actor.optimizer.zero_grad()
 				actor_loss.backward(retain_graph=True)
-
-				# DISTILL (code added from original SB3 train() method )
-				p = self.actor(replay_data.observations)
-				sample_slim = np.random.uniform(low=0.1251, high=0.9999, size=2)
-				slim_samples = [0.125] + list(sample_slim)
-				print(f'distilling:{slim_samples}')
-				for slim in slim_samples:
+				# DISTILL?? (if training to slim)
+				if with_distillation:
+					p = self.actor(replay_data.observations)
+					sample_slim = np.random.uniform(low=low, high=1, size=size)
+					slim_samples = [low] + list(sample_slim)
+					for slim in slim_samples:
+						for module in self.actor.modules():
+							if 'Slim' in str(type(module)):
+								module.slim = slim
+						p2 = self.actor(obs)
+						loss = F.mse_loss(p2, p)
+						loss.backward(retain_graph=True)
+					# UNSLIM
 					for module in self.actor.modules():
 						if 'Slim' in str(type(module)):
-							module.slim = slim
-					p2 = self.actor(replay_data.observations)
-					loss = F.mse_loss(p2, p)
-					loss.backward(retain_graph=True)
-				# UNSLIM
-				for module in self.actor.modules():
-					if 'Slim' in str(type(module)):
-						module.slim = 1
-
-				# step
+							module.slim = 1
+				# update weights of actor
 				self.actor.optimizer.step()
-
-				polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
-				polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
-				# Copy running stats, see GH issue #996
-				polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
-				polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
-
-		self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
-		if len(actor_losses) > 0:
-			self.logger.record("train/actor_loss", np.mean(actor_losses))
-		self.logger.record("train/critic_loss", np.mean(critic_losses))
-
+				# polyak updates on target networks
+				self.polyak_update(self._actor.parameters(), self._actor_target.parameters(), self.tau)
+				for c in range(self._nCritics):
+					self.polyak_update(self._critics[c].parameters(), self._critics_target[c].parameters(), self.tau)
+				
 		# RESET SLIM - to value set from previous action
 		for module in self.actor.modules():
 			if 'Slim' in str(type(module)):
 				module.slim = self.slim
-		#utils.speak('END TRAIN with distill')

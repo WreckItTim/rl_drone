@@ -8,15 +8,15 @@ from hyperopt import hp
 
 # grab arguments input from terminal
 args = sys.argv
-# first sys argument is test_case to run (see options below)
-	# if no arguments will default to test_case 'H4' - blocks, horizontal motion, with an MLP
+# first sys argument is test_case to run (see options below) - usually changes by device
+	# if no arguments will default to test_case 'h4' - my work laptop
 test_case = ''
 if len(args) > 1:
 	test_case = args[1].lower()
 # second sys argument is to continue training from last checkpoint (True) or not (False)
 	# will assume False if no additional input
 	# must pass in run_post var
-continue_training = False
+continue_training = False # if True will continue learning loop from last step saved, if False will reset learning loop
 if len(args) > 2:
 	continue_training = args[2] in ['true', 'True']
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
@@ -25,74 +25,85 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
+repo_version = 'delta1'
+parent_project = 'eecs298'
 use_wandb = False
-
-repo_version = 'gamma32'
-parent_project = 'SECON3'
 airsim_release = 'Blocks'
 action_noise = None
-child_project = 'navi'
-use_slim = False
-use_res = False
-vert_motion = False
-# rand = random_init, pre1 = A*, pre2 = blocks_horz, pre3 = blocks_vert
-init_type = 'rand'
 random_start = True
 read_model_path = None
-project_name = parent_project + '_' + child_project
+read_replay_buffer_path = None
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+learning_starts = 100 # collect this many episodes before start updating networks
+replay_buffer_size = 400_000 # number of recent samples (steps) to save in replay buffer
+	#400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
+max_episodes = 100_000 # max number of episodes to train for before terminating learning loop
+	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
+clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
+distance_param = 125 # distance contraint used for several calculations (see below)
+nTimesteps = 4 # number of timesteps to include in observation space
+# actions?
+actions = [
+	'MoveForward',
+	'Rotate',
+	#'MoveVertical',
+	#'SlimAction',
+	#'FlattenedDepthResolution1',
+	#'FlattenedDepthResolution2',
+]
+vert_motion = False
+use_slim = False
+use_res = False
+# rewards and weights?
+rewards = {
+	'CollisionReward': 200, 
+	'GoalReward', 200,
+	'StepsReward', 2,
+	'DistanceReward', 0.1,
+	#'SlimReward', 3,
+	#'ResolutionReward1', 0.5,
+	#'ResolutionReward2', 0.5,
+	'MaxStepsReward', 0,
+}
+child_project = 'navi'
 run_name = child_project + '_' + airsim_release 
 run_name += '_vert' if vert_motion else '_horz' 
-run_name += '_' + init_type + '_' + test_case + '_' + repo_version
+run_name += '_' + test_case + '_' + repo_version
 if run_post != '': 
 	run_name += '_' + run_post
 
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
-
-learning_starts = 100
+# Train controller is basic RL application
 controller_type = 'Train' # Train Debug Drift Evaluate Data	
-read_replay_buffer_path = None
-replay_buffer_size = 400_000 # 400_000 will work well within a 32gb-RAM system when using MultiInputPolicy
-training_steps = 1_000_000 # roughly 250k steps a day
-clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
-distance_param = 125 # distance contraint used for several calculations (see below)
-include_resolution = False
-nTimesteps = 4 # number of timesteps to use in observation space
-
-# collision goal steps distance slim res1 res2 max_steps
-if child_project == 'navi':
-	reward_weights = [200, 200, 2, .1, 0, 0, 0, 0] # nav
-if child_project == 'slim':
-	reward_weights = [200, 200, 2, .1, 3, 0, 0, 0] # slim
-if child_project == 'res':
-	reward_weights = [200, 200, 2, .1, 0, 0.5, 0.5, 0] # res
-if child_project == 'fuse':
-	reward_weights = [200, 200, 2, .1, 3, 0.5, 0.5, 0] # slim and res
-
+controller_params = {
+	'project_name' : parent_project + '_' + child_project,
+	'use_wandb' : False,
+}
 
 # runs some overarching base things
 def create_base_components(
+		actions,
+		rewards,
 		airsim_release = 'Blocks', # name of airsim release to use, see maps.arisimmap
 		vert_motion = False, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		replay_buffer_size = 1_000_000, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = False, # set to true if continuing training from checkpoint
 		controller_type = 'Train', # Train, Debug, Drift, Evaluate
+		controller_params = {},
 		clock_speed = 10, # airsim clock speed (increasing this will alsovalue_typevalue_type
-		training_steps = 50_000_000,
 		distance_param = 125,
 		nTimesteps = 4,
 		checkpoint = 100, # evaluate model and save checkpoint every # of episodes
 		read_model_path = None, # load pretrained model?
 		read_replay_buffer_path = None, # load prebuilt replay buffer?
-		reward_weights = [1]*7, # reward weights in order: goal, collision, steps
+		reward_weights = [1]*7, # reward weights in order (see above at declaration)
 		learning_starts = 100, # how many steps to collect in buffer before training starts
-		include_resolution = True,
 		action_noise = None,
 		random_start = True,
 		use_slim = False,
 		use_res = False,
-		use_wandb = True,
-		project_name = 'void',
 		run_name = 'run',
+		max_episodes = 1_000_000,
+		repo_version = 'unknown',
 ):
 
 	# **** SETUP ****
@@ -106,14 +117,7 @@ def create_base_components(
 	## CONTROLLER
 	controller = utils.get_controller(
 		controller_type = controller_type,
-		total_timesteps = training_steps, # optional if using train - all other hypers set from model instance
-		continue_training = continue_training, # if True will continue learning loop from last step saved, if False will reset learning loop
-		model_component = 'Model', # if using train, set model
-		environment_component = 'TrainEnvironment', # if using train, set train environment
-		use_wandb = use_wandb, # logs tensor board and wandb
-		log_interval = 10,
-		evaluator = 'Evaluator',
-		project_name = project_name,
+		controller_params = **controller_params, 
 	)
 	# SET META DATA (anything you want here, just writes to config file as a dict)
 	meta = {
@@ -136,11 +140,12 @@ def create_base_components(
 		if update_meta:
 			configuration.update_meta(meta)
 		# load model weights and replay buffer
+		# YOU MAY HAVE TO ADJUST THIS FOR YOUR USE
 		read_model_path = working_directory + 'Model/model.zip'
 		read_replay_buffer_path = working_directory + 'Model/replay_buffer.zip'
 		_model = configuration.get_component('Model')
-		_model.read_model_path = read_model_path
-		_model.read_replay_buffer_path = read_replay_buffer_path
+		_model.model = read_model_path
+		_model.replay_buffer = read_replay_buffer_path
 
 
 	# NEW CONFIGURATION?
@@ -150,8 +155,8 @@ def create_base_components(
 		configuration = Configuration(
 			meta, 
 			controller, 
-			add_timers=False, 
-			add_memories=False,
+			add_timers=False, # auto times all function calls
+			add_memories=False, # logs memory of all objs at each checkpoint
 			)
 
 
@@ -167,7 +172,7 @@ def create_base_components(
 			rewarder_component='Rewarder', 
 			goal_component='Goal',
 			model_component='Model',
-			change_train_freq_after = None if random_start else learning_starts,
+			is_evaluation_env=False,
 			name='TrainEnvironment',
 		)
 		## EVALUATE ENVIRONMENT
@@ -215,7 +220,7 @@ def create_base_components(
 				'ClockSpeed': clock_speed,
 				},
 			setting_files = [
-				'lightweight', # see maps/airsim_settings
+				'lightweight', # see maps/airsim_settings/...
 				],
 			console_flags = console_flags.copy(),
 			name = 'Map',
@@ -273,137 +278,136 @@ def create_base_components(
 		)
 
 
-		## REWARDS
-		rewards = []
-		# heavy penalty for collision
-		from rewards.collision import Collision
-		Collision(
-			drone_component = 'Drone',
-			name = 'CollisionReward',
-		)
-		rewards.append('CollisionReward')
-		# increasing reward as approaches goal
-		from rewards.goal import Goal
-		Goal(
-			drone_component = 'Drone',
-			goal_component = 'Goal',
-			include_z = True, # includes z in distance calculations
-			tolerance = 0 if airsim_release == 'Tello' else 4,
-			name = 'GoalReward',
-		)
-		rewards.append('GoalReward')
-		# penalize heavier as approaches time constraint
-		from rewards.steps import Steps
-		Steps(
-			name = 'StepsReward',
-		)
-		rewards.append('StepsReward')
-		# increasing reward as approaches goal
-		from rewards.distance import Distance
-		Distance(
-			drone_component = 'Drone',
-			goal_component = 'Goal',
-			include_z = True, # includes z in distance calculations
-			name = 'DistanceReward',
-		)
-		rewards.append('DistanceReward')
-		# penalize computational complexity
-		from rewards.slim import Slim
-		Slim(
-			slim_component='SlimAction',
-			name='SlimReward',
-		)
-		rewards.append('SlimReward')
-		# penalty for higher resolutions=
-		from rewards.resolution import Resolution
-		Resolution(
-			resolution_component = 'FlattenedDepthResolution',
-			name = 'ResolutionReward',
-		)
-		rewards.append('ResolutionReward')
-		Resolution(
-			resolution_component = 'FlattenedDepthResolution2',
-			name = 'ResolutionReward2',
-		)
-		rewards.append('ResolutionReward2')
-		# do not exceed this many steps
-		from rewards.maxsteps import MaxSteps
-		MaxSteps(
-			name = 'MaxStepsReward',
-			update_steps = True,
-			max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
-			max_max = 50,
-		)
-		rewards.append('MaxStepsReward')
-		# REWARDER
-		from rewarders.schema import Schema
-		Schema(
-			rewards_components = rewards,
-			reward_weights = reward_weights.copy(),
-			name = 'Rewarder',
-		)
-
-
-		## ACTIONS
-		actions = []			
+		## ACTIONS		
 		base_distance = 10 # meters, will multiply rl_output by this value
 		base_yaw = math.pi # degrees, will multiply rl_output by this value
-		from actions.move import Move 
-		Move(
-			drone_component = 'Drone', 
-			base_x_rel = base_distance, 
-			adjust_for_yaw = True,
-			zero_thresh_abs = False, # any negative input is not move forward
-			name = 'MoveForward',
-		)
-		actions.append('MoveForward')
-		from actions.rotate import Rotate 
-		Rotate(
-			drone_component = 'Drone',  
-			base_yaw = base_yaw,
-			name = 'Rotate',
-		)
-		actions.append('MoveVertical')
-		from actions.slim import Slim
-		Slim(
-			model_component = 'Model',
-			active = use_slim,
-			name = 'SlimAction'
-		) 
-		actions.append('Rotate')
-		Move(
-			drone_component = 'Drone', 
-			base_z_rel = base_distance, 
-			adjust_for_yaw = True,
-			active = vert_motion,
-			name = 'MoveVertical',
-		)
-		actions.append('SlimAction')
-		from actions.resolution import Resolution 
-		Resolution(
-			scales_components = [
-				'ResizeFlat',
-			],
-			active = use_res,
-			name = 'FlattenedDepthResolution',
-		)
-		actions.append('FlattenedDepthResolution')
-		Resolution(
-			scales_components = [
-				'ResizeFlat2',
-			],
-			active = use_res,
-			name = 'FlattenedDepthResolution2',
-		)
-		actions.append('FlattenedDepthResolution2')
-
-
-		## ACTOR
+		if 'MoveForward' in actions:
+			from actions.move import Move 
+			Move(
+				drone_component = 'Drone', 
+				base_x_rel = base_distance, 
+				adjust_for_yaw = True,
+				zero_thresh_abs = False, # any negative input is not move forward
+				name = 'MoveForward',
+			)
+		if 'Rotate' in actions:
+			from actions.rotate import Rotate 
+			Rotate(
+				drone_component = 'Drone',  
+				base_yaw = base_yaw,
+				name = 'Rotate',
+			)
+		if 'MoveVertical' in actions:
+			from actions.move import Move 
+			Move(
+				drone_component = 'Drone', 
+				base_z_rel = base_distance, 
+				adjust_for_yaw = True,
+				active = vert_motion,
+				name = 'MoveVertical',
+			)
+		if 'SlimAction' in actions:
+			from actions.slim import Slim
+			Slim(
+				model_component = 'Model',
+				active = use_slim,
+				name = 'SlimAction'
+			) 
+		if 'FlattenedDepthResolution1' in actions:
+			from actions.resolution import Resolution 
+			Resolution(
+				scales_components = [
+					'ResizeFlat1',
+				],
+				active = use_res,
+				name = 'FlattenedDepthResolution1',
+			)
+		if 'FlattenedDepthResolution2' in actions:
+			from actions.resolution import Resolution 
+			Resolution(
+				scales_components = [
+					'ResizeFlat2',
+				],
+				active = use_res,
+				name = 'FlattenedDepthResolution2',
+			)
+		# ACTOR (teleporter is more stable, and quicker)
 		from actors.teleporter import Teleporter
 		Teleporter(
 			drone_component = 'Drone',
 			actions_components = actions,
 			name='Actor',
+		)
+
+
+		## REWARDS
+		# heavy penalty for collision
+		if 'CollisionReward' in rewards:
+			from rewards.collision import Collision
+			Collision(
+				drone_component = 'Drone',
+				name = 'CollisionReward',
+			)
+		# increasing reward as approaches goal
+		if 'GoalReward' in rewards:
+			from rewards.goal import Goal
+			Goal(
+				drone_component = 'Drone',
+				goal_component = 'Goal',
+				include_z = True, # includes z in distance calculations
+				tolerance = 4,
+				name = 'GoalReward',
+			)
+		# penalize heavier as approaches time constraint
+		if 'StepsReward' in rewards:
+			from rewards.steps import Steps
+			Steps(
+				name = 'StepsReward',
+			)
+		# increasing reward as approaches goal
+		if 'DistanceReward' in rewards:
+			from rewards.distance import Distance
+			Distance(
+				drone_component = 'Drone',
+				goal_component = 'Goal',
+				include_z = True, # includes z in distance calculations
+				name = 'DistanceReward',
+			)
+		# penalize computational complexity
+		if 'SlimReward' in rewards:
+			from rewards.slim import Slim
+			Slim(
+				slim_component='SlimAction',
+				name='SlimReward',
+			)
+		# penalty for higher resolutions=
+		if 'ResolutionReward1' in rewards:
+			from rewards.resolution import Resolution
+			Resolution(
+				resolution_component = 'FlattenedDepthResolution1',
+				name = 'ResolutionReward1',
+			)
+		if 'ResolutionReward2' in rewards:
+			from rewards.resolution import Resolution
+			Resolution(
+				resolution_component = 'FlattenedDepthResolution2',
+				name = 'ResolutionReward2',
+			)
+		# do not exceed this many steps
+		if 'MaxStepsReward' in rewards:
+			from rewards.maxsteps import MaxSteps
+			MaxSteps(
+				name = 'MaxStepsReward',
+				update_steps = True,
+				max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
+				max_max = 50,
+			)
+		# REWARDER
+		from rewarders.schema import Schema
+		Schema(
+			rewards_components = list(rewards.keys()),
+			reward_weights = [rewards[key] for key in rewards],
+			name = 'Rewarder',
 		)
 
 
@@ -484,7 +488,7 @@ def create_base_components(
 		ResizeFlat(
 			max_cols = max_cols,
 			max_rows = max_rows,
-			name = 'ResizeFlat',
+			name = 'ResizeFlat1',
 		)
 		ResizeFlat(
 			max_cols = max_cols,
@@ -492,16 +496,18 @@ def create_base_components(
 			name = 'ResizeFlat2',
 		)
 		from sensors.airsimcamera import AirSimCamera
+		# forward facing depth map
 		AirSimCamera(
 			airsim_component = 'Map',
 			transformers_components = [
 				'ResizeImage',
-				'ResizeFlat',
+				'ResizeFlat1',
 				'DistanceNoise',
 				'NormalizeDistance',
 				],
-			name = 'FlattenedDepth',
+			name = 'FlattenedDepth1',
 		)
+		# downward facing depth map
 		AirSimCamera(
 			airsim_component = 'Map',
 			camera_view='3', 
@@ -517,7 +523,7 @@ def create_base_components(
 		# currently must count vector size of sensor output (TODO: automate this)
 		vector_sensors = []
 		vector_length = 0
-		vector_sensors.append('FlattenedDepth')
+		vector_sensors.append('FlattenedDepth1')
 		vector_length += len(max_cols) * len(max_rows) # several more vector elements
 		vector_sensors.append('FlattenedDepth2')
 		vector_length += len(max_cols) * len(max_rows) # several more vector elements
@@ -539,19 +545,15 @@ def create_base_components(
 		## MODEL
 		from models.td3 import TD3
 		TD3(
-			environment_component = 'TrainEnvironment',
-			policy = 'MlpPolicy',
-			policy_kwargs = {'net_arch':[64,32,32]},
-			buffer_size = replay_buffer_size,
-			learning_starts = learning_starts if random_start else 0,
-			train_freq = (1, "episode") if random_start else (learning_starts, "episode"),
-			tensorboard_log = working_directory + 'tensorboard_log/',
-			read_model_path = read_model_path,
-			read_replay_buffer_path = read_replay_buffer_path,
-			convert_slim = True,
-			with_distillation = True,
-			use_slim = use_slim,
-			action_noise = action_noise,
+			'TrainEnvironment',
+			actor,
+			actor_target,
+			critics,
+			critics_target,
+			obs_shape,
+			act_shape,
+			write_dir,
+			buffer_size=replay_buffer_size,
 			name='Model',
 		)
 
@@ -562,7 +564,7 @@ def create_base_components(
 		from others.spawn import Spawn
 		Spawner(
 			base_component = 'Drone',
-			parent_method = 'reset',
+			parent_method = 'start',
 			drone_component = 'Drone',
 			spawns_components=[
 				Spawn(
@@ -570,7 +572,7 @@ def create_base_components(
 					bounds_component = 'MapBounds',
 					dz=dz,
 					random=True,
-					vertical = vert_motion,
+					vertical=vert_motion,
 				),
 			],
 			order='post',
@@ -579,7 +581,7 @@ def create_base_components(
 		)
 		Spawner(
 			base_component = 'Drone',
-			parent_method = 'reset',
+			parent_method = 'start',
 			drone_component = 'Drone',
 			spawns_components=[
 				Spawn(
@@ -587,42 +589,42 @@ def create_base_components(
 					y=0,
 					dz=dz,
 					yaw=math.radians(0),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(45),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(135),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(180),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-130),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-45),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 			],
 			order='post',
@@ -639,7 +641,7 @@ def create_base_components(
 		# Evaluate model after each epoch (checkpoint)
 		EvaluatorCharlie(
 			base_component = 'TrainEnvironment',
-			parent_method = 'reset',
+			parent_method = 'start',
 			order = 'pre',
 			evaluate_environment_component = 'EvaluateEnvironment',
 			goal_component = 'Goal',
@@ -706,9 +708,9 @@ def run_controller(configuration):
 
 	# view neural net archetecture
 	model_name = str(configuration.get_component('Model')._child())
-	sb3_model = configuration.get_component('Model')._sb3model
-	print(sb3_model.actor)
-	for name, param in sb3_model.actor.named_parameters():
+	_model = configuration.get_component('Model')
+	print(_model.actor)
+	for name, param in _model.actor.named_parameters():
 		msg = str(name) + ' ____ ' + str(param[0])
 		utils.speak(msg)
 		break
@@ -726,13 +728,15 @@ def run_controller(configuration):
 
 # create base components
 configuration = create_base_components(
+		actions,
+		rewards,
 		airsim_release = airsim_release, # name of airsim release to use, see maps.arisimmap
 		vert_motion = vert_motion, # allowed to move on z-axis? False will restrict motion to horizontal plane
 		replay_buffer_size = replay_buffer_size, # a size of 1_000_000 requires 56.78 GB if using MultiInputPolicy
 		continue_training = continue_training, # set to true if continuing training from checkpoint
 		controller_type = controller_type, # Train, Debug, Drift, Evaluate
+		controller_params = controller_params,
 		clock_speed = clock_speed, # airsim clock speed (increasing this will also decerase sim-quality)
-		training_steps = training_steps, # max number of training steps 
 		distance_param = distance_param, # distance contraint used for several calculations (see below)
 		nTimesteps = nTimesteps, # number of timesteps to use in observation space
 		checkpoint = checkpoint, # evaluate model and save checkpoint every # of episodes
@@ -740,14 +744,13 @@ configuration = create_base_components(
 		read_replay_buffer_path = read_replay_buffer_path, # load prebuilt replay buffer?
 		reward_weights = reward_weights, # reward weights in order: goal, collision, steps
 		learning_starts = learning_starts, # how many steps to collect in buffer before training starts
-		include_resolution = include_resolution,
 		action_noise = action_noise,
 		random_start = random_start,
 		use_slim = use_slim,
 		use_res = use_res,
-		use_wandb = use_wandb,
-		project_name = project_name,
 		run_name = run_name,
+		max_episodes = max_episodes,
+		repo_version = repo_version,
 )
 
 # create any other components

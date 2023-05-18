@@ -93,12 +93,3 @@ class Single(Observer):
 		else:
 			self._history = np.full(self._output_shape, 0, dtype=float)
 		self._old_names = []
-
-	'''
-	from gym import spaces
-	# returns box space with proper dimensions
-	def get_space(self):
-		if self.is_image:
-			return spaces.Box(low=0, high=255, shape=self._output_shape, dtype=np.uint8)
-		return spaces.Box(0, 1, shape=self._output_shape, dtype=float)
-	'''

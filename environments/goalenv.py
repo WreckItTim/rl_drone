@@ -112,7 +112,7 @@ class GoalEnv(Environment):
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.end(self._states[this_step])
-		# state is passed to stable-baselines3 callbacks
+		# data needed to relay states to replay buffer
 		return observation_data, total_reward, done
 
 	# called at beginning of each episode to prepare for next
@@ -145,13 +145,7 @@ class GoalEnv(Environment):
 		self._states[this_step]['goal_position'] = self._goal.get_position()
 
 		# reset other components
-		if self._others is not None:
-			for other in self._others:
-				other.start(self._states[this_step])
-		self._actor.start(self._states[this_step])
-		self._observer.start(self._states[this_step])
-		self._rewarder.start(self._states[this_step])
-
+		if self._others is not None:state is passed to stable-baselines3 callbacks
 		# get first observation
 		observation_data, observation_name = self._observer.step(self._states[this_step])
 		self._last_observation_name = observation_name

@@ -129,7 +129,6 @@ class EvaluatorCharlie(Modifier):
 			# get rl output
 			rl_output = self._model.predict(observation_data)
 			# take next step
-			#observation_data, reward, done, state = self._evaluate_environment.step(rl_output)
 			observation_data, reward, done = self._evaluate_environment.step(rl_output)
 			total_reward += reward
 		# call end for modifiers

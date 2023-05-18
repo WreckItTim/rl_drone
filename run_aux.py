@@ -326,8 +326,7 @@ def create_base_components(
 			random_r = [6,8], # relative distance for random goal from drone
 			random_dz = [dz,dz], # relative z for random goal from drone (this is dz above roof or floor)
 			random_yaw = [-1*np.pi, np.pi], # relative yaw for random goal from drone
-			random_point_on_train = True, # random goal when training?
-			vertical = vert_motion,
+			random_point_on_train = True, # randhp
 			name = 'Goal',
 		)
 
@@ -648,7 +647,7 @@ def create_base_components(
 					bounds_component = 'MapBounds',
 					dz=dz,
 					random=True,
-					vertical = vert_motion,
+					vertical=vert_motion,
 				),
 			],
 			order='post',
@@ -665,42 +664,42 @@ def create_base_components(
 					y=0,
 					dz=dz,
 					yaw=math.radians(0),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(45),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(135),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(180),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-130),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 				Spawn(
 					x=0,
 					y=0,
 					dz=dz,
 					yaw=math.radians(-45),
-					vertical = vert_motion,
+					vertical=vert_motion,
 					),
 			],
 			order='post',
