@@ -10,6 +10,7 @@ class Train(Controller):
 	@_init_wrapper
 	def __init__(self, 
 			model_component = 'Model',
+			train_environment_component = 'TrainEnvironment',
 			continue_training = True,
 			max_episodes = 10_000,
 			train_start = 100, # don't call train() until after train_start episodes
@@ -18,6 +19,9 @@ class Train(Controller):
 			with_distillation = False, # slims during train() and distills to output of super
 			use_wandb = True, # turns on logging to wandb
 			project_name = 'void', # project name in wandb
+			evaluator_component = None,
+			evaluate_freq = 100, # eval every this many episodes
+			evaluate_start = 100, # don't call evaluate() until after evaluate_start episodes
 		):
 		super().__init__()
 
@@ -30,6 +34,7 @@ class Train(Controller):
 			self._configuration.reset_all()
 		# learn baby learn
 		self._model.learn(
+			train_environment = self._train_environment,
 			max_episodes = self.max_episodes,
 			train_start = self.train_start, # don't call train() until after train_start episodes
 			train_freq = self.train_freq, # then call train() every train_freq episode
@@ -37,4 +42,7 @@ class Train(Controller):
 			with_distillation = self.with_distillation, # slims during train() and distills to output of super
 			use_wandb = self.use_wandb, # turns on logging to wandb
 			project_name = self.project_name, # project name in wandb
+			evaluator = self._evaluator,
+			evaluate_freq = self.evaluate_freq, # eval every this many episodes
+			evaluate_start = self.evaluate_start, # don't call evaluate() until after evaluate_start episodes
 		)

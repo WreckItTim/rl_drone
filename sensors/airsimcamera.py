@@ -58,7 +58,7 @@ class AirSimCamera(Sensor):
 			if self.as_float:
 				np_flat = np.array(response.image_data_float, dtype=float)
 			else:
-				np_flat = np.fromstring(response.image_data_uint8, dtype=np.uint8)
+				np_flat = np.fromstring(response.image_data_uint8, dtype='uint8')
 			if self.is_gray:
 				img_array = np.reshape(np_flat, (response.height, response.width))
 				if len(img_array) > 0:

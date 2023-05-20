@@ -27,7 +27,7 @@ class Single(Observer):
 		)
 		if is_image:
 			self._output_shape = (image_bands * nTimesteps, image_height, image_width)
-			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
+			self._history = np.full(self._output_shape, 0, dtype='uint8')
 		else:
 			self._output_shape = (vector_length * nTimesteps,)
 			self._history = np.full(self._output_shape, 0, dtype=float)
@@ -42,7 +42,7 @@ class Single(Observer):
 			# get obeservation
 			if sensor.offline:
 				if self.is_image:
-					empty_array = np.full((self.image_bands, self.image_height, self.image_width), 0, dtype=np.uint8)
+					empty_array = np.full((self.image_bands, self.image_height, self.image_width), 0, dtype='uint8')
 					empty_name = 'I0'
 				else:
 					empty_array = np.full((self.vector_length,), 0, dtype=float)
@@ -89,7 +89,7 @@ class Single(Observer):
 		for sensor in self._sensors:
 			sensor.start(state)
 		if self.is_image:
-			self._history = np.full(self._output_shape, 0, dtype=np.uint8)
+			self._history = np.full(self._output_shape, 0, dtype='uint8')
 		else:
 			self._history = np.full(self._output_shape, 0, dtype=float)
 		self._old_names = []

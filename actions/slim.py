@@ -28,7 +28,7 @@ class Slim(Action):
 			rho = round(max(self.min_slim, rl_output), 4)
 		self._rho = rho # give access to other components to last rho
 		self._model._sb3model.slim = rho
-		for module in self._model._sb3model.actor.modules():
+		for module in self._model._actor.modules():
 			#print(type(module))
 			if 'Slim' in str(type(module)):
 				module.slim = rho

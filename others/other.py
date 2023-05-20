@@ -6,5 +6,5 @@ class Other(Component):
     def __init__(self):
         pass
 
-    def connect(self):
-        super().connect()
+    def connect(self, state=None):
+        super().connect(state)

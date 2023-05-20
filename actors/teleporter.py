@@ -33,16 +33,12 @@ class Teleporter(Actor):
 		for idx, action in enumerate(self._actions):
 			action._idx = idx # tell action which index it is
 			this = action.step(state, execute=False) # transcribe action but do not take
-			state['transcribed_action'].update(this)
 			for key in target:
 				if key in this:
 					target[key] += this[key]
 		# teleport drone
-		#print('Target:', target)
-		state['transcribed_action'].update(target)
 		self._drone.teleport(target['x'], target['y'], target['z'], target['yaw'], ignore_collision=False)
-		#print('Actual:', self._drone.get_position(), self._drone.get_yaw())
-		#print('Collided?', self._drone.check_collision())
+
 		
 	# randomly sample RL output from action space unless specified
 	def debug(self, state=None):

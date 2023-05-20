@@ -27,13 +27,13 @@ class Model(Component):
 		else:
 			self._actor_target = self.actor_target
 		# setup critic networks
-		if type(self.critics) is list:
+		if type(self.critics[0]) is str:
 			self._critics = []
 			for c in self.critics:
 				self._critics.append(torch.load(c))
 		else:
 			self._critics = self.critics
-		if type(self.critics_target) is list:
+		if type(self.critics_target[0]) is str:
 			self._critics_target = []
 			for c in self.critics_target:
 				self._critics_target.append(torch.load(c))
@@ -52,13 +52,12 @@ class Model(Component):
 		
 		# setup replay buffer
 		# create new from scratch
-		if type(self.replay_buffer) is None:
+		if self.replay_buffer is None:
 			self._replay_buffer = {
-				'obs':
-					self._replay_buffer[key] ((self.buffer_size, *self.obs_shape), dtype=self.obs_dtype),
-				'act':np.zeros((self.buffer_size, *self.act_shape), dtype=self.act_dtype),
-				'rew':np.zeros((self.buffer_size, 1), dtype=self.rew_dtype),
-				'end':np.zeros((self.buffer_size, 1), dtype=np.bool),
+				'obs':np.zeros((self.buffer_size, *self.obs_shape), dtype=float),
+				'act':np.zeros((self.buffer_size, *self.act_shape), dtype=float),
+				'rew':np.zeros((self.buffer_size, 1), dtype=float),
+				'end':np.zeros((self.buffer_size, 1), dtype='uint8'),
 			}
 		else:
 			# read from path
@@ -77,7 +76,7 @@ class Model(Component):
 					new_shape[0] = self.buffer_size
 					self._replay_buffer[key].resize(new_shape, refcheck=False)
 		# save init buffer
-		self.self.replay_buffer = self.write_dir + 'replay_buffer.npz'
+		self.replay_buffer = self.write_dir + 'replay_buffer.npz'
 		if self.save_init_buffer:
 			self.save_replay_buffer(self.write_dir + 'model_init/')
 
@@ -120,7 +119,7 @@ class Model(Component):
 		return(
 			torch.as_tensor(self._replay_buffer['obs'][idxs, :], device=self.device),
 			torch.as_tensor(self._replay_buffer['obs'][idxs+1, :], device=self.device),
-			torch.as_tensor(self._replay_buffer['act'][idxs, :].clone(), device=self.device),
+			torch.as_tensor(self._replay_buffer['act'][idxs, :].copy(), device=self.device),
 			torch.as_tensor(self._replay_buffer['rew'][idxs, :], device=self.device),
 			torch.as_tensor(self._replay_buffer['end'][idxs, :], device=self.device),
 		)
@@ -161,20 +160,24 @@ class Model(Component):
 	# makes a prediction on best action given single observation
 	# handles array (since typically called from env)
 	def predict(self, observation):
-		tensor_in = torch.as_tensor(observation, device=self.device)
-		tensor_out = self._actor(tensor_in)
-		action = tensor_out.cpu().numpy().reshape((-1, *self.act_shape))
+		with torch.no_grad():
+			tensor_in = torch.as_tensor(observation, device=self.device)
+			tensor_out = self._actor(tensor_in)
+			action = tensor_out.cpu().numpy()
 		return action
 
 	# makes an estimate on q-values given tensor of obserations and actions
 	# handles tensor (since typically called from train)
-	def critic(observations, actions, return_min=True):
+	def critic(self, observations, actions, return_min=True, target=False):
 		# concat rl_input and actions
 		features = torch.cat([observations, actions], 1)
 		# take min of all q-values
-		q_vals = torch.zeros((len(features), nCritics))
-		for c in range(nCritics):
-			q_vals[:, c] = critics[c](features).flatten()
+		q_vals = torch.zeros((len(features), self._nCritics))
+		for c in range(self._nCritics):
+			if target:
+				q_vals[:, c] = self._critics_target[c](features).flatten()
+			else:
+				q_vals[:, c] = self._critics[c](features).flatten()
 		if return_min:
 			return torch.min(q_vals, dim=1, keepdim=True)[0]
 		return q_vals
@@ -190,20 +193,20 @@ class Model(Component):
 	# called at begin of each episode
 	def start(self, state = None):
 		# reset slim factor to use full super-net
-		if self._is_slim:
-			for module in self._sb3model.actor.modules():
-				if 'Slim' in str(type(module)):
-					module.slim = 1
-			self._slim = 1
+		for module in self._actor.modules():
+			if 'Slim' in str(type(module)):
+				module.slim = 1
+		self._slim = 1
 
 	# new learning loop
 	def reset_learning(self, state=None):
-		self.nTrain = 0, # number of total train iters
-		self.nSteps = 0, # number of sampling steps
-		self.nEpisodes = 0, # number of sampling episodes
+		self.nTrain = 0 # number of total train iters
+		self.nSteps = 0 # number of sampling steps
+		self.nEpisodes = 0 # number of sampling episodes
 
 	# runs learning loop on model
 	def learn(self, 
+			train_environment,
 			max_episodes = 10_000,
 			train_start = 100, # don't call train() until after train_start episodes
 			train_freq = 1, # then call train() every train_freq episode
@@ -211,11 +214,15 @@ class Model(Component):
 			with_distillation = False, # slims during train() and distills to output of super
 			use_wandb = True, # turns on logging to wandb
 			project_name = 'void', # project name in wandb
+			# evaluation params
+			evaluator = None,
+			evaluate_freq = 100, # eval every this many episodes
+			evaluate_start = 1000, # don't call evaluate() until after evaluate_start episodes
+			learning_modifier = None,
 		):
 		# learning loop
 		for _ in range(self.nEpisodes, max_episodes+1):
-			# reset environment, returning first observation
-			observation_data = self._train_environment.start()
+			observation_data = train_environment.start()
 			# start episode
 			done = False
 			episode_steps = 0
@@ -223,14 +230,21 @@ class Model(Component):
 				# get rl output
 				rl_output = self.predict(observation_data)
 				# take next step
-				observation_data, reward, done = self._train_environment.step(rl_output)
+				observation_data, reward, done, state = train_environment.step(rl_output)
 				# log data to replay buffer
 				self.add_buffer(observation_data, rl_output, reward, done)
 				self.nSteps += 1
 				episode_steps += 1
-			# call end for modifiers
+			# end of episode
 			self.end()
 			self.nEpisodes += 1
 			# check train
-			if self.nEpisodes > train_start and self.nEpisodes % train_freq == 0:
+			if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
 				self.train(episode_steps, batch_size, with_distillation)
+			# check evaluate
+			if self.nEpisodes >= evaluate_start and evaluator is not None:
+				if self.nEpisodes % evaluate_freq == 0:
+					evaluator.evaluate_set()
+			# learning modifier
+			if learning_modifier is not None:
+				learning_modifier.update()

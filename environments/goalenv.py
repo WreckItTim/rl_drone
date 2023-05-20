@@ -87,7 +87,7 @@ class GoalEnv(Environment):
 		self._states[this_step]['nSteps'] = self._nSteps
 		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 		# clean and save rl_output to state
-		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
+		self._states[this_step]['rl_output'] = list(rl_output)
 		# take action
 		self._actor.step(self._states[this_step])
 		# save state kinematics
@@ -112,8 +112,8 @@ class GoalEnv(Environment):
 			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 		if done: 
 			self.end(self._states[this_step])
-		# data needed to relay states to replay buffer
-		return observation_data, total_reward, done
+		# data needed to relay states to replay buffer and state
+		return observation_data, total_reward, done, self._states[this_step]
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
@@ -144,8 +144,14 @@ class GoalEnv(Environment):
 			self._goal.set_position(*state['goal_at'][:3])
 		self._states[this_step]['goal_position'] = self._goal.get_position()
 
-		# reset other components
-		if self._others is not None:state is passed to stable-baselines3 callbacks
+		# start other components
+		if self._others is not None:
+			for other in self._others:
+				other.start(self._states[this_step])
+		self._actor.start(self._states[this_step])
+		self._observer.start(self._states[this_step])
+		self._rewarder.start(self._states[this_step])
+
 		# get first observation
 		observation_data, observation_name = self._observer.step(self._states[this_step])
 		self._last_observation_name = observation_name
@@ -162,6 +168,7 @@ class GoalEnv(Environment):
 	# off-by-one errors aggregate when switching between multiple envs
 	def end(self, state=None):
 		# end all components
+		self._model.end(state)
 		self._drone.end(state)
 		self._goal.end(state)
 		if self._others is not None:
