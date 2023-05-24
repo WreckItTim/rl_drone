@@ -153,6 +153,13 @@ class Model(Component):
 		for i in range(self._nCritics):
 			torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
 			torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
+	def load_models(self, folder):
+		self._actor = torch.load(folder + 'actor.pt')
+		self._actor_target = torch.load(folder + 'actor_target.pt')
+		for i in range(self._nCritics)
+			self._critics[i] = torch.load(folder + 'critic_' + str(i) + '.pt')
+			self._critics_target[i] = torch.load(folder + 'critic_target_' + str(i) + '.pt')
+
 	# save replay_buffer to path
 	def save_replay_buffer(self, folder):
 		np.savez(folder + 'replay_buffer.npz', **self._replay_buffer)
@@ -216,14 +223,13 @@ class Model(Component):
 			project_name = 'void', # project name in wandb
 			# evaluation params
 			evaluator = None,
-			evaluate_freq = 100, # eval every this many episodes
-			evaluate_start = 1000, # don't call evaluate() until after evaluate_start episodes
-			learning_modifier = None,
 		):
 		# learning loop
 		for _ in range(self.nEpisodes, max_episodes+1):
-			observation_data = train_environment.start()
+			# check evaluate
+			evaluator.update()
 			# start episode
+			observation_data, state = train_environment.start()
 			done = False
 			episode_steps = 0
 			while(not done):
@@ -236,15 +242,7 @@ class Model(Component):
 				self.nSteps += 1
 				episode_steps += 1
 			# end of episode
-			self.end()
 			self.nEpisodes += 1
 			# check train
 			if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
 				self.train(episode_steps, batch_size, with_distillation)
-			# check evaluate
-			if self.nEpisodes >= evaluate_start and evaluator is not None:
-				if self.nEpisodes % evaluate_freq == 0:
-					evaluator.evaluate_set()
-			# learning modifier
-			if learning_modifier is not None:
-				learning_modifier.update()

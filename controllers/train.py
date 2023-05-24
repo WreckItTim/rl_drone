@@ -22,6 +22,7 @@ class Train(Controller):
 			evaluator_component = None,
 			evaluate_freq = 100, # eval every this many episodes
 			evaluate_start = 100, # don't call evaluate() until after evaluate_start episodes
+			learning_modifier_component = None,
 		):
 		super().__init__()
 
@@ -45,4 +46,5 @@ class Train(Controller):
 			evaluator = self._evaluator,
 			evaluate_freq = self.evaluate_freq, # eval every this many episodes
 			evaluate_start = self.evaluate_start, # don't call evaluate() until after evaluate_start episodes
+			learning_modifier = self._learning_modifier,
 		)

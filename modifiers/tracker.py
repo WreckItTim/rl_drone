@@ -19,8 +19,6 @@ class Tracker(Modifier):
 			  write_folder = None, # path to write log to
 			  nActivations = 0,
 			  nParts = 0,
-			  on_evaluate = True, # toggle to run modifier on evaluation environ
-			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
 			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
@@ -95,7 +93,7 @@ class Tracker(Modifier):
 				for device in self._devices:
 					processes = device.processes()
 					snapshots = GpuProcess.take_snapshots(processes.values(), failsafe=True)
-					for snapshot in snapshots:
+					for snapshot in snaon_evaluatepshots:
 						this_info = {
 							'name' : snapshot.name,
 							'username' : snapshot.username,

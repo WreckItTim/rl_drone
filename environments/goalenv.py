@@ -18,13 +18,13 @@ class GoalEnv(Environment):
 				 actor_component, 
 				 observer_component, 
 				 rewarder_component, 
+				 spawn_component,
 				 goal_component,
 				 model_component,
 				 others_components=None,
 				 step_counter=0, 
 				 episode_counter=0, 
 				 save_counter=0,
-				 is_evaluation_env=False,
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
@@ -85,7 +85,6 @@ class GoalEnv(Environment):
 		else:
 			self._states[this_step] = state.copy()
 		self._states[this_step]['nSteps'] = self._nSteps
-		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 		# clean and save rl_output to state
 		self._states[this_step]['rl_output'] = list(rl_output)
 		# take action
@@ -127,22 +126,15 @@ class GoalEnv(Environment):
 			self._states = {this_step:{}}
 		else:
 			self._states = {this_step:state.copy()}
-		self._states[this_step]['nSteps'] = self._nSteps
-		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 
 		# reset drone and goal components, several start() methods may be blank
 		# order may matter here, currently no priority queue set-up, may need later
 		self._model.start(self._states[this_step])
 		self._drone.start(self._states[this_step])
-		if state is not None and 'spawn_to' in state:
-			self._drone.teleport(*state['spawn_to'], ignore_collision=True)
-		self._states[this_step]['drone_position'] = self._drone.get_position()
-		self._states[this_step]['yaw'] = self._drone.get_yaw() 
-
-		self._goal.start(self._states[this_step])
-		if state is not None and 'goal_at' in state:
-			self._goal.set_position(*state['goal_at'][:3])
-		self._states[this_step]['goal_position'] = self._goal.get_position()
+		drone_position, goal_position, astar_steps = self._spawn.start(self._states[this_step])
+		self._drone.teleport(drone_position, ignore_collision=True)
+		self._goal.set_position(goal_position)
+		self._goal.set_steps(astar_steps)
 
 		# start other components
 		if self._others is not None:
@@ -160,7 +152,14 @@ class GoalEnv(Environment):
 		if self._track_save and 'observations' in self._track_vars:
 			self._observations[observation_name] = observation_data.copy()
 
-		return observation_data
+		# save initial state values
+		self._states[this_step]['nSteps'] = self._nSteps
+		self._states[this_step]['drone_position'] = self._drone.get_position()
+		self._states[this_step]['yaw'] = self._drone.get_yaw() 
+		self._states[this_step]['goal_position'] = self._goal.get_position()
+		self._states[this_step]['astar_steps'] = self._goal.get_steps()
+
+		return observation_data, self._states[this_step]
 
 	# called at the end of each episode for any clean up, when done=True
 	# normally only start() is used in OpenAI Gym environments
@@ -170,7 +169,7 @@ class GoalEnv(Environment):
 		# end all components
 		self._model.end(state)
 		self._drone.end(state)
-		self._goal.end(state)
+		self._spawn.end(state)
 		if self._others is not None:
 			for other in self._others:
 				other.end(state)

@@ -1,82 +1,57 @@
 from others.other import Other
 from component import _init_wrapper
+import pickle
 import random
-import numpy as np
-import math
-import rl_utils as utils
 
-# data structure specifying a spawn zone
+# set drone spawn and goal from list
 class Spawn(Other):
-	# pass in either static x, y, z, yaw
-	# or ranges for random values
-	# constructor
+
 	@_init_wrapper
 	def __init__(self, 
-				 map_component='Map',
-				 x=0,
-				 y=0,
-				 dz=4, # this will spawn w/dz-meters above (positive) object (roof or floor)
-				 yaw=0,
-				 bounds_component=None,
-				 random_yaw=True,
-				 random=False,
-				 vertical = True,
-				 ):
-		super().__init__()
+				read_path, # read in dict of possible paths or static spawns
+				random, # True will get random path, False will use static
+				nSteps=0, # if random (how many steps to sample goal)
+			):
+		pass
 
-	def connect(self):
-		super().connect()
-		# define if spawn method will be random or static
+	def connect(self, state=None):
+		super().connect(state)
 		if self.random:
-			self.get_spawn = self.random_spawn
+			self._dicts = pickle.load(open(self.read_path, 'rb'))
+			self._idxs = {}
+			# sort
+			for i, d in enumerate(dicts):
+				steps = min(self.max_steps, d['steps'])
+				for s in range(steps, 0, -1):
+					if s not in self._idxs:
+						self._idxs[s] = []
+					self._idxs[s].append(i)
 		else:
-			self.get_spawn = self.static_spawn
-			self._x = self.x
-			self._y = self.y
-			self._z = self._map.get_roof(self._x, self._y, self.dz)
-			self._yaw = self.yaw
+			self._spawns = pickle.load(open(self.read_path, 'rb'))
+			self._idx = 0
 
-	# uniform distribution between passed in range
-	def get_random_pos(self):
-		if self.vertical:
-			x, y, z = self._bounds.get_random()
-			z = self._map.get_roof(x, y, self.dz)
+	# need to recalculate relative point at each reset
+	def start(self, state=None):
+		if self.random:
+			idx = random.choice(self._idxs[self.nSteps])
+			dic =  self._dicts[idx]
+			path = dic['path']
+			start = random.randint(0, len(path)-1)
+			if start < self.nSteps:
+				end = start + self.nSteps
+			elif start >= len(path) - self.nSteps:
+				end = start - self.nSteps
+			else:
+				flip = random.choice([-1, 1])
+				end = start + flip*self.nSteps
+			drone_position = path[start][:3]
+			goal_position = path[end][:3]
+			astar_steps = self.nSteps
 		else:
-			while (True):
-				x, y, z = self._bounds.get_random()
-				z = -1*self.dz
-				in_object = self._map.at_object_2d(x, y)
-				if not in_object:
-					break
-		return x, y, z
-	
-	# generate random spawn until outside of an object
-	def random_spawn(self):
-		self._x, self._y, self._z = self.get_random_pos()
-		if self.random_yaw:
-			# make yaw face towards origin (with some noise)
-			# this is used to make sure drone navigates through buildings (most of the time)
-			#curr_position = np.array([self._x, self._y, self._z], dtype=float)
-			#facing_position = np.array([0, 0, 0], dtype=float)
-			#distance_vector = facing_position - curr_position
-			#facing_yaw = math.atan2(distance_vector[1], distance_vector[0])
-			#noise = np.random.normal(0, np.pi/6)
-			#self._yaw = facing_yaw + noise
-			self._yaw = np.random.uniform(-1*np.pi, np.pi)
-		return [self._x, self._y, self._z], self._yaw
-		
-	# simply return a static spawn 
-	def static_spawn(self):
-		return [self._x, self._y, self._z], self._yaw
-
-	# get the position of last spawn
-	def get_position(self):
-		return [self._x, self._y, self._z]
-	
-	# get the yaw of last spawn
-	def get_yaw(self):
-		return self._yaw
-
-	# debug mode
-	def debug(self):
-		utils.speak('spawn = ' + str(self.get_spawn()))
+			drone_position = self._spawns[self._idx][0]
+			goal_position = self._spawns[self._idx][1]
+			astar_steps = self._spawns[self._idx][3]
+			self._idx += 1
+			if self._idx >= len(self._spawns):
+				self._idx = 0
+		return drone_position.copy(), goal_position.copy(), astar_steps

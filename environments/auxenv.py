@@ -18,7 +18,6 @@ class AuxEnv(Environment):
 				actor_component, 
 				model_component, # aux model for rho-preds
 				navi_component, # goalenv environment for navigation
-				is_evaluation_env=False,
 				step_counter=0, 
 				episode_counter=0, 
 		):
@@ -50,7 +49,6 @@ class AuxEnv(Environment):
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
-	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def start(self, state = None):
 		self.episode_counter += 1
 		# reset navi env

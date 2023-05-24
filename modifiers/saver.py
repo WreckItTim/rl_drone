@@ -17,8 +17,6 @@ class Saver(Modifier):
 			save_config = False, # saves config file with every activate
 			save_benchmarks = False, # saves timer/mem benchmarks with every activate
 			write_folder = None, # will default to working_directory/component_name/
-			on_evaluate = True, # toggle to run modifier on evaluation environ
-			on_train = True, # toggle to run modifier on train environ
 			frequency = 1, # use modifiation after how many calls to parent method?
 			counter = 0, # keepts track of number of calls to parent method
 			activation_counter = 0, # keeps track of number of times activated

@@ -34,6 +34,14 @@ replay_buffer_size = 400_000 # number of recent samples (steps) to save in repla
 clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-quality)
 distance_param = 125 # distance contraint used for several calculations (see below)
 nTimesteps = 4 # number of timesteps to include in observation space
+# sensors?
+vector_sensors = {
+	'FlattenedDepth1',
+	#'FlattenedDepth2',
+	'GoalDistance',
+	'GoalOrientation',
+	#'GoalAltitude',
+}
 # actions?
 actions = [
 	'MoveForward',
@@ -43,9 +51,6 @@ actions = [
 	#'FlattenedDepthResolution1',
 	#'FlattenedDepthResolution2',
 ]
-vert_motion = False
-use_slim = False
-use_res = False
 # rewards and weights?
 rewards = {
 	'CollisionReward': 200, 
@@ -57,6 +62,9 @@ rewards = {
 	#'ResolutionReward2': 0.5,
 	'MaxStepsReward': 0,
 }
+vert_motion = False
+use_slim = False
+use_res = False
 child_project = 'navi'
 run_name = child_project + '_' + airsim_release 
 run_name += '_vert' if vert_motion else '_horz' 
@@ -66,14 +74,12 @@ if run_post != '':
 
 # learning loop (controller) stuff
 continue_training = False
-max_episodes = 20_000 # max number of episodes to train for before terminating learning loop
+max_episodes = 4_000 # max number of episodes to train for before terminating learning loop
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
 train_freq = 1
 batch_size = 100
-evaluate_start = 0
-evaluate_freq = 100
 with_distillation = False
 use_wandb = False
 parent_project = 'eecs298'
@@ -90,8 +96,6 @@ controller_params = {
 	'use_wandb' : use_wandb, # turns on logging to wandb
 	'project_name' : parent_project + '_' + child_project, # wandb logs here
 	'evaluator_component' : 'Evaluator',
-	'evaluate_freq' : evaluate_freq,
-	'evaluate_start' : evaluate_start, 
 }
 
 # runs some overarching base things
@@ -171,31 +175,6 @@ def create_base_components(
 
 
 		# **** CREATE COMPONENTS ****
-
-
-		## TRAIN ENVIRONMENT
-		from environments.goalenv import GoalEnv
-		GoalEnv(
-			drone_component='Drone', 
-			actor_component='Actor', 
-			observer_component='Observer', 
-			rewarder_component='Rewarder', 
-			goal_component='Goal',
-			model_component='Model',
-			is_evaluation_env=False,
-			name='TrainEnvironment',
-		)
-		## EVALUATE ENVIRONMENT
-		GoalEnv(
-			drone_component='Drone', 
-			actor_component='Actor', 
-			observer_component='Observer', 
-			rewarder_component='Rewarder', 
-			goal_component='Goal',
-			model_component='Model',
-			is_evaluation_env=True,
-			name='EvaluateEnvironment',
-		)
 		
 
 		## MAP
@@ -248,17 +227,6 @@ def create_base_components(
 			name = 'Voxels',
 		)
 
-		# MAP BOUNDS
-		from others.boundscube import BoundsCube
-		dz = 4 #distance_param/25
-		BoundsCube(
-				center = [0, 0, 0],
-				x = [-1*distance_param, distance_param],
-				y = [-1*distance_param, distance_param],
-				z = [-40, -2],
-				name = 'MapBounds'
-		)
-
 
 		#  DRONE
 		from drones.airsimdrone import AirSimDrone
@@ -266,27 +234,6 @@ def create_base_components(
 			airsim_component = 'Map',
 			name='Drone',
 		)
-
-		
-		## GOAL
-		# dynamic goal will spawn in bounds - randomly for train, static for evaluate
-		# goal distance will increase, "amp up", with curriculum learning
-		from others.relativegoal import RelativeGoal
-		start_distance = 4
-		RelativeGoal(
-			drone_component = 'Drone',
-			map_component = 'Map',
-			bounds_component = 'MapBounds',
-			min_r = start_distance,
-			mean_r = start_distance,
-			std_r = 2,
-			min_dz = 3,
-			mean_dz = 4,
-			std_dz = 1 if vert_motion else 0,
-			vertical = vert_motion,
-			name = 'Goal',
-		)
-
 
 		## ACTIONS		
 		base_distance = 10 # meters, will multiply rl_output by this value
@@ -408,9 +355,9 @@ def create_base_components(
 			from rewards.maxsteps import MaxSteps
 			MaxSteps(
 				name = 'MaxStepsReward',
-				update_steps = True,
-				max_steps = 4**(1+vert_motion), # base number of steps, will scale with further goal
-				max_max = 50,
+				update_steps = False,
+				max_steps = 30, # base number of steps, will scale with further goal
+				max_max = 30,
 			)
 		# REWARDER
 		from rewarders.schema import Schema
@@ -442,91 +389,91 @@ def create_base_components(
 			name = 'ResizeImage',
 		)
 		# SENSORS
+		vector_length = 0
 		# sense horz distance to goal
-		from sensors.distance import Distance
-		Distance(
-			misc_component = 'Drone',
-			misc2_component = 'Goal',
-			include_z = False,
-			prefix = 'drone_to_goal',
-			transformers_components = [
-				'NormalizeDistance',
-				], 
-			name = 'GoalDistance',
-		)
+		if 'GoalDistance' in vector_sensors:
+			from sensors.distance import Distance
+			Distance(
+				misc_component = 'Drone',
+				misc2_component = 'Goal',
+				include_z = False,
+				prefix = 'drone_to_goal',
+				transformers_components = [
+					'NormalizeDistance',
+					], 
+				name = 'GoalDistance',
+			)
+			vector_length += 1
 		# sense yaw difference to goal 
-		from sensors.orientation import Orientation
-		Orientation(
-			misc_component = 'Drone',
-			misc2_component = 'Goal',
-			prefix = 'drone_to_goal',
-			transformers_components = [
-				'NormalizeOrientation',
-				],
-			name = 'GoalOrientation',
-		)
+		if 'GoalOrientation' in vector_sensors:
+			from sensors.orientation import Orientation
+			Orientation(
+				misc_component = 'Drone',
+				misc2_component = 'Goal',
+				prefix = 'drone_to_goal',
+				transformers_components = [
+					'NormalizeOrientation',
+					],
+				name = 'GoalOrientation',
+			)
+			vector_length += 1
 		# sense vert distance to goal
-		Distance(
-			misc_component = 'Drone',
-			misc2_component = 'Goal',
-			include_x = False,
-			include_y = False,
-			prefix = 'drone_to_goal',
-			transformers_components = [
-				'NormalizeDistance',
-				],
-			name = 'GoalAltitude',
-		)
+		if 'GoalAltitude' in vector_sensors:
+			Distance(
+				misc_component = 'Drone',
+				misc2_component = 'Goal',
+				include_x = False,
+				include_y = False,
+				prefix = 'drone_to_goal',
+				transformers_components = [
+					'NormalizeDistance',
+					],
+				name = 'GoalAltitude',
+			)
+			vector_length += 1
 		# get flattened depth map (obsfucated front facing distance sensors)
-		from transformers.resizeflat import ResizeFlat
 		max_cols = [5*(i+1) for i in range(5)] # splits depth map by columns
 		max_rows = [5*(i+1) for i in range(5)] # splits depth map by rows
-		ResizeFlat(
-			max_cols = max_cols,
-			max_rows = max_rows,
-			name = 'ResizeFlat1',
-		)
-		ResizeFlat(
-			max_cols = max_cols,
-			max_rows = max_rows,
-			name = 'ResizeFlat2',
-		)
-		from sensors.airsimcamera import AirSimCamera
-		# forward facing depth map
-		AirSimCamera(
-			airsim_component = 'Map',
-			transformers_components = [
-				'ResizeImage',
-				'ResizeFlat1',
-				'NormalizeDistance',
-				],
-			name = 'FlattenedDepth1',
-		)
-		# downward facing depth map
-		AirSimCamera(
-			airsim_component = 'Map',
-			camera_view='3', 
-			transformers_components = [
-				'ResizeImage',
-				'ResizeFlat2',
-				'NormalizeDistance',
-				],
-			name = 'FlattenedDepth2',
-		)
+		if 'FlattenedDepth1' in vector_sensors:
+			from transformers.resizeflat import ResizeFlat
+			ResizeFlat(
+				max_cols = max_cols,
+				max_rows = max_rows,
+				name = 'ResizeFlat1',
+			)
+			# forward facing depth map
+			from sensors.airsimcamera import AirSimCamera
+			AirSimCamera(
+				airsim_component = 'Map',
+				transformers_components = [
+					'ResizeImage',
+					'ResizeFlat1',
+					'NormalizeDistance',
+					],
+				name = 'FlattenedDepth1',
+			)
+			vector_length += len(max_cols) * len(max_rows)
+		if 'FlattenedDepth2' in vector_sensors:
+			from transformers.resizeflat import ResizeFlat
+			ResizeFlat(
+				max_cols = max_cols,
+				max_rows = max_rows,
+				name = 'ResizeFlat2',
+			)
+			# downward facing depth map
+			from sensors.airsimcamera import AirSimCamera
+			AirSimCamera(
+				airsim_component = 'Map',
+				camera_view='3', 
+				transformers_components = [
+					'ResizeImage',
+					'ResizeFlat2',
+					'NormalizeDistance',
+					],
+				name = 'FlattenedDepth2',
+			)
+			vector_length += len(max_cols) * len(max_rows)
 		# OBSERVER
-		# currently must count vector size of sensor output (TODO: automate this)
-		vector_sensors = []
-		vector_length = 0
-		vector_sensors.append('FlattenedDepth1')
-		vector_length += len(max_cols) * len(max_rows) # several more vector elements
-		#vector_sensors.append('FlattenedDepth2')
-		#vector_length += len(max_cols) * len(max_rows) # several more vector elements
-		vector_sensors.append('GoalDistance')
-		vector_length += 1
-		vector_sensors.append('GoalOrientation')
-		vector_length += 1
-		vector_sensors.append('GoalAltitude')
-		vector_length += 1
 		from observers.single import Single
 		Single(
 			sensors_components = vector_sensors, 
@@ -534,7 +481,6 @@ def create_base_components(
 			nTimesteps = nTimesteps,
 			name = 'Observer',
 		)
-
 
 
 		## MODEL
@@ -608,65 +554,91 @@ def create_base_components(
 			name='Model',
 		)
 
-		# SPAWNER
-		from modifiers.spawner import Spawner
-		from others.spawn import Spawn
-		Spawner(
-			base_component = 'Drone',
-			parent_method = 'start',
-			drone_component = 'Drone',
-			spawns_components=[
-				Spawn(
-					map_component = 'Map',
-					bounds_component = 'MapBounds',
-					dz=dz,
-					random=True,
-					vertical=vert_motion,
-					name = 'TrainSpawn',
-				),
-			],
-			order='post',
-			on_evaluate = False,
-			name='TrainSpawner',
+
+		# spawn (initial drone pos and goal pos)
+		from other.spawn import Spawn:
+		motion = 'horizontal'
+		if vert_motion:
+			motion = 'vertical'
+		Spawn(
+			read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
+			random=True, # True will get random path, False will use static
+			name='SpawnTrain'
+		)
+		Spawn(
+			read_path='eval_spawns.p', # read in dict of possible paths or static spawns
+			random=False, # True will get random path, False will use static
+			name='SpawnEvaluate'
+		)
+
+		## TRAIN ENVIRONMENT
+		from environments.goalenv import GoalEnv
+		GoalEnv(
+			drone_component='Drone', 
+			actor_component='Actor', 
+			observer_component='Observer', 
+			rewarder_component='Rewarder', 
+			spawn_component='SpawnTrain',
+			goal_component='TrainGoal',
+			model_component='Model',
+			name='TrainEnvironment',
+		)
+		## EVALUATE ENVIRONMENT
+		GoalEnv(
+			drone_component='Drone', 
+			actor_component='Actor', 
+			observer_component='Observer', 
+			rewarder_component='Rewarder', 
+			spawn_component='SpawnEvaluate',
+			goal_component='EvaluateGoal',
+			model_component='Model',
+			name='EvaluateEnvironment',
+		)
+
+		# goals
+		from others.goal import Goal
+		Goal(
+			name = 'TrainGoal',
+		)
+		Goal(
+			name = 'EvaluateGoal',
 		)
 
 		# EVALUATOR
-		from others.curriculum import Curriculum
-		de = 1000
+		# curriculum learning
+		from others.fvar import FVar
+		EvaluatorFVar = FVar(
+			fpath = 'temp/evaluator_fvar.p'
+			default = [0],
+			name = 'EvaluatorFVar',
+		)
+		EvaluatorFVar.speak([1, False]) # start feedback
+		FVar(
+			fpath = 'temp/trainer_fvar.p'
+			default = [0],
+			name = 'TrainerFVar',
+		)
+		from evaluators.curriculum import Curriculum
+		nEvals = 100
 		Curriculum(
-			goal_component='Goal',
+			models_directory=working_directory+'Models/',
 			model_component='Model',
-			start_r = start_distance,
-			intervals = [2*de, de, de, de, de, de, de, de, de, de , de],
-			distances = [10  , 15, 20, 25, 30, 40, 50, 60, 80, 100, 55],
-			name = 'Curriculum',
+			eval_freq=100,
+			is_evaluator=True,
+			evaluator_fvar_component='EvaluatorFVar',
+			evaluate_environment_component='EvaluateEnvironment',
+			nEpisodes=nEvals,
+			criteria=99,
+			is_trainer=True,
+			trainer_fvar_component='TrainerFVar',
+			train_spawn_component='SpawnTrain',
+			steps=list(range(1,21)),
+			in_final_form=False,
+			level=0,
+			level_steps=1,
 		)
-		from evaluators.static import Static
-		min_dist = start_distance
-		max_dist = 101
-		Static(
-			evaluate_environment_component = 'EvaluateEnvironment', 
-			model_component = 'Model',
-			spawn_component = Spawn(
-				map_component = 'Map',
-				bounds_component = 'MapBounds',
-				dz=dz,
-				random=True,
-				vertical=vert_motion,
-				name = 'StaticSpawn',
-			),
-			goal_component = 'Goal',
-			distances = [i for i in range(min_dist, max_dist)], 
-			read_spawns_path = None,
-			read_goals_path = None,
-			write_spawns_path = working_directory + 'spawns/',
-			write_goals_path = working_directory + 'goals/',
-			write_results_path = working_directory + 'results/',
-			name = 'Static',
-		)
-		nEvalEpisodes = max_dist - min_dist
 
-		# SAVERS
+		# SAVERS - writes values to file
 		from modifiers.saver import Saver
 		# save Train states and observations after each epoch (checkpoint)
 		Saver(
@@ -682,19 +654,6 @@ def create_base_components(
 			frequency = checkpoint,
 			name='TrainEnvSaver',
 		)
-		# save model after each epoch (checkpoint)
-		# environment does not have access to model
-		Saver(
-			base_component = 'Model',
-			parent_method = 'end',
-			track_vars = [
-						'model', 
-						'replay_buffer',
-						],
-			order = 'post',
-			frequency = nEvalEpisodes,
-			name='ModelSaver',
-		)
 		# save Evlaluate states and observations after each epoch (checkpoint)
 		Saver(
 			base_component = 'EvaluateEnvironment',
@@ -704,7 +663,7 @@ def create_base_components(
 						'states',
 						],
 			order = 'post',
-			frequency = nEvalEpisodes,
+			frequency = nEvals,
 			name='EvalEnvSaver',
 		)
 	
