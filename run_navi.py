@@ -21,7 +21,7 @@ if len(args) > 2:
 	continue_training = args[2] in ['true', 'True']
 # third sys argument is any text to concatenate to run output folder name (i.e. run2 etc)
 	# will assume no text to concat if no additional input
-run_post = 't3'
+run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
@@ -203,7 +203,7 @@ def create_base_components(
 			console_flags.append('-RenderOffscreen')
 		# create airsim map object
 		AirSimMap(
-			voxels_component='Voxels',
+			#voxels_component='Voxels',
 			release_path = release_path,
 			settings = {
 				'ClockSpeed': clock_speed,
@@ -217,7 +217,7 @@ def create_base_components(
 		# voxels grabs locations of objects from airsim map
 		# used to validate spawn and goal points (not inside an object)
 		# also used to visualize flight paths
-		from others.voxels import Voxels
+		""" from others.voxels import Voxels
 		Voxels(
 			relative_path = working_directory + 'map_voxels.binvox',
 			map_component = 'Map',
@@ -225,7 +225,7 @@ def create_base_components(
 			y_length = 2 * distance_param, # total y-axis  meters (split around center)
 			z_length = 2 * distance_param, # total z-axis  meters (split around center)
 			name = 'Voxels',
-		)
+		) """
 
 
 		#  DRONE
@@ -355,9 +355,7 @@ def create_base_components(
 			from rewards.maxsteps import MaxSteps
 			MaxSteps(
 				name = 'MaxStepsReward',
-				update_steps = False,
 				max_steps = 30, # base number of steps, will scale with further goal
-				max_max = 30,
 			)
 		# REWARDER
 		from rewarders.schema import Schema
@@ -556,7 +554,7 @@ def create_base_components(
 
 
 		# spawn (initial drone pos and goal pos)
-		from other.spawn import Spawn:
+		from others.spawn import Spawn
 		motion = 'horizontal'
 		if vert_motion:
 			motion = 'vertical'
@@ -579,7 +577,7 @@ def create_base_components(
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			spawn_component='SpawnTrain',
-			goal_component='TrainGoal',
+			goal_component='Goal',
 			model_component='Model',
 			name='TrainEnvironment',
 		)
@@ -590,7 +588,7 @@ def create_base_components(
 			observer_component='Observer', 
 			rewarder_component='Rewarder', 
 			spawn_component='SpawnEvaluate',
-			goal_component='EvaluateGoal',
+			goal_component='Goal',
 			model_component='Model',
 			name='EvaluateEnvironment',
 		)
@@ -598,23 +596,20 @@ def create_base_components(
 		# goals
 		from others.goal import Goal
 		Goal(
-			name = 'TrainGoal',
-		)
-		Goal(
-			name = 'EvaluateGoal',
+			name = 'Goal',
 		)
 
 		# EVALUATOR
 		# curriculum learning
 		from others.fvar import FVar
 		EvaluatorFVar = FVar(
-			fpath = 'temp/evaluator_fvar.p'
+			fpath = 'temp/evaluator_fvar.p',
 			default = [0],
 			name = 'EvaluatorFVar',
 		)
 		EvaluatorFVar.speak([1, False]) # start feedback
 		FVar(
-			fpath = 'temp/trainer_fvar.p'
+			fpath = 'temp/trainer_fvar.p',
 			default = [0],
 			name = 'TrainerFVar',
 		)

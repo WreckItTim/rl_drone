@@ -10,7 +10,8 @@ class Spawn(Other):
 	def __init__(self, 
 				read_path, # read in dict of possible paths or static spawns
 				random, # True will get random path, False will use static
-				nSteps=0, # if random (how many steps to sample goal)
+				nSteps=1, # if random (how many steps to sample goal)
+				max_steps=20,
 			):
 		pass
 
@@ -20,7 +21,7 @@ class Spawn(Other):
 			self._dicts = pickle.load(open(self.read_path, 'rb'))
 			self._idxs = {}
 			# sort
-			for i, d in enumerate(dicts):
+			for i, d in enumerate(self._dicts):
 				steps = min(self.max_steps, d['steps'])
 				for s in range(steps, 0, -1):
 					if s not in self._idxs:
@@ -35,8 +36,8 @@ class Spawn(Other):
 		if self.random:
 			idx = random.choice(self._idxs[self.nSteps])
 			dic =  self._dicts[idx]
-			path = dic['path']
-			start = random.randint(0, len(path)-1)
+			path = dic['a_path']
+			start = random.randint(0, len(path)-self.nSteps-1)
 			if start < self.nSteps:
 				end = start + self.nSteps
 			elif start >= len(path) - self.nSteps:

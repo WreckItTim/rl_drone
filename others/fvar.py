@@ -13,7 +13,7 @@ class FVar(Other):
 		):
 		pass
 
-	def reset_learning(self, state=None)
+	def reset_learning(self, state=None):
 		self.speak(self.default)
 
 	def listen(self):

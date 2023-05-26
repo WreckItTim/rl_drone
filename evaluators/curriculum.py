@@ -50,7 +50,7 @@ class Curriculum(Evaluator):
 		self.ignore_first = True
 
 	def update(self):
-		elif self.is_trainer:
+		if self.is_trainer:
 			self.check_trainer()
 		if self.is_evaluator:
 			self.check_evaluator()			
@@ -120,7 +120,7 @@ class Curriculum(Evaluator):
 				else:
 					self.level_up()
 
-		if.is_evaluator:
+		if self.is_evaluator:
 			if self._model.nEpisodes % self.eval_freq == 0:
 				self.prep_next()
 		elif msg[0] == 1:

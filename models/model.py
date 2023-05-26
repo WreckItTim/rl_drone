@@ -156,7 +156,7 @@ class Model(Component):
 	def load_models(self, folder):
 		self._actor = torch.load(folder + 'actor.pt')
 		self._actor_target = torch.load(folder + 'actor_target.pt')
-		for i in range(self._nCritics)
+		for i in range(self._nCritics):
 			self._critics[i] = torch.load(folder + 'critic_' + str(i) + '.pt')
 			self._critics_target[i] = torch.load(folder + 'critic_target_' + str(i) + '.pt')
 

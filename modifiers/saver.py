@@ -20,10 +20,9 @@ class Saver(Modifier):
 			frequency = 1, # use modifiation after how many calls to parent method?
 			counter = 0, # keepts track of number of calls to parent method
 			activation_counter = 0, # keeps track of number of times activated
-			activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			save_on_exit = True, # save all when program ends
 			):
-		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
+		super().__init__(base_component, parent_method, order, frequency, counter)
 
 	def connect(self, state=None):
 		super().connect(state)
