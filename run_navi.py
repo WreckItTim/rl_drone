@@ -5,8 +5,9 @@ import copy
 import torch
 import numpy as np
 import math
+import random
 
-# grab arguments input from terminal
+## grab arguments input from terminal
 args = sys.argv
 # first sys argument is test_case to run (see options below) - usually changes by device
 	# if no arguments will default to test_case 'h4' - my work laptop
@@ -25,6 +26,12 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
+## set random seeds
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
+## set params
 repo_version = 'delta1'
 airsim_release = 'Blocks'
 read_model_path = None
@@ -71,7 +78,6 @@ run_name += '_vert' if vert_motion else '_horz'
 run_name += '_' + test_case + '_' + repo_version
 if run_post != '': 
 	run_name += '_' + run_post
-
 # learning loop (controller) stuff
 continue_training = False
 max_episodes = 4_000 # max number of episodes to train for before terminating learning loop
@@ -79,6 +85,8 @@ max_episodes = 4_000 # max number of episodes to train for before terminating le
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
 train_freq = 1
+num_batches = -1
+random_start = 40
 batch_size = 100
 with_distillation = False
 use_wandb = False
@@ -89,16 +97,18 @@ controller_params = {
 	'train_environment_component' : 'TrainEnvironment',
 	'continue_training' : continue_training,
 	'max_episodes' : max_episodes,
+	'random_start' : random_start, # num episodes to take random actions?
 	'train_start' : train_start, # don't call train() until after train_start episodes
 	'train_freq' : train_freq, # then call train() every train_freq episode
 	'batch_size' : batch_size, # split training into mini-batches of steps from buffer
+	'num_batches' : num_batches, # split training into mini-batches of steps from buffer
 	'with_distillation' : with_distillation, # slims during train() and distills to output of super
 	'use_wandb' : use_wandb, # turns on logging to wandb
 	'project_name' : parent_project + '_' + child_project, # wandb logs here
 	'evaluator_component' : 'Evaluator',
 }
 
-# runs some overarching base things
+## runs overarching base code
 def create_base_components(
 		actions,
 		rewards,
@@ -564,7 +574,8 @@ def create_base_components(
 			name='SpawnTrain'
 		)
 		Spawn(
-			read_path='eval_spawns.p', # read in dict of possible paths or static spawns
+			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			#read_path = 'spawns_dummy.p',
 			random=False, # True will get random path, False will use static
 			name='SpawnEvaluate'
 		)
@@ -602,12 +613,11 @@ def create_base_components(
 		# EVALUATOR
 		# curriculum learning
 		from others.fvar import FVar
-		EvaluatorFVar = FVar(
+		FVar(
 			fpath = 'temp/evaluator_fvar.p',
 			default = [0],
 			name = 'EvaluatorFVar',
 		)
-		EvaluatorFVar.speak([1, False]) # start feedback
 		FVar(
 			fpath = 'temp/trainer_fvar.p',
 			default = [0],
@@ -616,9 +626,9 @@ def create_base_components(
 		from evaluators.curriculum import Curriculum
 		nEvals = 100
 		Curriculum(
-			models_directory=working_directory+'Models/',
+			models_directory=working_directory+'Model/',
 			model_component='Model',
-			eval_freq=100,
+			eval_freq=checkpoint,
 			is_evaluator=True,
 			evaluator_fvar_component='EvaluatorFVar',
 			evaluate_environment_component='EvaluateEnvironment',
@@ -627,10 +637,11 @@ def create_base_components(
 			is_trainer=True,
 			trainer_fvar_component='TrainerFVar',
 			train_spawn_component='SpawnTrain',
-			steps=list(range(1,21)),
+			steps=list(range(2,21)),
 			in_final_form=False,
 			level=0,
 			level_steps=1,
+			name = 'Evaluator',
 		)
 
 		# SAVERS - writes values to file
@@ -683,7 +694,7 @@ def run_controller(configuration):
 	# done
 	configuration.controller.stop()
 
-# create base components
+## create base components
 configuration = create_base_components(
 		actions,
 		rewards,
@@ -705,10 +716,10 @@ configuration = create_base_components(
 		repo_version = repo_version,
 )
 
-# create any other components
+## create any other components
 if not continue_training:
 	# ---* add components here *--- #
 	pass
 
-# run baby run
+## run baby run
 run_controller(configuration)

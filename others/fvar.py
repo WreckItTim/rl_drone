@@ -27,6 +27,7 @@ class FVar(Other):
 				waiting = False
 			except IOError:
 				time.sleep(.1)
+		return value
 
 	def speak(self, value):
 		waiting = True

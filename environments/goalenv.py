@@ -131,8 +131,8 @@ class GoalEnv(Environment):
 		# order may matter here, currently no priority queue set-up, may need later
 		self._model.start(self._states[this_step])
 		self._drone.start(self._states[this_step])
-		drone_position, goal_position, astar_steps = self._spawn.start(self._states[this_step])
-		self._drone.teleport(drone_position, ignore_collision=True)
+		drone_position, yaw, goal_position, astar_steps = self._spawn.start(self._states[this_step])
+		self._drone.teleport(*drone_position, yaw, ignore_collision=True)
 		self._goal.set_position(goal_position)
 		self._goal.set_steps(astar_steps)
 
@@ -158,6 +158,7 @@ class GoalEnv(Environment):
 		self._states[this_step]['yaw'] = self._drone.get_yaw() 
 		self._states[this_step]['goal_position'] = self._goal.get_position()
 		self._states[this_step]['astar_steps'] = self._goal.get_steps()
+		print(self._states[this_step])
 
 		return observation_data, self._states[this_step]
 

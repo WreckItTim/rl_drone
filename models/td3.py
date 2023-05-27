@@ -30,25 +30,27 @@ class TD3(Model):
 			policy_delay = 2, # train iter delay netween updates
 			noise_std = 0.2, # standard deviation of added action noise during train
 			noise_max = 0.5, # max abs value of added action noise during train
+			explore_std = 0.1, # standard deviation of added action noise during train
 		):
 		self._is_hyper = False
 		super().__init__()
 
 	# adapted base code from psuedo @ https://spinningup.openai.com/en/latest/algorithms/td3.html
 	def train(self,
-			nIters=1,
 			batch_size=100,
+			num_batches=1, 
 			with_distillation=False,
 			low=0.125, size=2, # distill params
 		):
 
+		utils.speak('train()')
 		# UNSLIM (if no net modules are slim, then does nothing)
 		for module in self._actor.modules():
 			if 'Slim' in str(type(module)):
 				module.slim = 1
 
 		# do nIters many updates
-		for itr in range(nIters):
+		for batch in range(num_batches):
 			# sample replay buffer (actions are clones)
 			obs, obs_next, act, rew, end = self.sample_buffer(batch_size)
 
@@ -74,6 +76,8 @@ class TD3(Model):
 				# calc gradient in critic
 				critic.optimizer.zero_grad()
 				critic_loss.backward()
+				critic.optimizer.step()
+				
 			self.nTrain += 1
 			# update actor and target networks?
 			if self.nTrain % self.policy_delay == 0:

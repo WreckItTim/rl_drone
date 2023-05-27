@@ -37,7 +37,7 @@ class Curriculum(Evaluator):
 				in_final_form=False,
 				level=0,
 				level_steps=-1,
-				ignore_first=True, # ignore level up from 0th eval
+				ignore_first=False, # ignore level up from 0th eval
 			): 
 		pass
 
@@ -47,7 +47,7 @@ class Curriculum(Evaluator):
 		self.in_final_form = False
 		self.level = 0
 		self.level_steps = -1
-		self.ignore_first = True
+		self.ignore_first = False
 
 	def update(self):
 		if self.is_trainer:
@@ -62,10 +62,11 @@ class Curriculum(Evaluator):
 		if msg[0] == 1:
 			self.level_steps = msg[1]
 			model_path = msg[2]
-			self._model.load_models(models_directory + model_path)
+			self._model.load_models(self.models_directory + model_path)
 			self.evaluate_set()
 
 	def evaluate_set(self):
+		utils.speak('evaluate_set()')
 		# loop through all episodes
 		aSuccesses = []
 		lSuccesses = []
@@ -79,7 +80,7 @@ class Curriculum(Evaluator):
 		aSuccess = round(100.*sum(aSuccesses)/len(aSuccesses),2)
 		utils.speak(f'evaluated with total_success:{aSuccess}%')
 		msg = [1, True]
-		if len(lSuccess) > 0:
+		if len(lSuccesses) > 0:
 			lSuccess = round(100.*sum(lSuccesses)/len(lSuccesses),2)
 			utils.speak(f'evaluated with level_success:{lSuccess}%')
 			if lSuccess < self.criteria:
@@ -129,7 +130,7 @@ class Curriculum(Evaluator):
 	def prep_next(self):
 		level_steps = -1 if self.in_final_form else self._train_spawn.nSteps
 		model_path = 'train_eps_' + str(self._model.nEpisodes) + '/'
-		self._model.save_models(models_directory + model_path)
+		self._model.save_models(self.models_directory + model_path)
 		msg = [1, level_steps, model_path]
 		self._trainer_fvar.speak(msg)
 

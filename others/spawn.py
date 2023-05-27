@@ -46,13 +46,15 @@ class Spawn(Other):
 				flip = random.choice([-1, 1])
 				end = start + flip*self.nSteps
 			drone_position = path[start][:3]
+			yaw = path[start][3]
 			goal_position = path[end][:3]
 			astar_steps = self.nSteps
 		else:
-			drone_position = self._spawns[self._idx][0]
-			goal_position = self._spawns[self._idx][1]
-			astar_steps = self._spawns[self._idx][3]
+			drone_position = self._spawns[self._idx][0][:3]
+			yaw = self._spawns[self._idx][0][3]
+			goal_position = self._spawns[self._idx][1][:3]
+			astar_steps = self._spawns[self._idx][2]
 			self._idx += 1
 			if self._idx >= len(self._spawns):
 				self._idx = 0
-		return drone_position.copy(), goal_position.copy(), astar_steps
+		return drone_position.copy(), yaw, goal_position.copy(), astar_steps

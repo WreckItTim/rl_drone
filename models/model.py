@@ -215,9 +215,11 @@ class Model(Component):
 	def learn(self, 
 			train_environment,
 			max_episodes = 10_000,
-			train_start = 100, # don't call train() until after train_start episodes
+			random_start = 40, # number of episodes to randomize actions
+			train_start = 40, # don't call train() until after train_start episodes
 			train_freq = 1, # then call train() every train_freq episode
 			batch_size = 100, # split training into mini-batches of steps from buffer
+			num_batches = -1, # split training into mini-batches of steps from buffer
 			with_distillation = False, # slims during train() and distills to output of super
 			use_wandb = True, # turns on logging to wandb
 			project_name = 'void', # project name in wandb
@@ -225,24 +227,36 @@ class Model(Component):
 			evaluator = None,
 		):
 		# learning loop
+		random_act = True
 		for _ in range(self.nEpisodes, max_episodes+1):
-			# check evaluate
-			evaluator.update()
+			if self.nEpisodes >= random_start:
+				random_act = False
 			# start episode
+			utils.speak('rollout()')
 			observation_data, state = train_environment.start()
 			done = False
 			episode_steps = 0
 			while(not done):
 				# get rl output
-				rl_output = self.predict(observation_data)
+				if random_act:
+					action = np.random.uniform(low=-1, high=1, size=self.act_shape)
+				else:
+					action = self.predict(observation_data)
+					explore = np.random.normal(0, self.explore_std, size=action.size)
+					action = action + explore
 				# take next step
-				observation_data, reward, done, state = train_environment.step(rl_output)
+				observation_data, reward, done, state = train_environment.step(action)
 				# log data to replay buffer
-				self.add_buffer(observation_data, rl_output, reward, done)
+				self.add_buffer(observation_data, action, reward, done)
 				self.nSteps += 1
 				episode_steps += 1
 			# end of episode
 			self.nEpisodes += 1
 			# check train
 			if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
-				self.train(episode_steps, batch_size, with_distillation)
+				num = num_batches
+				if num_batches == -1:
+					num = episode_steps
+				self.train(batch_size, num, with_distillation)
+			# check evaluate
+			evaluator.update()
