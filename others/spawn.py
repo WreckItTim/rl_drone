@@ -22,7 +22,7 @@ class Spawn(Other):
 			self._idxs = {}
 			# sort
 			for i, d in enumerate(self._dicts):
-				steps = min(self.max_steps, d['steps'])
+				steps = min(self.max_steps, len(d['a_path'])-1)
 				for s in range(steps, 0, -1):
 					if s not in self._idxs:
 						self._idxs[s] = []

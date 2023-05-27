@@ -637,7 +637,7 @@ def create_base_components(
 			is_trainer=True,
 			trainer_fvar_component='TrainerFVar',
 			train_spawn_component='SpawnTrain',
-			steps=list(range(2,21)),
+			steps=list(range(1,21)),
 			in_final_form=False,
 			level=0,
 			level_steps=1,
