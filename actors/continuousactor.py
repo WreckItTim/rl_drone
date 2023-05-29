@@ -14,6 +14,7 @@ class ContinuousActor(Actor):
 			  ):
 		super().__init__()
 		self._type = 'continuous'
+		self._last_state = [[0,0,0],0]
 		
 	# interpret action from RL
 	def step(self, state):

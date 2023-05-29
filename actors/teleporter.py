@@ -18,12 +18,19 @@ class Teleporter(Actor):
 	):
 		super().__init__()
 		self._type = 'continuous'
+		self._last_state = [[0,0,0], 0]
 
+	# backtracks to state before last action
+	def undo(self):
+		self._drone.teleport(self._last_state[0][0], self._last_state[0][1], self._last_state[0][2], self._last_state[1], ignore_collision=False)
+		for idx, action in enumerate(self._actions):
+			action.undo()
 
 	# interpret action from RL
 	def step(self, state):
 		current_position = self._drone.get_position() # meters
 		current_yaw = self._drone.get_yaw() # radians
+		self._last_state = [current_position, current_yaw]
 		target = {
 			'x':current_position[0],
 			'y':current_position[1],

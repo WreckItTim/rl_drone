@@ -27,33 +27,52 @@ class Spawn(Other):
 					if s not in self._idxs:
 						self._idxs[s] = []
 					self._idxs[s].append(i)
+			self._last_state = self.get_random()
 		else:
 			self._spawns = pickle.load(open(self.read_path, 'rb'))
 			self._idx = 0
+			self._last_state = self.get_static()
+		self._redo = False
+
+	def get_random(self):
+		idx = random.choice(self._idxs[self.nSteps])
+		dic =  self._dicts[idx]
+		path = dic['a_path']
+		start = random.randint(0, len(path)-self.nSteps-1)
+		if start < self.nSteps:
+			end = start + self.nSteps
+		elif start >= len(path) - self.nSteps:
+			end = start - self.nSteps
+		else:
+			flip = random.choice([-1, 1])
+			end = start + flip*self.nSteps
+		drone_position = path[start][:3]
+		yaw = path[start][3]
+		goal_position = path[end][:3]
+		astar_steps = self.nSteps
+		return drone_position, yaw, goal_position, astar_steps
+
+	def get_static(self):
+		drone_position = self._spawns[self._idx][0][:3]
+		yaw = self._spawns[self._idx][0][3]
+		goal_position = self._spawns[self._idx][1][:3]
+		astar_steps = self._spawns[self._idx][2]
+		return drone_position, yaw, goal_position, astar_steps
+
+	def undo(self):
+		self._redo = True
 
 	# need to recalculate relative point at each reset
 	def start(self, state=None):
-		if self.random:
-			idx = random.choice(self._idxs[self.nSteps])
-			dic =  self._dicts[idx]
-			path = dic['a_path']
-			start = random.randint(0, len(path)-self.nSteps-1)
-			if start < self.nSteps:
-				end = start + self.nSteps
-			elif start >= len(path) - self.nSteps:
-				end = start - self.nSteps
-			else:
-				flip = random.choice([-1, 1])
-				end = start + flip*self.nSteps
-			drone_position = path[start][:3]
-			yaw = path[start][3]
-			goal_position = path[end][:3]
-			astar_steps = self.nSteps
+		if self._redo:
+			drone_position, yaw, goal_position, astar_steps = self._last_state
+			self._redo = False
+		elif self.random:
+			self._last_state = self.get_random()
+			drone_position, yaw, goal_position, astar_steps = self._last_state
 		else:
-			drone_position = self._spawns[self._idx][0][:3]
-			yaw = self._spawns[self._idx][0][3]
-			goal_position = self._spawns[self._idx][1][:3]
-			astar_steps = self._spawns[self._idx][2]
+			self._last_state = self.get_static()
+			drone_position, yaw, goal_position, astar_steps = self._last_state
 			self._idx += 1
 			if self._idx >= len(self._spawns):
 				self._idx = 0

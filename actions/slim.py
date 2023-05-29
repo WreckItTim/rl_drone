@@ -17,20 +17,27 @@ class Slim(Action):
 				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 				active = True, # False will just return default behavior
 			):
-		pass
-		
-	# move at input rate
-	def step(self, state, execute=True):
-		if not self.active:
-			rho = 1
-		else:
-			rl_output = state['rl_output'][self._idx]
-			rho = round(max(self.min_slim, rl_output), 4)
+		self._last_state = 1
+
+	def undo(self):
+		self.set_rho(self._last_state)
+
+	def set_rho(self, rho):
 		self._rho = rho # give access to other components to last rho
 		self._model._sb3model.slim = rho
 		for module in self._model._actor.modules():
 			#print(type(module))
 			if 'Slim' in str(type(module)):
 				module.slim = rho
+		
+	# move at input rate
+	def step(self, state, execute=True):
+		self._last_state = self._rho
+		if not self.active:
+			rho = 1
+		else:
+			rl_output = state['rl_output'][self._idx]
+			rho = round(max(self.min_slim, rl_output), 4)
+		self.set_rho(rho)
 		#utils.speak(f'set slim:{rho}')
 		return {'slim':rho}

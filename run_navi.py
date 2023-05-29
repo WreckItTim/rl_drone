@@ -80,13 +80,13 @@ if run_post != '':
 	run_name += '_' + run_post
 # learning loop (controller) stuff
 continue_training = False
-max_episodes = 4_000 # max number of episodes to train for before terminating learning loop
+max_episodes = 10_000 # max number of episodes to train for before terminating learning loop
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
 train_freq = 1
 num_batches = -1
-random_start = 40
+random_start = 50
 batch_size = 100
 with_distillation = False
 use_wandb = False
@@ -569,13 +569,15 @@ def create_base_components(
 		if vert_motion:
 			motion = 'vertical'
 		Spawn(
-			read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
-			random=True, # True will get random path, False will use static
+			#read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
+			#random=True, # True will get random path, False will use static
+			#name='SpawnTrain'
+			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			random=False, # True will get random path, False will use static
 			name='SpawnTrain'
 		)
 		Spawn(
 			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
-			#read_path = 'spawns_dummy.p',
 			random=False, # True will get random path, False will use static
 			name='SpawnEvaluate'
 		)
@@ -590,6 +592,7 @@ def create_base_components(
 			spawn_component='SpawnTrain',
 			goal_component='Goal',
 			model_component='Model',
+			map_component='Map',
 			name='TrainEnvironment',
 		)
 		## EVALUATE ENVIRONMENT
@@ -601,6 +604,7 @@ def create_base_components(
 			spawn_component='SpawnEvaluate',
 			goal_component='Goal',
 			model_component='Model',
+			map_component='Map',
 			name='EvaluateEnvironment',
 		)
 

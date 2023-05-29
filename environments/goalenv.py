@@ -3,6 +3,7 @@ from component import _init_wrapper
 import numpy as np
 import rl_utils as utils
 import os
+import msgpackrpc
 
 # an environment is the heart of RL algorithms
 # the Goal flavor wants the drone to go to Point A to Point B
@@ -21,6 +22,7 @@ class GoalEnv(Environment):
 				 spawn_component,
 				 goal_component,
 				 model_component,
+				 map_component,
 				 others_components=None,
 				 step_counter=0, 
 				 episode_counter=0, 
@@ -74,43 +76,57 @@ class GoalEnv(Environment):
 			self._observations = {}
 		self.save_counter += 1
 
+	def handle_crash(self):
+		self._map.connect(from_crash=True)
+
 	# activate needed components
 	def step(self, rl_output, state=None):
 		# next step
 		self._nSteps += 1 # total number of steps
 		self.step_counter += 1 # total number of steps
-		this_step = 'step_' + str(self._nSteps)
-		if state is None:
-			self._states[this_step] = {}
-		else:
-			self._states[this_step] = state.copy()
-		self._states[this_step]['nSteps'] = self._nSteps
-		# clean and save rl_output to state
-		self._states[this_step]['rl_output'] = list(rl_output)
-		# take action
-		self._actor.step(self._states[this_step])
-		# save state kinematics
-		self._states[this_step]['drone_position'] = self._drone.get_position()
-		self._states[this_step]['yaw'] = self._drone.get_yaw()
-		# get observation
-		self._states[this_step]['observation_name'] = self._last_observation_name
-		observation_data, observation_name = self._observer.step(self._states[this_step])
-		self._last_observation_name = observation_name
-		# take step for other components
-		if self._others is not None:
-			for other in self._others:
-				other.step(self._states[this_step])
-		# assign rewards (stores total rewards and individual rewards in state)
-		# also checks if we are done with episode
-		total_reward, done = self._rewarder.step(self._states[this_step])
-		self._states[this_step]['done'] = done
-		# save data?
-		if self._track_save and 'observations' in self._track_vars:
-			self._observations[observation_name] = observation_data.copy()
-		if self._track_save and 'states' in self._track_vars and done: 
-			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
-		if done: 
-			self.end(self._states[this_step])
+		try_again = True
+		while(try_again):
+			try:
+				took_action = False
+				this_step = 'step_' + str(self._nSteps)
+				if state is None:
+					self._states[this_step] = {}
+				else:
+					self._states[this_step] = state.copy()
+				self._states[this_step]['nSteps'] = self._nSteps
+				# clean and save rl_output to state
+				self._states[this_step]['rl_output'] = list(rl_output)
+				# take action
+				self._actor.step(self._states[this_step])
+				took_action = True
+				# save state kinematics
+				self._states[this_step]['drone_position'] = self._drone.get_position()
+				self._states[this_step]['yaw'] = self._drone.get_yaw()
+				# get observation
+				self._states[this_step]['observation_name'] = self._last_observation_name
+				observation_data, observation_name = self._observer.step(self._states[this_step])
+				self._last_observation_name = observation_name
+				# take step for other components
+				if self._others is not None:
+					for other in self._others:
+						other.step(self._states[this_step])
+				# assign rewards (stores total rewards and individual rewards in state)
+				# also checks if we are done with episode
+				total_reward, done = self._rewarder.step(self._states[this_step])
+				self._states[this_step]['done'] = done
+				# save data?
+				if self._track_save and 'observations' in self._track_vars:
+					self._observations[observation_name] = observation_data.copy()
+				if self._track_save and 'states' in self._track_vars and done: 
+					self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
+				if done: 
+					self.end(self._states[this_step])
+				try_again = False
+			except msgpackrpc.error.TimeoutError as e:
+				utils.speak(str(e) + ' caught in step()')
+				self.handle_crash()
+				if took_action:
+					self._actor.undo()
 		# data needed to relay states to replay buffer and state
 		return observation_data, total_reward, done, self._states[this_step]
 
@@ -119,46 +135,57 @@ class GoalEnv(Environment):
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
 	def start(self, state = None):
 		self.episode_counter += 1
-		# init state(s)
-		self._nSteps = 0 # steps this episode
-		this_step = 'step_' + str(self._nSteps)
-		if state is None:
-			self._states = {this_step:{}}
-		else:
-			self._states = {this_step:state.copy()}
+		try_again = True
+		while(try_again):
+			try:
+				spawned = False
+				# init state(s)
+				self._nSteps = 0 # steps this episode
+				this_step = 'step_' + str(self._nSteps)
+				if state is None:
+					self._states = {this_step:{}}
+				else:
+					self._states = {this_step:state.copy()}
 
-		# reset drone and goal components, several start() methods may be blank
-		# order may matter here, currently no priority queue set-up, may need later
-		self._model.start(self._states[this_step])
-		self._drone.start(self._states[this_step])
-		drone_position, yaw, goal_position, astar_steps = self._spawn.start(self._states[this_step])
-		self._drone.teleport(*drone_position, yaw, ignore_collision=True)
-		self._goal.set_position(goal_position)
-		self._goal.set_steps(astar_steps)
+				# reset drone and goal components, several start() methods may be blank
+				# order may matter here, currently no priority queue set-up, may need later
+				self._model.start(self._states[this_step])
+				self._drone.start(self._states[this_step])
+				drone_position, yaw, goal_position, astar_steps = self._spawn.start(self._states[this_step])
+				spawned = True
+				self._drone.teleport(*drone_position, yaw, ignore_collision=True)
+				self._goal.set_position(goal_position)
+				self._goal.set_steps(astar_steps)
 
-		# start other components
-		if self._others is not None:
-			for other in self._others:
-				other.start(self._states[this_step])
-		self._actor.start(self._states[this_step])
-		self._observer.start(self._states[this_step])
-		self._rewarder.start(self._states[this_step])
+				# start other components
+				if self._others is not None:
+					for other in self._others:
+						other.start(self._states[this_step])
+				self._actor.start(self._states[this_step])
+				self._observer.start(self._states[this_step])
+				self._rewarder.start(self._states[this_step])
 
-		# get first observation
-		observation_data, observation_name = self._observer.step(self._states[this_step])
-		self._last_observation_name = observation_name
-		
-		# save data?
-		if self._track_save and 'observations' in self._track_vars:
-			self._observations[observation_name] = observation_data.copy()
+				# get first observation
+				observation_data, observation_name = self._observer.step(self._states[this_step])
+				self._last_observation_name = observation_name
+				
+				# save data?
+				if self._track_save and 'observations' in self._track_vars:
+					self._observations[observation_name] = observation_data.copy()
 
-		# save initial state values
-		self._states[this_step]['nSteps'] = self._nSteps
-		self._states[this_step]['drone_position'] = self._drone.get_position()
-		self._states[this_step]['yaw'] = self._drone.get_yaw() 
-		self._states[this_step]['goal_position'] = self._goal.get_position()
-		self._states[this_step]['astar_steps'] = self._goal.get_steps()
-		print(self._states[this_step])
+				# save initial state values
+				self._states[this_step]['nSteps'] = self._nSteps
+				self._states[this_step]['drone_position'] = self._drone.get_position()
+				self._states[this_step]['yaw'] = self._drone.get_yaw() 
+				self._states[this_step]['goal_position'] = self._goal.get_position()
+				self._states[this_step]['astar_steps'] = self._goal.get_steps()
+				print(self._states[this_step])
+				try_again = False
+			except msgpackrpc.error.TimeoutError as e:
+				utils.speak(str(e) + ' caught in start()')
+				self.handle_crash()
+				if spawned:
+					self._spawn.undo()
 
 		return observation_data, self._states[this_step]
 
@@ -167,13 +194,20 @@ class GoalEnv(Environment):
 	# but end() is much easier/clear/necessary for modifiers and multiple envs
 	# off-by-one errors aggregate when switching between multiple envs
 	def end(self, state=None):
-		# end all components
-		self._model.end(state)
-		self._drone.end(state)
-		self._spawn.end(state)
-		if self._others is not None:
-			for other in self._others:
-				other.end(state)
-		self._actor.end(state)
-		self._observer.end(state)
-		self._rewarder.end(state)
+		try_again = True
+		while(try_again):
+			try:
+				# end all components
+				self._model.end(state)
+				self._drone.end(state)
+				self._spawn.end(state)
+				if self._others is not None:
+					for other in self._others:
+						other.end(state)
+				self._actor.end(state)
+				self._observer.end(state)
+				self._rewarder.end(state)
+				try_again = False
+			except msgpackrpc.error.TimeoutError as e:
+				utils.speak(str(e) + ' caught in end()')
+				self.handle_crash()

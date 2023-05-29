@@ -6,6 +6,9 @@ class Actor(Component):
 	def __init__(self,
 			  ):
 		self.connect_priority = 1 # before environ to get_space
+
+	def undo(self):
+		pass
 	
 	def connect(self, state=None):
 		super().connect(state)

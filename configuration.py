@@ -10,10 +10,12 @@ class Configuration():
 			  controller,
 			  add_timers=False, 
 			  add_memories=False,
+			  add_debug=False,
 			  ):
 		self.meta = meta
 		self.add_timers = add_timers
 		self.add_memories = add_memories
+		self.add_debug = add_debug
 		self.components = {}
 		self.benchmarks = {
 			'time':{'units':'microseconds'}, 

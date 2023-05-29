@@ -13,7 +13,7 @@ class AirSimDrone(Drone):
 			  airsim_component,
 			  ):
 		super().__init__()
-		self._timeout = 4
+		self._timeout = 20
 		
 	# check if has collided
 	def check_collision(self):

@@ -18,17 +18,24 @@ class Resolution(Action):
 				adjust_for_yaw = False,
 				active = True, # False will just return default behavior
 			):
-		pass
+		self._last_state = self._level = self.max_level
+
+	def undo(self):
+		self.set_level(self._last_state)
+
+	def set_level(self, level):
+		self._level = level # give information access compos connected to this
+		# tell each resolution-based component to scale
+		for scale in self._scales:
+			scale.scale_to(level)
 		
 	# move at input rate
 	def step(self, state, execute=True):
+		self._last_state = self._level
 		if not self.active:
 			level = self.max_level
 		else:
 			rl_output = state['rl_output'][self._idx]
 			level = max(0, min(int((self.max_level+1) * rl_output), self.max_level))
-		self._level = level # give information access compos connected to this
-		# tell each resolution-based component to scale
-		for scale in self._scales:
-			scale.scale_to(level)
+		self.set_level(level)
 		return {self._name:level}

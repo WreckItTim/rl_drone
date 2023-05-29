@@ -7,7 +7,8 @@ import setup_path # need this in same directory as python code for airsim
 import airsim
 from others.voxels import Voxels
 import psutil
-
+import time
+	
 # handles airsim release executables
 class AirSimMap(Map):
 
@@ -58,6 +59,10 @@ class AirSimMap(Map):
 				utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
 			else:
 				utils.set_global_parameter('ApiServerPort', 41451)
+			if 'timeout' in self.settings:
+				utils.set_global_parameter('timeout', self.settings['timeout'])
+			else:
+				utils.set_global_parameter('timeout', 20)
 			# pipeline to open for console output
 
 	def make_voxels(self,
@@ -83,13 +88,12 @@ class AirSimMap(Map):
 									)
 
 	# launch airsim map
-	def connect(self):
-		super().connect()
-		# prompt user to confirm when launch is successful (can launch manually if needs be)
-		auto_key = 'y'
-		self_key = 'n'
-		key = utils.prompt(f'Enter {auto_key} to automatically launch airsim or {self_key} to launch manually. After AirSim launches, press any key to continue...')
-		if key == auto_key and self.release_path is not None:
+	def connect(self, state=None, from_crash=False):
+		if not from_crash:
+			super().connect()
+		else:
+			self.disconnect()
+		if self.release_path is not None and os.path.exists(self.release_path):
 			# check OS to determine how to launch map
 			OS = utils.get_global_parameter('OS')
 			# set flags
@@ -98,40 +102,31 @@ class AirSimMap(Map):
 				flags = ' '.join(self.console_flags)
 			# launch map from OS
 			if OS == 'windows':
-				_release_path = self.release_path
-				# send command to terminal to launch the relase executable, if can
-				if os.path.exists(_release_path):
-					utils.speak(f'Launching AirSim at {_release_path}')
-					terminal_command = f'{_release_path} {flags} -settings=\"{self._settings_path}\"'
-					utils.speak(f'Issuing command to OS: {terminal_command}')
-					process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-					self._pid = process.pid
-				else:
-					utils.speak('Please manually launch Airsim.')
+				terminal_command = f'{self.release_path} {flags} -settings=\"{self._settings_path}\"'
+				utils.speak(f'Issuing command to OS: {terminal_command}')
+				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+				self._pid = process.pid
 			elif OS == 'linux':
-				_release_path = self.release_path
-				# send command to terminal to launch the relase executable, if can
-				if os.path.exists(_release_path):
-					utils.speak(f'Launching AirSim at {_release_path}')
-					terminal_command = f'sh {_release_path} {flags} -settings=\"{self._settings_path}\"'
-					utils.speak(f'Issuing command to OS: {terminal_command}')
-					process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
-					self._pid = process.pid
-				else:
-					utils.speak('Please manually launch Airsim.')
+				terminal_command = f'sh {self.release_path} {flags} -settings=\"{self._settings_path}\"'
+				utils.speak(f'Issuing command to OS: {terminal_command}')
+				process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
+				self._pid = process.pid
 			else:
 				utils.speak('Please manually launch Airsim.')
 		else:
 			utils.speak('Please manually launch Airsim.')
-		utils.prompt(f'After AirSim launches, press any key to continue...')
+		# wait for launch
+		time.sleep(20)
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_global_parameter('LocalHostIp'),
 			port=utils.get_global_parameter('ApiServerPort'),
-										 )
+			timeout_value=utils.get_global_parameter('timeout'),
+		)
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)
+		utils.speak('Connected to AirSim')
 		self.start() # this seems repetitive but needed to reset state info
 
 	# close airsim map
