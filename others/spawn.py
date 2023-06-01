@@ -12,6 +12,7 @@ class Spawn(Other):
 				random, # True will get random path, False will use static
 				nSteps=1, # if random (how many steps to sample goal)
 				max_steps=20,
+				clip_spawns=-1,
 			):
 		pass
 
@@ -29,7 +30,7 @@ class Spawn(Other):
 					self._idxs[s].append(i)
 			self._last_state = self.get_random()
 		else:
-			self._spawns = pickle.load(open(self.read_path, 'rb'))
+			self._spawns = pickle.load(open(self.read_path, 'rb'))[:self.clip_spawns]
 			self._idx = 0
 			self._last_state = self.get_static()
 		self._redo = False

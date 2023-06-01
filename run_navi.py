@@ -11,7 +11,7 @@ import random
 args = sys.argv
 # first sys argument is test_case to run (see options below) - usually changes by device
 	# if no arguments will default to test_case 'h4' - my work laptop
-test_case = ''
+test_case = 'sb3'
 if len(args) > 1:
 	test_case = args[1].lower()
 # second sys argument is to continue training from last checkpoint (True) or not (False)
@@ -80,7 +80,7 @@ if run_post != '':
 	run_name += '_' + run_post
 # learning loop (controller) stuff
 continue_training = False
-max_episodes = 10_000 # max number of episodes to train for before terminating learning loop
+max_episodes = 100_000 # max number of episodes to train for before terminating learning loop
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
@@ -378,16 +378,16 @@ def create_base_components(
 
 		## OBSERVATION SPACE
 		# TRANSFORMERS
-		distance_epsilon = distance_param/1000 # outputs a senosr-value of zero for values below this
+		#distance_epsilon = distance_param/1000 # outputs a senosr-value of zero for values below this
 		from transformers.normalize import Normalize
 		Normalize(
 			max_input = 2*math.pi, # max angle
 			name = 'NormalizeOrientation',
 		)
 		Normalize(
-			min_input = distance_epsilon, # min depth (below this is erroneous)
+			#min_input = distance_epsilon, # min depth (below this is erroneous)
 			max_input = distance_param, # max depth
-			left = 0, # set all values below range to this
+			#left = 0, # set all values below range to this
 			name = 'NormalizeDistance',
 		)
 		from transformers.resizeimage import ResizeImage
@@ -493,7 +493,7 @@ def create_base_components(
 
 		## MODEL
 		# make neural networks
-		torch.set_default_dtype(torch.float64)
+		# torch.set_default_dtype(torch.float64)
 		def create_sequential(
 			input_dim,
 			output_dim,
@@ -558,10 +558,9 @@ def create_base_components(
 			obs_shape=[input_dim_actor],
 			act_shape=[output_dim_actor],
 			write_dir=working_directory+'Model/',
-			buffer_size=replay_buffer_size,
+			buffer_size=1,
 			name='Model',
 		)
-
 
 		# spawn (initial drone pos and goal pos)
 		from others.spawn import Spawn
@@ -572,13 +571,15 @@ def create_base_components(
 			#read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
 			#random=True, # True will get random path, False will use static
 			#name='SpawnTrain'
-			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
-			random=False, # True will get random path, False will use static
+			read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			random=True, # True will get random path, False will use static
 			name='SpawnTrain'
 		)
+		nEvals = 100
 		Spawn(
 			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
 			random=False, # True will get random path, False will use static
+			clip_spawns=nEvals,
 			name='SpawnEvaluate'
 		)
 
@@ -593,6 +594,7 @@ def create_base_components(
 			goal_component='Goal',
 			model_component='Model',
 			map_component='Map',
+			evaluator_component='Evaluator',
 			name='TrainEnvironment',
 		)
 		## EVALUATE ENVIRONMENT
@@ -628,7 +630,6 @@ def create_base_components(
 			name = 'TrainerFVar',
 		)
 		from evaluators.curriculum import Curriculum
-		nEvals = 100
 		Curriculum(
 			models_directory=working_directory+'Model/',
 			model_component='Model',
@@ -687,7 +688,7 @@ def run_controller(configuration):
 	configuration.connect_all()
 	
 	utils.speak('all components connected. Send any key to continue...')
-	x = input()
+	#x = input()
 
 	# WRITE CONFIGURATION
 	configuration.save()

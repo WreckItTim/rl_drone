@@ -4,6 +4,9 @@ import rl_utils as utils
 import os
 import numpy as np
 import torch
+from stable_baselines3 import TD3 as sb3TD3
+import gym
+from gym import spaces
 
 # Generalized actor/critic model with replay buffer
 # must define train() from child model
@@ -167,11 +170,14 @@ class Model(Component):
 	# makes a prediction on best action given single observation
 	# handles array (since typically called from env)
 	def predict(self, observation):
-		with torch.no_grad():
-			tensor_in = torch.as_tensor(observation, device=self.device)
-			tensor_out = self._actor(tensor_in)
-			action = tensor_out.cpu().numpy()
-		return action
+		# with torch.no_grad():
+		# 	tensor_in = torch.as_tensor(observation, device=self.device)
+		# 	tensor_out = self._actor(tensor_in)
+		# 	action = tensor_out.cpu().numpy()
+		# return action
+		rl_output, next_state = self._sb3model.predict(observation, deterministic=True)
+		return rl_output
+
 
 	# makes an estimate on q-values given tensor of obserations and actions
 	# handles tensor (since typically called from train)
@@ -226,37 +232,44 @@ class Model(Component):
 			# evaluation params
 			evaluator = None,
 		):
-		# learning loop
-		random_act = True
-		for _ in range(self.nEpisodes, max_episodes+1):
-			if self.nEpisodes >= random_start:
-				random_act = False
-			# start episode
-			utils.speak('rollout()')
-			observation_data, state = train_environment.start()
-			done = False
-			episode_steps = 0
-			while(not done):
-				# get rl output
-				if random_act:
-					action = np.random.uniform(low=-1, high=1, size=self.act_shape)
-				else:
-					action = self.predict(observation_data)
-					explore = np.random.normal(0, self.explore_std, size=action.size)
-					action = action + explore
-				# take next step
-				observation_data, reward, done, state = train_environment.step(action)
-				# log data to replay buffer
-				self.add_buffer(observation_data, action, reward, done)
-				self.nSteps += 1
-				episode_steps += 1
-			# end of episode
-			self.nEpisodes += 1
-			# check train
-			if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
-				num = num_batches
-				if num_batches == -1:
-					num = episode_steps
-				self.train(batch_size, num, with_distillation)
-			# check evaluate
-			evaluator.update()
+
+		train_environment.observation_space = spaces.Box(0, 1, shape=self.obs_shape, dtype=float)
+		train_environment.action_space = spaces.Box(np.array([-1, -1]), np.array([1, 1]))
+		train_environment.metadata = {"render.modes": ["rgb_array"]}
+		self._sb3model = sb3TD3('MlpPolicy', train_environment)
+		self._sb3model.learn(max_episodes*30)
+
+		# # learning loop
+		# random_act = True
+		# for _ in range(self.nEpisodes, max_episodes+1):
+		# 	if self.nEpisodes >= random_start:
+		# 		random_act = False
+		# 	# start episode
+		# 	utils.speak('rollout()')
+		# 	observation_data, state = train_environment.start()
+		# 	done = False
+		# 	episode_steps = 0
+		# 	while(not done):
+		# 		# get rl output
+		# 		if random_act:
+		# 			action = np.random.uniform(low=-1, high=1, size=self.act_shape)
+		# 		else:
+		# 			action = self.predict(observation_data)
+		# 			explore = np.random.normal(0, self.explore_std, size=action.size)
+		# 			action = action + explore
+		# 		# take next step
+		# 		observation_data, reward, done, state = train_environment.step(action)
+		# 		# log data to replay buffer
+		# 		self.add_buffer(observation_data, action, reward, done)
+		# 		self.nSteps += 1
+		# 		episode_steps += 1
+		# 	# end of episode
+		# 	self.nEpisodes += 1
+		# 	# check train
+		# 	if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
+		# 		num = num_batches
+		# 		if num_batches == -1:
+		# 			num = episode_steps
+		# 		self.train(batch_size, num, with_distillation)
+		# 	# check evaluate
+		# 	evaluator.update()

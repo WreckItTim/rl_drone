@@ -6,6 +6,7 @@ from observations.image import Image
 import numpy as np
 from component import _init_wrapper
 import rl_utils as utils
+import os
 
 # see https://microsoft.github.io/AirSim/image_apis/
 class AirSimCamera(Sensor):
@@ -37,6 +38,7 @@ class AirSimCamera(Sensor):
 			  is_gray=True,
 			  transformers_components=None,
 			  offline = False,
+			  save_scene=False,
 			  ):
 		super().__init__(offline)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
@@ -69,6 +71,19 @@ class AirSimCamera(Sensor):
 				if len(img_array) > 0:
 					# make channel-first
 					img_array = np.moveaxis(img_array, 2, 0)
+			if self.save_scene:
+				# get scene image
+				response = self._airsim._client.simGetImages([airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)])[0]
+				# get numpy array
+				img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) 
+				# reshape array to 4 channel image array H X W X 4
+				img_rgb = img1d.reshape(response.height, response.width, 3)
+				# original image is fliped vertically
+				#img_rgb = np.flipud(img_rgb)
 		observation = self.create_obj(img_array)
 		transformed = self.transform(observation)
+		if self.save_scene:
+			# write to png 
+			scene_file = utils.get_global_parameter('working_directory') + 'scene_imgs/' + transformed._name + '.png'
+			airsim.write_png(os.path.normpath(scene_file), img_rgb) 
 		return transformed

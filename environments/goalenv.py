@@ -27,6 +27,7 @@ class GoalEnv(Environment):
 				 step_counter=0, 
 				 episode_counter=0, 
 				 save_counter=0,
+				 evaluator_component=None,
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
@@ -130,6 +131,8 @@ class GoalEnv(Environment):
 		# data needed to relay states to replay buffer and state
 		return observation_data, total_reward, done, self._states[this_step]
 
+	def reset(self,state=None):
+		self.start(state)
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
@@ -211,3 +214,6 @@ class GoalEnv(Environment):
 			except msgpackrpc.error.TimeoutError as e:
 				utils.speak(str(e) + ' caught in end()')
 				self.handle_crash()
+		if self._evaluator is not None:
+			self._model.nEpisodes += 1
+			self._evaluator.update()

@@ -12,6 +12,9 @@ class Action(Component):
 	def connect(self, state=None):
 		super().connect()
 
+	def undo(self):
+		pass
+
 	def debug(self, state=None):
 		print('enter rl_output:')
 		user_input = input().lower()

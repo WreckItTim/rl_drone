@@ -1,8 +1,11 @@
 # abstract class used to handle observations to input into rl algo
 from component import Component
 
-# follows OpenAI structure with some changes
-class Environment(Component):
+import gym
+from gym import spaces
+
+# OpenAI Gym enviornment needed to run Stable_Baselines3
+class Environment(gym.Env, Component):
 
 	# constructor
 	def __init__(self):
