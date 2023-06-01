@@ -59,15 +59,16 @@ actions = [
 	#'FlattenedDepthResolution2',
 ]
 # rewards and weights?
+reward_norm = 1
 rewards = {
-	'CollisionReward': 200, 
-	'GoalReward': 200,
-	'StepsReward': 2,
-	'DistanceReward': 0.1,
-	#'SlimReward': 3,
-	#'ResolutionReward1': 0.5,
-	#'ResolutionReward2': 0.5,
-	'MaxStepsReward': 0,
+	'CollisionReward': 200/reward_norm, 
+	'GoalReward': 200/reward_norm,
+	'StepsReward': 2/reward_norm,
+	'DistanceReward': 0.1/reward_norm,
+	#'SlimReward': 3/reward_norm,
+	#'ResolutionReward1': 0.5/reward_norm,
+	#'ResolutionReward2': 0.5/reward_norm,
+	'MaxStepsReward': 0/reward_norm,
 }
 vert_motion = False
 use_slim = False
@@ -493,7 +494,7 @@ def create_base_components(
 
 		## MODEL
 		# make neural networks
-		# torch.set_default_dtype(torch.float64)
+		#torch.set_default_dtype(torch.float64)
 		def create_sequential(
 			input_dim,
 			output_dim,
@@ -687,8 +688,7 @@ def run_controller(configuration):
 	# CONNECT COMPONENTS
 	configuration.connect_all()
 	
-	utils.speak('all components connected. Send any key to continue...')
-	#x = input()
+	utils.speak('all components connected.')
 
 	# WRITE CONFIGURATION
 	configuration.save()

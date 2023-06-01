@@ -16,10 +16,6 @@ class Move(Action):
 				zero_threshold=0.01, # absolute value of rl_output below this will do nothing (true zero)
 				zero_thresh_abs=True,
 				speed=2, # m/s
-				# set these values for continuous actions
-				# # they determine the possible ranges of output from rl algorithm
-				min_space = -1, # will scale base values by this range from rl_output
-				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 				adjust_for_yaw = False,
 				active = True, # False will just return default behavior
 			):

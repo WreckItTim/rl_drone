@@ -7,6 +7,8 @@ import torch
 from stable_baselines3 import TD3 as sb3TD3
 import gym
 from gym import spaces
+from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
+		
 
 # Generalized actor/critic model with replay buffer
 # must define train() from child model
@@ -233,10 +235,30 @@ class Model(Component):
 			evaluator = None,
 		):
 
+		#torch.set_default_dtype(torch.float64)
+		np.seterr(invalid='raise')
+		torch.autograd.set_detect_anomaly(True)
 		train_environment.observation_space = spaces.Box(0, 1, shape=self.obs_shape, dtype=float)
-		train_environment.action_space = spaces.Box(np.array([-1, -1]), np.array([1, 1]))
+		train_environment.action_space = spaces.Box(-1, 1, shape=self.act_shape)
 		train_environment.metadata = {"render.modes": ["rgb_array"]}
-		self._sb3model = sb3TD3('MlpPolicy', train_environment)
+		from stable_baselines3.common.env_checker import check_env
+		print('CHECK ENV...')
+		check_env(train_environment)
+		#env = DummyVecEnv(train_environment)
+		#train_environment = VecCheckNan(train_environment, raise_exception=True)
+		self._sb3model = sb3TD3('MlpPolicy', train_environment, 
+			buffer_size=400_000, 
+			policy_kwargs= {
+					"net_arch": [
+						64,
+						32,
+						32
+					]
+				},
+		)
+		print('params:', self._sb3model.__dict__.copy())
+		#print('torch dtype:', self._sb3model.actor.modules[0].dtype)
+		#x = input()
 		self._sb3model.learn(max_episodes*30)
 
 		# # learning loop

@@ -83,8 +83,8 @@ class GoalEnv(Environment):
 	# activate needed components
 	def step(self, rl_output, state=None):
 		# next step
-		self._nSteps += 1 # total number of steps
-		self.step_counter += 1 # total number of steps
+		self._nSteps += 1 # episodic number of steps
+		self.step_counter += 1 # global number of steps
 		try_again = True
 		while(try_again):
 			try:
@@ -98,6 +98,9 @@ class GoalEnv(Environment):
 				# clean and save rl_output to state
 				self._states[this_step]['rl_output'] = list(rl_output)
 				# take action
+				if np.isnan(rl_output).any():
+					print('NaN rl_output:', rl_output)
+					x=input()
 				self._actor.step(self._states[this_step])
 				took_action = True
 				# save state kinematics
@@ -106,6 +109,7 @@ class GoalEnv(Environment):
 				# get observation
 				self._states[this_step]['observation_name'] = self._last_observation_name
 				observation_data, observation_name = self._observer.step(self._states[this_step])
+				#print(observation_data)
 				self._last_observation_name = observation_name
 				# take step for other components
 				if self._others is not None:
@@ -114,6 +118,7 @@ class GoalEnv(Environment):
 				# assign rewards (stores total rewards and individual rewards in state)
 				# also checks if we are done with episode
 				total_reward, done = self._rewarder.step(self._states[this_step])
+				#print('rewards', total_reward)
 				self._states[this_step]['done'] = done
 				# save data?
 				if self._track_save and 'observations' in self._track_vars:
@@ -129,10 +134,17 @@ class GoalEnv(Environment):
 				if took_action:
 					self._actor.undo()
 		# data needed to relay states to replay buffer and state
+		if np.isnan(total_reward):
+			print('NaN total_reward:', total_reward)
+			x=input()
+		if np.isnan(observation_data).any():
+			print('NaN observation_data:', observation_data)
+			x=input()
 		return observation_data, total_reward, done, self._states[this_step]
 
 	def reset(self,state=None):
-		self.start(state)
+		obs_data, first_state = self.start(state)
+		return obs_data
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
@@ -190,6 +202,9 @@ class GoalEnv(Environment):
 				if spawned:
 					self._spawn.undo()
 
+		if np.isnan(observation_data).any():
+			print('NaN observation_data:', observation_data)
+			x=input()
 		return observation_data, self._states[this_step]
 
 	# called at the end of each episode for any clean up, when done=True

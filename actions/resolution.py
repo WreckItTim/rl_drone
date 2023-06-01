@@ -9,10 +9,6 @@ class Resolution(Action):
 	@_init_wrapper
 	def __init__(self, 
 				scales_components, # list of components to call scale_down() on
-				# set these values for continuous actions
-				# # they determine the possible ranges of output from rl algorithm
-				min_space = -1, # will scale base values by this range from rl_output
-				max_space = 1, # min_space to -1 will allow you to reverse positive motion
 				max_level = 3, # levels of resolution scale down by (do not include zero)
 					# for example, if want to scale down by zero or one level then levels=1
 				adjust_for_yaw = False,
