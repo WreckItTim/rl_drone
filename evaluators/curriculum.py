@@ -29,6 +29,7 @@ class Curriculum(Evaluator):
 				evaluate_environment_component=None,
 				nEpisodes=100,
 				criteria=99,
+				eval_counter=0,
 
 				is_trainer=True,
 				trainer_fvar_component=None,
@@ -48,6 +49,7 @@ class Curriculum(Evaluator):
 		self.level = 0
 		self.level_steps = -1
 		self.ignore_first = False
+		self.eval_counter = 0
 
 	def update(self):
 		if self.is_trainer:
@@ -66,25 +68,25 @@ class Curriculum(Evaluator):
 			self.evaluate_set()
 
 	def evaluate_set(self):
-		utils.speak('evaluate_set()')
+		#utils.speak('evaluate_set()')
 		# loop through all episodes
 		aSuccesses = []
 		lSuccesses = []
-		steps_success = 0
 		for i in range(self.nEpisodes):
 			# step through next episode
 			success, astar_steps = self.evaluate_episode()
 			aSuccesses.append(success)
 			if astar_steps == self.level_steps:
 				lSuccesses.append(success)
+		self.eval_counter += 1
 		aSuccess = round(100.*sum(aSuccesses)/len(aSuccesses),2)
-		utils.speak(f'evaluated with total_success:{aSuccess}%')
 		msg = [1, True]
+		lSuccess = 'N/A'
 		if len(lSuccesses) > 0:
 			lSuccess = round(100.*sum(lSuccesses)/len(lSuccesses),2)
-			utils.speak(f'evaluated with level_success:{lSuccess}%')
 			if lSuccess < self.criteria:
 				msg = [1, False]
+		utils.speak(f'evaluation:{self.eval_counter} total_success:{aSuccess}% level_success:{lSuccess}%')
 		self._evaluator_fvar.speak(msg)
 
 	# steps through one evaluation episode

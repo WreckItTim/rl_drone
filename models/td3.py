@@ -8,13 +8,13 @@ class TD3(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			actor,
-			actor_target,
-			critics,
-			critics_target,
 			obs_shape,
 			act_shape,
 			write_dir,
+			actor=None,
+			actor_target=None,
+			critics=None,
+			critics_target=None,
 			save_init_model = True,
 			save_init_buffer = False,
 			replay_buffer = None, # str to read from file, None for new, numpy for exact
@@ -31,9 +31,19 @@ class TD3(Model):
 			noise_std = 0.2, # standard deviation of added action noise during train
 			noise_max = 0.5, # max abs value of added action noise during train
 			explore_std = 0.1, # standard deviation of added action noise during train
+			sb3=False,
 		):
 		self._is_hyper = False
 		super().__init__()
+		self._model_kwargs = {
+			'buffer_size':buffer_size, # number of recent samples to keep in replaybuffer
+			'device':device, # torch device, i.e. cpu or gpu
+			'tau':tau,
+			'gamma':gamma,
+			'policy_delay':policy_delay,
+			'target_policy_noise':noise_std,
+			'target_noise_clip':noise_max,
+		}
 
 	# adapted base code from psuedo @ https://spinningup.openai.com/en/latest/algorithms/td3.html
 	def train(self,

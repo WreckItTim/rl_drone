@@ -31,7 +31,6 @@ class Modifier(Component):
 
 	# increments counter and checks if we activate
 	def check_counter(self, state=None):
-		# we now know that we are in proper environment...
 		self.counter += 1
 		# check if we are on frequency
 		if self.counter % self.frequency == 0:

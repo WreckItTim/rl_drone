@@ -21,8 +21,6 @@ class Train(Controller):
 			with_distillation = False, # slims during train() and distills to output of super
 			use_wandb = True, # turns on logging to wandb
 			project_name = 'void', # project name in wandb
-			# evaluation params
-			evaluator_component = None,
 		):
 		super().__init__()
 
@@ -45,5 +43,4 @@ class Train(Controller):
 			with_distillation = self.with_distillation, # slims during train() and distills to output of super
 			use_wandb = self.use_wandb, # turns on logging to wandb
 			project_name = self.project_name, # project name in wandb
-			evaluator = self._evaluator,
 		)

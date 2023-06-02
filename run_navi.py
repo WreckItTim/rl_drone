@@ -11,7 +11,7 @@ import random
 args = sys.argv
 # first sys argument is test_case to run (see options below) - usually changes by device
 	# if no arguments will default to test_case 'h4' - my work laptop
-test_case = 'sb3'
+test_case = ''
 if len(args) > 1:
 	test_case = args[1].lower()
 # second sys argument is to continue training from last checkpoint (True) or not (False)
@@ -70,7 +70,10 @@ rewards = {
 	#'ResolutionReward2': 0.5/reward_norm,
 	'MaxStepsReward': 0/reward_norm,
 }
-vert_motion = False
+if test_case in ['h4', 'torch']:
+	vert_motion = False
+if test_case in ['pyro', 'phoenix']:
+	vert_motion = True
 use_slim = False
 use_res = False
 child_project = 'navi'
@@ -106,8 +109,11 @@ controller_params = {
 	'with_distillation' : with_distillation, # slims during train() and distills to output of super
 	'use_wandb' : use_wandb, # turns on logging to wandb
 	'project_name' : parent_project + '_' + child_project, # wandb logs here
-	'evaluator_component' : 'Evaluator',
 }
+if test_case in ['h4', 'pyro']:
+	sb3 = False
+if test_case in ['torch', 'phoenix']:
+	sb3 = True
 
 ## runs overarching base code
 def create_base_components(
@@ -129,6 +135,7 @@ def create_base_components(
 		use_res = False,
 		run_name = 'run',
 		repo_version = 'unknown',
+		sb3 = False,
 ):
 
 	# **** SETUP ****
@@ -494,72 +501,74 @@ def create_base_components(
 
 		## MODEL
 		# make neural networks
-		#torch.set_default_dtype(torch.float64)
-		def create_sequential(
-			input_dim,
-			output_dim,
-			nLayers = 3,
-			nNodes = 2**5,
-			activation_fn = torch.nn.ReLU,
-			with_bias = True,
-		):
-			net_arch = [nNodes for _ in range(nLayers)]
-			modules = []
-			if nLayers == 0:
-				modules.append(torch.nn.Linear(input_dim, output_dim, bias=with_bias))
-			else:
-				modules.append(torch.nn.Linear(input_dim, net_arch[0], bias=with_bias))
-				modules.append(activation_fn())
-				for idx in range(len(net_arch) - 1):
-					modules.append(torch.nn.Linear(net_arch[idx], net_arch[idx + 1], bias=with_bias))
+		if not sb3:
+			#torch.set_default_dtype(torch.float64)
+			def create_sequential(
+				input_dim,
+				output_dim,
+				nLayers = 3,
+				nNodes = 2**5,
+				activation_fn = torch.nn.ReLU,
+				with_bias = True,
+			):
+				net_arch = [nNodes for _ in range(nLayers)]
+				modules = []
+				if nLayers == 0:
+					modules.append(torch.nn.Linear(input_dim, output_dim, bias=with_bias))
+				else:
+					modules.append(torch.nn.Linear(input_dim, net_arch[0], bias=with_bias))
 					modules.append(activation_fn())
-				modules.append(torch.nn.Linear(net_arch[-1], output_dim, bias=with_bias))
-			modules.append(torch.nn.Tanh())
-			network = torch.nn.Sequential(*modules)
-			return network
-		def attach_optimizer(
-			network,
-			learning_rate = 10**(int(-1*3)),
-			weight_decay = 10**(int(-1*6)),
-		):
-			network.optimizer = torch.optim.Adam(
-				network.parameters(),
-				lr=learning_rate,
-				weight_decay= weight_decay,
-			)
-		# actor
-		input_dim_actor = vector_length * nTimesteps
-		output_dim_actor = len(actions)
-		actor = create_sequential(input_dim_actor, output_dim_actor)
-		attach_optimizer(actor)
-		actor_target = create_sequential(input_dim_actor, output_dim_actor)
-		actor_target.load_state_dict(copy.deepcopy(actor.state_dict()))
-		attach_optimizer(actor_target)
-		# critic
-		input_dim_critic = input_dim_actor + output_dim_actor
-		output_dim_critic = 1
-		nCritics = 2
-		critics = []
-		critics_target = []
-		for c in range(nCritics):
-			critic = create_sequential(input_dim_critic, output_dim_critic)
-			critics.append(critic)
-			attach_optimizer(critic)
-			critic_target = create_sequential(input_dim_critic, output_dim_critic)
-			critic_target.load_state_dict(copy.deepcopy(critic.state_dict()))
-			critics_target.append(critic_target)
-			attach_optimizer(critic_target)
+					for idx in range(len(net_arch) - 1):
+						modules.append(torch.nn.Linear(net_arch[idx], net_arch[idx + 1], bias=with_bias))
+						modules.append(activation_fn())
+					modules.append(torch.nn.Linear(net_arch[-1], output_dim, bias=with_bias))
+				modules.append(torch.nn.Tanh())
+				network = torch.nn.Sequential(*modules)
+				return network
+			def attach_optimizer(
+				network,
+				learning_rate = 10**(int(-1*3)),
+				weight_decay = 10**(int(-1*6)),
+			):
+				network.optimizer = torch.optim.Adam(
+					network.parameters(),
+					lr=learning_rate,
+					weight_decay= weight_decay,
+				)
+			# actor
+			input_dim_actor = vector_length * nTimesteps
+			output_dim_actor = len(actions)
+			actor = create_sequential(input_dim_actor, output_dim_actor)
+			attach_optimizer(actor)
+			actor_target = create_sequential(input_dim_actor, output_dim_actor)
+			actor_target.load_state_dict(copy.deepcopy(actor.state_dict()))
+			attach_optimizer(actor_target)
+			# critic
+			input_dim_critic = input_dim_actor + output_dim_actor
+			output_dim_critic = 1
+			nCritics = 2
+			critics = []
+			critics_target = []
+			for c in range(nCritics):
+				critic = create_sequential(input_dim_critic, output_dim_critic)
+				critics.append(critic)
+				attach_optimizer(critic)
+				critic_target = create_sequential(input_dim_critic, output_dim_critic)
+				critic_target.load_state_dict(copy.deepcopy(critic.state_dict()))
+				critics_target.append(critic_target)
+				attach_optimizer(critic_target)
 		# TD3
 		from models.td3 import TD3
 		TD3(
-			actor=actor,
-			actor_target=actor_target,
-			critics=critics,
-			critics_target=critics_target,
+			actor=None if sb3 else actor,
+			actor_target=None if sb3 else actor_target,
+			critics=None if sb3 else critics,
+			critics_target=None if sb3 else critics_target,
 			obs_shape=[input_dim_actor],
 			act_shape=[output_dim_actor],
 			write_dir=working_directory+'Model/',
-			buffer_size=1,
+			buffer_size=replay_buffer_size,
+			sb3=sb3,
 			name='Model',
 		)
 
@@ -660,7 +669,7 @@ def create_base_components(
 						'observations', 
 						'states',
 						],
-			order = 'post',
+			order = 'pre',
 			save_config = True,
 			save_benchmarks = True,
 			frequency = checkpoint,
@@ -674,7 +683,7 @@ def create_base_components(
 						'observations', 
 						'states',
 						],
-			order = 'post',
+			order = 'pre',
 			frequency = nEvals,
 			name='EvalEnvSaver',
 		)
@@ -719,6 +728,7 @@ configuration = create_base_components(
 		use_res = use_res,
 		run_name = run_name,
 		repo_version = repo_version,
+		sb3 = sb3,
 )
 
 ## create any other components

@@ -23,85 +23,87 @@ class Model(Component):
 		super().connect(state)
 
 		# setup actor networks
-		if type(self.actor) is str:
-			self._actor = torch.load(self.actor)
-		else:
-			self._actor = self.actor
-		if type(self.actor_target) is str:
-			self._actor_target = torch.load(self.actor_target)
-		else:
-			self._actor_target = self.actor_target
-		# setup critic networks
-		if type(self.critics[0]) is str:
-			self._critics = []
-			for c in self.critics:
-				self._critics.append(torch.load(c))
-		else:
-			self._critics = self.critics
-		if type(self.critics_target[0]) is str:
-			self._critics_target = []
-			for c in self.critics_target:
-				self._critics_target.append(torch.load(c))
-		else:
-			self._critics_target = self.critics_target
-		self._nCritics = len(self._critics)
-		if len(self._critics_target) != self._nCritics:
-			utils.error('number of critics neq numner of target critics')
-		# save init models
-		self.actor = self.write_dir + 'actor.pt'
-		self.actor_target = self.write_dir + 'actor_target.pt'
-		self.critics = [self.write_dir + 'critics_' + str(i) for i in range(self._nCritics)]
-		self.critics_target = [self.write_dir + 'critics_target_' + str(i) for i in range(self._nCritics)]
-		if self.save_init_model:
-			self.save_models(self.write_dir + 'model_init/')
-		
-		# setup replay buffer
-		# create new from scratch
-		if self.replay_buffer is None:
-			self._replay_buffer = {
-				'obs':np.zeros((self.buffer_size, *self.obs_shape), dtype=float),
-				'act':np.zeros((self.buffer_size, *self.act_shape), dtype=float),
-				'rew':np.zeros((self.buffer_size, 1), dtype=float),
-				'end':np.zeros((self.buffer_size, 1), dtype='uint8'),
-			}
-		else:
-			# read from path
-			if type(self.replay_buffer) is str:
-				self._replay_buffer = np.load(self.replay_buffer, allow_pickle=True)
-			# save if passed in buffer obj (WARNING: not deepcopy - save mem)
+		if not self.sb3:
+			if type(self.actor) is str:
+				self._actor = torch.load(self.actor)
 			else:
-				self._replay_buffer = self.replay_buffer
-			# resize buffer as needed 
-			for key in self._replay_buffer:
-				old = self._replay_buffer[key].shape[0]
-				if old > self.buffer_size:  # keep first elements that fit
-					self._replay_buffer[key] = self._replay_buffer[:self.buffer_size,:]
-				if old < self.buffer_size:
-					new_shape = list(self._replay_buffer[key].shape)
-					new_shape[0] = self.buffer_size
-					self._replay_buffer[key].resize(new_shape, refcheck=False)
-		# save init buffer
-		self.replay_buffer = self.write_dir + 'replay_buffer.npz'
-		if self.save_init_buffer:
-			self.save_replay_buffer(self.write_dir + 'model_init/')
+				self._actor = self.actor
+			if type(self.actor_target) is str:
+				self._actor_target = torch.load(self.actor_target)
+			else:
+				self._actor_target = self.actor_target
+			# setup critic networks
+			if type(self.critics[0]) is str:
+				self._critics = []
+				for c in self.critics:
+					self._critics.append(torch.load(c))
+			else:
+				self._critics = self.critics
+			if type(self.critics_target[0]) is str:
+				self._critics_target = []
+				for c in self.critics_target:
+					self._critics_target.append(torch.load(c))
+			else:
+				self._critics_target = self.critics_target
+			self._nCritics = len(self._critics)
+			if len(self._critics_target) != self._nCritics:
+				utils.error('number of critics neq numner of target critics')
+			# save init models
+			self.actor = self.write_dir + 'actor.pt'
+			self.actor_target = self.write_dir + 'actor_target.pt'
+			self.critics = [self.write_dir + 'critics_' + str(i) for i in range(self._nCritics)]
+			self.critics_target = [self.write_dir + 'critics_target_' + str(i) for i in range(self._nCritics)]
 
-		# set device for torch
-		if self.device == 'cuda':
-			device = torch.device('cuda')
-			self._actor.cuda()
-			self._actor_target.cuda()
-			for critic in self._critics:
-				critic.cuda()
-			for critic in self._critics_target:
-				critic.cuda()
-		if self.device == 'cpu':
-			device = torch.device('cpu')
-			self._actor.cpu()
-			self._actor_target.cpu()
-			for critic in self._critics:
-				critic.cpu()
-			for critic in self._critics_target:
-				critic.cpu()
+			# setup replay buffer
+			# create new from scratch
+			if self.replay_buffer is None:
+				self._replay_buffer = {
+					'obs':np.zeros((self.buffer_size, *self.obs_shape), dtype=float),
+					'act':np.zeros((self.buffer_size, *self.act_shape), dtype=float),
+					'rew':np.zeros((self.buffer_size, 1), dtype=float),
+					'end':np.zeros((self.buffer_size, 1), dtype='uint8'),
+				}
+			else:
+				# read from path
+				if type(self.replay_buffer) is str:
+					self._replay_buffer = np.load(self.replay_buffer, allow_pickle=True)
+				# save if passed in buffer obj (WARNING: not deepcopy - save mem)
+				else:
+					self._replay_buffer = self.replay_buffer
+				# resize buffer as needed 
+				for key in self._replay_buffer:
+					old = self._replay_buffer[key].shape[0]
+					if old > self.buffer_size:  # keep first elements that fit
+						self._replay_buffer[key] = self._replay_buffer[:self.buffer_size,:]
+					if old < self.buffer_size:
+						new_shape = list(self._replay_buffer[key].shape)
+						new_shape[0] = self.buffer_size
+						self._replay_buffer[key].resize(new_shape, refcheck=False)
+			self.replay_buffer = self.write_dir + 'replay_buffer.npz'
+
+			# set device for torch
+			if self.device == 'cuda':
+				device = torch.device('cuda')
+				self._actor.cuda()
+				self._actor_target.cuda()
+				for critic in self._critics:
+					critic.cuda()
+				for critic in self._critics_target:
+					critic.cuda()
+			if self.device == 'cpu':
+				device = torch.device('cpu')
+				self._actor.cpu()
+				self._actor_target.cpu()
+				for critic in self._critics:
+					critic.cpu()
+				for critic in self._critics_target:
+					critic.cpu()
+
+			if self.save_init_model:
+				self.save_models(self.write_dir + 'model_init/')
+			
+			if self.save_init_buffer:
+				self.save_replay_buffer(self.write_dir + 'model_init/')
 	
 	# adds a single sample (step) to replay buffer
 	def add_buffer(self, obs, act, rew, end):
@@ -153,32 +155,43 @@ class Model(Component):
 		folder = utils.fix_directory(folder)
 		if not os.path.exists(folder):
 			os.makedirs(folder)
-		torch.save(self._actor, folder + 'actor.pt')
-		torch.save(self._actor_target, folder + 'actor_target.pt')
-		for i in range(self._nCritics):
-			torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
-			torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
+		if self.sb3:
+			self._sb3model.save(folder + 'sb3model.zip')
+		else:
+			torch.save(self._actor, folder + 'actor.pt')
+			torch.save(self._actor_target, folder + 'actor_target.pt')
+			for i in range(self._nCritics):
+				torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
+				torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
 	def load_models(self, folder):
-		self._actor = torch.load(folder + 'actor.pt')
-		self._actor_target = torch.load(folder + 'actor_target.pt')
-		for i in range(self._nCritics):
-			self._critics[i] = torch.load(folder + 'critic_' + str(i) + '.pt')
-			self._critics_target[i] = torch.load(folder + 'critic_target_' + str(i) + '.pt')
-
+		if self.sb3:
+			self._sb3model = sb3TD3.load(folder + 'sb3model.zip')
+		else:
+			self._actor = torch.load(folder + 'actor.pt')
+			self._actor_target = torch.load(folder + 'actor_target.pt')
+			for i in range(self._nCritics):
+				self._critics[i] = torch.load(folder + 'critic_' + str(i) + '.pt')
+				self._critics_target[i] = torch.load(folder + 'critic_target_' + str(i) + '.pt')
+	def load_replay_buffer(self, folder):
+		self._replay_buffer = np.load(path)
 	# save replay_buffer to path
 	def save_replay_buffer(self, folder):
-		np.savez(folder + 'replay_buffer.npz', **self._replay_buffer)
+		if self.sb3:
+			self._sb3model.save_replay_buffer(folder + 'replay_buffer.npz')
+		else:
+			np.savez(folder + 'replay_buffer.npz', **self._replay_buffer)
 
 	# makes a prediction on best action given single observation
 	# handles array (since typically called from env)
 	def predict(self, observation):
-		# with torch.no_grad():
-		# 	tensor_in = torch.as_tensor(observation, device=self.device)
-		# 	tensor_out = self._actor(tensor_in)
-		# 	action = tensor_out.cpu().numpy()
-		# return action
-		rl_output, next_state = self._sb3model.predict(observation, deterministic=True)
-		return rl_output
+		if self.sb3:
+			action, next_state = self._sb3model.predict(observation, deterministic=True)
+		else:
+			with torch.no_grad():
+				tensor_in = torch.as_tensor(observation, device=self.device)
+				tensor_out = self._actor(tensor_in)
+				action = tensor_out.cpu().numpy()
+		return action
 
 
 	# makes an estimate on q-values given tensor of obserations and actions
@@ -207,11 +220,12 @@ class Model(Component):
 
 	# called at begin of each episode
 	def start(self, state = None):
-		# reset slim factor to use full super-net
-		for module in self._actor.modules():
-			if 'Slim' in str(type(module)):
-				module.slim = 1
-		self._slim = 1
+		if not self.sb3:
+			# reset slim factor to use full super-net
+			for module in self._actor.modules():
+				if 'Slim' in str(type(module)):
+					module.slim = 1
+			self._slim = 1
 
 	# new learning loop
 	def reset_learning(self, state=None):
@@ -231,67 +245,51 @@ class Model(Component):
 			with_distillation = False, # slims during train() and distills to output of super
 			use_wandb = True, # turns on logging to wandb
 			project_name = 'void', # project name in wandb
-			# evaluation params
-			evaluator = None,
 		):
 
-		#torch.set_default_dtype(torch.float64)
-		np.seterr(invalid='raise')
-		torch.autograd.set_detect_anomaly(True)
-		train_environment.observation_space = spaces.Box(0, 1, shape=self.obs_shape, dtype=float)
-		train_environment.action_space = spaces.Box(-1, 1, shape=self.act_shape)
-		train_environment.metadata = {"render.modes": ["rgb_array"]}
-		from stable_baselines3.common.env_checker import check_env
-		print('CHECK ENV...')
-		check_env(train_environment)
-		#env = DummyVecEnv(train_environment)
-		#train_environment = VecCheckNan(train_environment, raise_exception=True)
-		self._sb3model = sb3TD3('MlpPolicy', train_environment, 
-			buffer_size=400_000, 
-			policy_kwargs= {
-					"net_arch": [
-						64,
-						32,
-						32
-					]
-				},
-		)
-		print('params:', self._sb3model.__dict__.copy())
-		#print('torch dtype:', self._sb3model.actor.modules[0].dtype)
-		#x = input()
-		self._sb3model.learn(max_episodes*30)
-
-		# # learning loop
-		# random_act = True
-		# for _ in range(self.nEpisodes, max_episodes+1):
-		# 	if self.nEpisodes >= random_start:
-		# 		random_act = False
-		# 	# start episode
-		# 	utils.speak('rollout()')
-		# 	observation_data, state = train_environment.start()
-		# 	done = False
-		# 	episode_steps = 0
-		# 	while(not done):
-		# 		# get rl output
-		# 		if random_act:
-		# 			action = np.random.uniform(low=-1, high=1, size=self.act_shape)
-		# 		else:
-		# 			action = self.predict(observation_data)
-		# 			explore = np.random.normal(0, self.explore_std, size=action.size)
-		# 			action = action + explore
-		# 		# take next step
-		# 		observation_data, reward, done, state = train_environment.step(action)
-		# 		# log data to replay buffer
-		# 		self.add_buffer(observation_data, action, reward, done)
-		# 		self.nSteps += 1
-		# 		episode_steps += 1
-		# 	# end of episode
-		# 	self.nEpisodes += 1
-		# 	# check train
-		# 	if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
-		# 		num = num_batches
-		# 		if num_batches == -1:
-		# 			num = episode_steps
-		# 		self.train(batch_size, num, with_distillation)
-		# 	# check evaluate
-		# 	evaluator.update()
+		if self.sb3:
+			np.seterr(invalid='raise')
+			torch.autograd.set_detect_anomaly(True)
+			train_environment.observation_space = spaces.Box(0, 1, shape=self.obs_shape, dtype=float)
+			train_environment.action_space = spaces.Box(-1, 1, shape=self.act_shape)
+			train_environment.metadata = {"render.modes": ["rgb_array"]}
+			self._model_kwargs['learning_starts'] = train_start*20
+			self._model_kwargs['batch_size'] = batch_size
+			self._model_kwargs['train_freq'] = (train_freq,'episode')
+			self._model_kwargs['gradient_steps'] = num_batches
+			self._model_kwargs['policy_kwargs'] = {'net_arch':[32,32,32]}
+			self._sb3model = sb3TD3('MlpPolicy', train_environment, **self._model_kwargs)
+			self._sb3model.learn(max_episodes*20)
+		else:
+			# learning loop
+			random_act = True
+			for _ in range(self.nEpisodes, max_episodes+1):
+				if self.nEpisodes >= random_start:
+					random_act = False
+				# start episode
+				#utils.speak('rollout()')
+				observation_data, state = train_environment.start()
+				done = False
+				episode_steps = 0
+				while(not done):
+					# get rl output
+					if random_act:
+						action = np.random.uniform(low=-1, high=1, size=self.act_shape)
+					else:
+						action = self.predict(observation_data)
+						explore = np.random.normal(0, self.explore_std, size=action.size)
+						action = action + explore
+					# take next step
+					observation_data, reward, done, state = train_environment.step(action)
+					# log data to replay buffer
+					self.add_buffer(observation_data, action, reward, done)
+					self.nSteps += 1
+					episode_steps += 1
+				# end of episode
+				self.nEpisodes += 1
+				# check train
+				if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
+					num = num_batches
+					if num_batches == -1:
+						num = episode_steps
+					self.train(batch_size, num, with_distillation)

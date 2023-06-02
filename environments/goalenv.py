@@ -96,7 +96,7 @@ class GoalEnv(Environment):
 					self._states[this_step] = state.copy()
 				self._states[this_step]['nSteps'] = self._nSteps
 				# clean and save rl_output to state
-				self._states[this_step]['rl_output'] = list(rl_output)
+				self._states[this_step]['rl_output'] = rl_output.astype(float).tolist()
 				# take action
 				if np.isnan(rl_output).any():
 					print('NaN rl_output:', rl_output)
@@ -140,7 +140,7 @@ class GoalEnv(Environment):
 		if np.isnan(observation_data).any():
 			print('NaN observation_data:', observation_data)
 			x=input()
-		return observation_data, total_reward, done, self._states[this_step]
+		return observation_data, total_reward, done, self._states[this_step].copy()
 
 	def reset(self,state=None):
 		obs_data, first_state = self.start(state)
@@ -194,7 +194,7 @@ class GoalEnv(Environment):
 				self._states[this_step]['yaw'] = self._drone.get_yaw() 
 				self._states[this_step]['goal_position'] = self._goal.get_position()
 				self._states[this_step]['astar_steps'] = self._goal.get_steps()
-				print(self._states[this_step])
+				#print(self._states[this_step])
 				try_again = False
 			except msgpackrpc.error.TimeoutError as e:
 				utils.speak(str(e) + ' caught in start()')
@@ -205,7 +205,7 @@ class GoalEnv(Environment):
 		if np.isnan(observation_data).any():
 			print('NaN observation_data:', observation_data)
 			x=input()
-		return observation_data, self._states[this_step]
+		return observation_data, self._states[this_step].copy()
 
 	# called at the end of each episode for any clean up, when done=True
 	# normally only start() is used in OpenAI Gym environments
