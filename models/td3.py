@@ -53,7 +53,7 @@ class TD3(Model):
 			low=0.125, size=2, # distill params
 		):
 
-		utils.speak('train()')
+		#utils.speak('train()')
 		# UNSLIM (if no net modules are slim, then does nothing)
 		for module in self._actor.modules():
 			if 'Slim' in str(type(module)):
