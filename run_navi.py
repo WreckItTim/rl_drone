@@ -26,6 +26,18 @@ run_post = ''
 if len(args) > 3:
 	run_post = args[3]
 
+## test_case vars
+# motion
+if test_case in ['h4', 'torch']:
+	vert_motion = False
+if test_case in ['pyro', 'phoenix']:
+	vert_motion = True
+# sb3 model
+if test_case in ['h4', 'pyro']:
+	sb3 = False
+if test_case in ['torch', 'phoenix']:
+	sb3 = True
+
 ## set random seeds
 torch.manual_seed(0)
 np.random.seed(0)
@@ -58,6 +70,8 @@ actions = [
 	#'FlattenedDepthResolution1',
 	#'FlattenedDepthResolution2',
 ]
+if vert_motion:
+	actions.append('MoveVertical')
 # rewards and weights?
 reward_norm = 1
 rewards = {
@@ -70,10 +84,6 @@ rewards = {
 	#'ResolutionReward2': 0.5/reward_norm,
 	'MaxStepsReward': 0/reward_norm,
 }
-if test_case in ['h4', 'torch']:
-	vert_motion = False
-if test_case in ['pyro', 'phoenix']:
-	vert_motion = True
 use_slim = False
 use_res = False
 child_project = 'navi'
@@ -110,10 +120,6 @@ controller_params = {
 	'use_wandb' : use_wandb, # turns on logging to wandb
 	'project_name' : parent_project + '_' + child_project, # wandb logs here
 }
-if test_case in ['h4', 'pyro']:
-	sb3 = False
-if test_case in ['torch', 'phoenix']:
-	sb3 = True
 
 ## runs overarching base code
 def create_base_components(
@@ -578,10 +584,8 @@ def create_base_components(
 		if vert_motion:
 			motion = 'vertical'
 		Spawn(
-			#read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
-			#random=True, # True will get random path, False will use static
-			#name='SpawnTrain'
-			read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
+			#read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
 			random=True, # True will get random path, False will use static
 			name='SpawnTrain'
 		)

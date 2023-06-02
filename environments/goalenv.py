@@ -168,6 +168,7 @@ class GoalEnv(Environment):
 				self._drone.start(self._states[this_step])
 				drone_position, yaw, goal_position, astar_steps = self._spawn.start(self._states[this_step])
 				spawned = True
+				#print('tp', drone_position, yaw)
 				self._drone.teleport(*drone_position, yaw, ignore_collision=True)
 				self._goal.set_position(goal_position)
 				self._goal.set_steps(astar_steps)
