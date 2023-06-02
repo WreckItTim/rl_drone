@@ -500,9 +500,11 @@ def create_base_components(
 
 
 		## MODEL
+		input_dim_actor = vector_length * nTimesteps
+		output_dim_actor = len(actions)
 		# make neural networks
 		if not sb3:
-			#torch.set_default_dtype(torch.float64)
+			torch.set_default_dtype(torch.float64)
 			def create_sequential(
 				input_dim,
 				output_dim,
@@ -536,8 +538,6 @@ def create_base_components(
 					weight_decay= weight_decay,
 				)
 			# actor
-			input_dim_actor = vector_length * nTimesteps
-			output_dim_actor = len(actions)
 			actor = create_sequential(input_dim_actor, output_dim_actor)
 			attach_optimizer(actor)
 			actor_target = create_sequential(input_dim_actor, output_dim_actor)
