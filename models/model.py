@@ -123,7 +123,6 @@ class Model(Component):
 	# returns as tensors since typically called from train
 	def sample_buffer(self, batch_size):
 		idxs = np.random.randint(low=0, high=self.end_buffer, size=batch_size)
-		print('sample:', idxs)
 		return(
 			torch.as_tensor(self._replay_buffer['obs'][idxs, :], device=self.device),
 			torch.as_tensor(self._replay_buffer['obs'][idxs+1, :], device=self.device),

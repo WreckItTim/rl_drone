@@ -99,12 +99,12 @@ if run_post != '':
 continue_training = False
 max_episodes = 100_000 # max number of episodes to train for before terminating learning loop
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
-checkpoint = 4 # evaluate model and save checkpoint every # of episodes
-train_start = 1 # collect this many episodes before start updating networks
+checkpoint = 100 # evaluate model and save checkpoint every # of episodes
+train_start = 100 # collect this many episodes before start updating networks
 train_freq = 1
 num_batches = -1
 random_start = 2
-batch_size = 4
+batch_size = 100
 with_distillation = False
 use_wandb = False
 parent_project = 'eecs298'
