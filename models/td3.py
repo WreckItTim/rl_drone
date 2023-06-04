@@ -50,14 +50,8 @@ class TD3(Model):
 			batch_size=100,
 			num_batches=1, 
 			with_distillation=False,
-			low=0.125, size=2, # distill params
+			#low=0.125, size=2, # distill params
 		):
-
-		#utils.speak('train()')
-		# UNSLIM (if no net modules are slim, then does nothing)
-		for module in self._actor.modules():
-			if 'Slim' in str(type(module)):
-				module.slim = 1
 
 		# do nIters many updates
 		for batch in range(num_batches):
@@ -97,31 +91,10 @@ class TD3(Model):
 				actor_loss = -self._critics[0](obs_act).mean()
 				# calc gradient in actor
 				self._actor.optimizer.zero_grad()
-				actor_loss.backward(retain_graph=True)
-				# DISTILL?? (if training to slim)
-				if with_distillation:
-					p = self._actor(obs) # before slim
-					sample_slim = np.random.uniform(low=low, high=1, size=size)
-					slim_samples = [low] + list(sample_slim)
-					for slim in slim_samples:
-						for module in self._actor.modules():
-							if 'Slim' in str(type(module)):
-								module.slim = slim
-						p2 = self._actor(obs) # after slim
-						loss = torch.nn.functional.mse_loss(p2, p)
-						loss.backward(retain_graph=True)
-					# UNSLIM
-					for module in self._actor.modules():
-						if 'Slim' in str(type(module)):
-							module.slim = 1
+				actor_loss.backward()
 				# update weights of actor
 				self._actor.optimizer.step()
 				# polyak updates on target networks
 				self.polyak_update(self._actor.parameters(), self._actor_target.parameters(), self.tau)
 				for c in range(self._nCritics):
 					self.polyak_update(self._critics[c].parameters(), self._critics_target[c].parameters(), self.tau)
-				
-		# RESET SLIM - to value set from previous action
-		for module in self._actor.modules():
-			if 'Slim' in str(type(module)):
-				module.slim = self._slim

@@ -7,6 +7,7 @@ import numpy as np
 import math
 import random
 
+
 ## grab arguments input from terminal
 args = sys.argv
 # first sys argument is test_case to run (see options below) - usually changes by device
@@ -54,13 +55,15 @@ clock_speed = 10 # airsim clock speed (increasing this will also decerase sim-qu
 distance_param = 125 # distance contraint used for several calculations (see below)
 nTimesteps = 4 # number of timesteps to include in observation space
 # sensors?
-vector_sensors = {
+vector_sensors = [
 	'FlattenedDepth1',
 	#'FlattenedDepth2',
 	'GoalDistance',
 	'GoalOrientation',
 	#'GoalAltitude',
-}
+]
+if vert_motion:
+	vector_sensors.append('GoalAltitude')
 # actions?
 actions = [
 	'MoveForward',
@@ -96,12 +99,12 @@ if run_post != '':
 continue_training = False
 max_episodes = 100_000 # max number of episodes to train for before terminating learning loop
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
-checkpoint = 100 # evaluate model and save checkpoint every # of episodes
-train_start = 100 # collect this many episodes before start updating networks
+checkpoint = 4 # evaluate model and save checkpoint every # of episodes
+train_start = 1 # collect this many episodes before start updating networks
 train_freq = 1
 num_batches = -1
-random_start = 50
-batch_size = 100
+random_start = 2
+batch_size = 4
 with_distillation = False
 use_wandb = False
 parent_project = 'eecs298'
@@ -584,9 +587,11 @@ def create_base_components(
 		if vert_motion:
 			motion = 'vertical'
 		Spawn(
-			read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
+			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			random=False, # True will get random path, False will use static
+			#read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
 			#read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
-			random=True, # True will get random path, False will use static
+			#random=True, # True will get random path, False will use static
 			name='SpawnTrain'
 		)
 		nEvals = 100

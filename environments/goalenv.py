@@ -206,6 +206,7 @@ class GoalEnv(Environment):
 		if np.isnan(observation_data).any():
 			print('NaN observation_data:', observation_data)
 			x=input()
+		print(self._states[this_step])
 		return observation_data, self._states[this_step].copy()
 
 	# called at the end of each episode for any clean up, when done=True

@@ -123,6 +123,7 @@ class Model(Component):
 	# returns as tensors since typically called from train
 	def sample_buffer(self, batch_size):
 		idxs = np.random.randint(low=0, high=self.end_buffer, size=batch_size)
+		print('sample:', idxs)
 		return(
 			torch.as_tensor(self._replay_buffer['obs'][idxs, :], device=self.device),
 			torch.as_tensor(self._replay_buffer['obs'][idxs+1, :], device=self.device),
@@ -280,13 +281,14 @@ class Model(Component):
 						explore = np.random.normal(0, self.explore_std, size=action.size)
 						action = action + explore
 					# take next step
-					observation_data, reward, done, state = train_environment.step(action)
+					next_observation_data, reward, done, state = train_environment.step(action)
 					# log data to replay buffer
 					self.add_buffer(observation_data, action, reward, done)
+					observation_data = next_observation_data
 					self.nSteps += 1
 					episode_steps += 1
 				# end of episode
-				self.nEpisodes += 1
+				#self.nEpisodes += 1
 				# check train
 				if self.nEpisodes >= train_start and self.nEpisodes % train_freq == 0:
 					num = num_batches
