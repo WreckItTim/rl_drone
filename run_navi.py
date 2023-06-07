@@ -28,6 +28,8 @@ if len(args) > 3:
 	run_post = args[3]
 
 ## test_case vars
+use_slim = False
+use_res = False
 # motion
 if test_case in ['h4', 'torch']:
 	vert_motion = False
@@ -87,8 +89,6 @@ rewards = {
 	#'ResolutionReward2': 0.5/reward_norm,
 	'MaxStepsReward': 0/reward_norm,
 }
-use_slim = False
-use_res = False
 child_project = 'navi'
 run_name = child_project + '_' + airsim_release 
 run_name += '_vert' if vert_motion else '_horz' 
@@ -103,7 +103,7 @@ checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
 train_freq = 1
 num_batches = -1
-random_start = 2
+random_start = 100
 batch_size = 100
 with_distillation = False
 use_wandb = False
@@ -587,8 +587,8 @@ def create_base_components(
 		if vert_motion:
 			motion = 'vertical'
 		Spawn(
-			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
-			random=False, # True will get random path, False will use static
+			read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
+			random=True, # True will get random path, False will use static
 			#read_path='aPaths_' + motion + '_train.p', # read in dict of possible paths or static spawns
 			#read_path='aPaths_' + motion + '_val.p', # read in dict of possible paths or static spawns
 			#random=True, # True will get random path, False will use static

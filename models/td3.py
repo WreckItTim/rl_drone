@@ -8,9 +8,9 @@ class TD3(Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
-			obs_shape,
-			act_shape,
 			write_dir,
+			obs_shape=None,
+			act_shape=None,
 			actor=None,
 			actor_target=None,
 			critics=None,

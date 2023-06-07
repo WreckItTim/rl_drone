@@ -20,6 +20,7 @@ class AuxEnv(Environment):
 				navi_component, # goalenv environment for navigation
 				step_counter=0, 
 				episode_counter=0, 
+				evaluator_component=None,
 		):
 		super().__init__()
 
@@ -32,7 +33,7 @@ class AuxEnv(Environment):
 	def step(self, rl_output, state=None):
 		self.step_counter += 1 # total number of steps
 		# clean and save rl_output to state
-		rhos = self.clean_rl_output(rl_output)
+		rhos = list(rl_output)
 		if state is None:
 			state = {}
 		state['rl_output'] = rhos.copy()
@@ -47,14 +48,27 @@ class AuxEnv(Environment):
 		# state is passed to stable-baselines3 callbacks
 		return aux_obs, navi_reward, navi_done, navi_state
 
+	def reset(self,state=None):
+		obs_data, first_state = self.start(state)
+		return obs_data
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	def start(self, state = None):
 		self.episode_counter += 1
+		self._actor.start(state)
+		self._model.start(state)
 		# reset navi env
-		navi_obs = self._navi.start()
+		navi_obs, first_start = self._navi.start()
 		self._navi_obs = navi_obs.copy()
 		actions = [0] * len(self._navi._actor._actions)
 		rhos = [1] * len(self._actor._actions)
 		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rhos])
-		return aux_obs
+		return aux_obs, state
+
+	def end(self, state=None):
+		self._navi.end(state)
+		self._actor.end(state)
+		self._model.end(state)
+		if self._evaluator is not None:
+			self._model.nEpisodes += 1
+			self._evaluator.update()

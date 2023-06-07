@@ -138,8 +138,8 @@ class Curriculum(Evaluator):
 
 	# goes to next level of curric learning
 	def level_up(self):
-		print('LEVEL UP')
 		self.level += 1
+		utils.speak(f'LEVEL UP:{self.level}')
 		if self.level >= len(self.steps):
 			self.in_final_form = True
 			self.use_final_form()

@@ -16,15 +16,23 @@ class Slim(Action):
 				active = True, # False will just return default behavior
 			):
 		self._last_state = 1
+		self._rho = 1
 
 	def undo(self):
 		self.set_rho(self._last_state)
 
+	def start(self, state=None):
+		self._last_state = 1
+		self._rho = 1
+		self._model.slim = 1
+		for module in self._model._actor.modules():
+			if 'Slim' in str(type(module)):
+				module.slim = 1
+
 	def set_rho(self, rho):
 		self._rho = rho # give access to other components to last rho
-		self._model._sb3model.slim = rho
+		self._model.slim = rho
 		for module in self._model._actor.modules():
-			#print(type(module))
 			if 'Slim' in str(type(module)):
 				module.slim = rho
 		

@@ -33,21 +33,23 @@ class Model(Component):
 			else:
 				self._actor_target = self.actor_target
 			# setup critic networks
-			if type(self.critics[0]) is str:
+			if self.critics is not None and type(self.critics[0]) is str:
 				self._critics = []
 				for c in self.critics:
 					self._critics.append(torch.load(c))
 			else:
 				self._critics = self.critics
-			if type(self.critics_target[0]) is str:
+			if self.critics_target is not None and type(self.critics_target[0]) is str:
 				self._critics_target = []
 				for c in self.critics_target:
 					self._critics_target.append(torch.load(c))
 			else:
 				self._critics_target = self.critics_target
-			self._nCritics = len(self._critics)
-			if len(self._critics_target) != self._nCritics:
-				utils.error('number of critics neq numner of target critics')
+			self._nCritics = 0
+			if self.critics is not None:
+				self._nCritics = len(self._critics)
+				if len(self._critics_target) != self._nCritics:
+					utils.error('number of critics neq numner of target critics')
 			# save init models
 			self.actor = self.write_dir + 'actor.pt'
 			self.actor_target = self.write_dir + 'actor_target.pt'
@@ -84,20 +86,28 @@ class Model(Component):
 			# set device for torch
 			if self.device == 'cuda':
 				device = torch.device('cuda')
-				self._actor.cuda()
-				self._actor_target.cuda()
-				for critic in self._critics:
-					critic.cuda()
-				for critic in self._critics_target:
-					critic.cuda()
+				if self._actor is not None:
+					self._actor.cuda()
+				if self._actor_target is not None:
+					self._actor_target.cuda()
+				if self._critics is not None:
+					for critic in self._critics:
+						critic.cuda()
+				if self._critics_target is not None:
+					for critic in self._critics_target:
+						critic.cuda()
 			if self.device == 'cpu':
 				device = torch.device('cpu')
-				self._actor.cpu()
-				self._actor_target.cpu()
-				for critic in self._critics:
-					critic.cpu()
-				for critic in self._critics_target:
-					critic.cpu()
+				if self._actor is not None:
+					self._actor.cpu()
+				if self._actor_target is not None:
+					self._actor_target.cpu()
+				if self._critics is not None:
+					for critic in self._critics:
+						critic.cpu()
+				if self._critics_target is not None:
+					for critic in self._critics_target:
+						critic.cpu()
 
 			if self.save_init_model:
 				self.save_models(self.write_dir + 'model_init/')
@@ -158,11 +168,16 @@ class Model(Component):
 		if self.sb3:
 			self._sb3model.save(folder + 'sb3model.zip')
 		else:
-			torch.save(self._actor, folder + 'actor.pt')
-			torch.save(self._actor_target, folder + 'actor_target.pt')
-			for i in range(self._nCritics):
-				torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
-				torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
+			if self._actor is not None:
+				torch.save(self._actor, folder + 'actor.pt')
+			if self._actor_target is not None:
+				torch.save(self._actor_target, folder + 'actor_target.pt')
+			if self._critics is not None:
+				for i in range(self._nCritics):
+					torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
+			if self._critics_target is not None:
+				for i in range(self._nCritics):
+					torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
 	def load_models(self, folder):
 		if self.sb3:
 			self._sb3model = sb3TD3.load(folder + 'sb3model.zip')
@@ -257,8 +272,34 @@ class Model(Component):
 			self._model_kwargs['batch_size'] = batch_size
 			self._model_kwargs['train_freq'] = (train_freq,'episode')
 			self._model_kwargs['gradient_steps'] = num_batches
-			self._model_kwargs['policy_kwargs'] = {'net_arch':[32,32,32]}
+			self._model_kwargs['policy_kwargs'] = {'net_arch':[32,32]}
 			self._sb3model = sb3TD3('MlpPolicy', train_environment, **self._model_kwargs)
+			self._sb3model.actor.optimizer = torch.optim.Adam(
+				self._sb3model.actor.parameters(),
+				amsgrad=False,
+				betas= (0.9, 0.999),
+				capturable= False,
+				differentiable= False,
+				eps= 1e-8,
+				foreach= None,
+				fused= False,
+				lr= 1e-3,
+				maximize= False,
+				weight_decay= 1e-6,
+			)
+			self._sb3model.critic.optimizer = torch.optim.Adam(
+				self._sb3model.critic.parameters(),
+				amsgrad=False,
+				betas= (0.9, 0.999),
+				capturable= False,
+				differentiable= False,
+				eps= 1e-8,
+				foreach= None,
+				fused= False,
+				lr= 1e-3,
+				maximize= False,
+				weight_decay= 1e-6,
+			)
 			self._sb3model.learn(max_episodes*20)
 		else:
 			# learning loop

@@ -127,6 +127,7 @@ class GoalEnv(Environment):
 					self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
 				if done: 
 					self.end(self._states[this_step])
+					#print(self._states[this_step])
 				try_again = False
 			except msgpackrpc.error.TimeoutError as e:
 				utils.speak(str(e) + ' caught in step()')
