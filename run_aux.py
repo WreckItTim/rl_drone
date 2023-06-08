@@ -106,6 +106,7 @@ max_episodes = 100_000 # max number of episodes to train for before terminating 
 	# computations will finish roughly 250k steps a day (episode lengths vary but ~10-20 per)
 checkpoint = 100 # evaluate model and save checkpoint every # of episodes
 train_start = 100 # collect this many episodes before start updating networks
+nEvals = 100
 train_freq = 1
 num_batches = -1
 random_start = 100
@@ -151,6 +152,7 @@ def create_base_components(
 		repo_version = 'unknown',
 		sb3 = False,
 		navi_path = None,
+		nEvals = 100
 ):
 
 	# **** SETUP ****
@@ -524,6 +526,7 @@ def create_base_components(
 		import torch
 		import torch.nn as nn
 		import torch.nn.functional as F
+		torch.set_default_dtype(torch.float64)
 		class Slim(nn.Linear):
 			def __init__(self, max_in_features: int, max_out_features: int, bias: bool = True,
 						device=None, dtype=None,
@@ -549,10 +552,7 @@ def create_base_components(
 				#print('SLIM', weight.size(), bias.size())
 				y = F.linear(input, weight, bias)
 				return y
-		input_dim_actor = vector_length * nTimesteps
-		output_dim_actor = len(navi_actions)
 		# make neural networks
-		torch.set_default_dtype(torch.float64)
 		def create_sequential(
 			input_dim,
 			output_dim,
@@ -574,22 +574,59 @@ def create_base_components(
 			modules.append(nn.Tanh())
 			network = torch.nn.Sequential(*modules)
 			return network
+		def attach_optimizer(
+			network,
+			learning_rate = 10**(int(-1*3)),
+			weight_decay = 10**(int(-1*6)),
+		):
+			network.optimizer = torch.optim.Adam(
+				network.parameters(),
+				lr=learning_rate,
+				weight_decay= weight_decay,
+			)
+		# aux
 		# actor
-		actor = create_sequential(input_dim_actor, output_dim_actor)
-		actor.load_state_dict(copy.deepcopy(torch.load(navi_path)))
+		input_dim_actor = vector_length * nTimesteps + len(navi_actions) + len(aux_actions)
+		output_dim_actor = len(aux_actions)
+		actor = create_sequential(input_dim_actor, output_dim_actor, net_arch = [32, 32])
+		attach_optimizer(actor)
+		actor_target = create_sequential(input_dim_actor, output_dim_actor, net_arch = [32, 32])
+		actor_target.load_state_dict(copy.deepcopy(actor.state_dict()))
+		attach_optimizer(actor_target)
+		# critic
+		input_dim_critic = input_dim_actor + output_dim_actor
+		output_dim_critic = 1
+		nCritics = 2
+		critics = []
+		critics_target = []
+		for c in range(nCritics):
+			critic = create_sequential(input_dim_critic, output_dim_critic)
+			critics.append(critic)
+			attach_optimizer(critic)
+			critic_target = create_sequential(input_dim_critic, output_dim_critic)
+			critic_target.load_state_dict(copy.deepcopy(critic.state_dict()))
+			critics_target.append(critic_target)
+			attach_optimizer(critic_target)
+		# navi
+		actor_navi = create_sequential(vector_length * nTimesteps, len(navi_actions))
+		actor_navi.load_state_dict(copy.deepcopy(torch.load(navi_path)))
 		# TD3
 		from models.td3 import TD3
 		TD3(
-			obs_shape=[vector_length * nTimesteps + len(navi_actions) + len(aux_actions)],
-			act_shape=[len(aux_actions)],
+			actor=actor,
+			actor_target=actor_target,
+			critics=critics,
+			critics_target=critics_target,
+			obs_shape=[input_dim_actor],
+			act_shape=[output_dim_actor],
 			write_dir=working_directory+'AuxModel/',
 			buffer_size=replay_buffer_size,
-			sb3=True,
+			sb3=False,
 			name='AuxModel',
 		)
 		TD3(
 			write_dir=working_directory+'NaviModel/',
-			actor=actor,
+			actor=actor_navi,
 			replay_buffer = {},
 			save_init_model = False,
 			name='NaviModel',
@@ -605,7 +642,6 @@ def create_base_components(
 			random=True, # True will get random path, False will use static
 			name='SpawnTrain'
 		)
-		nEvals = 100
 		Spawn(
 			read_path='spawns_' + motion + '_val.p', # read in dict of possible paths or static spawns
 			random=False, # True will get random path, False will use static
@@ -764,6 +800,7 @@ configuration = create_base_components(
 		repo_version = repo_version,
 		sb3 = sb3,
 		navi_path=navi_path,
+		nEvals=nEvals,
 )
 
 ## create any other components

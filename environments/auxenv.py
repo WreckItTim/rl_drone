@@ -31,20 +31,22 @@ class AuxEnv(Environment):
 		
 	# activate needed components
 	def step(self, rl_output, state=None):
+		rl_output = rl_output.astype(float).tolist()
 		self.step_counter += 1 # total number of steps
 		# clean and save rl_output to state
-		rhos = list(rl_output)
 		if state is None:
 			state = {}
-		state['rl_output'] = rhos.copy()
-		state['rhos'] = rhos.copy()
+		state['rl_output'] = rl_output.copy()
+		state['rhos'] = rl_output.copy()
 		# take action 1 - set rho values
 		self._actor.step(state)
 		# take action 2 - navi
 		actions = self._navi._model.predict(self._navi_obs)
 		navi_obs, navi_reward, navi_done, navi_state = self._navi.step(actions, state)
 		self._navi_obs = navi_obs.copy()
-		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rhos])
+		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rl_output.copy()])
+		if navi_done:
+			self.end(state)
 		# state is passed to stable-baselines3 callbacks
 		return aux_obs, navi_reward, navi_done, navi_state
 
@@ -55,10 +57,13 @@ class AuxEnv(Environment):
 	# returns first observation for new episode
 	def start(self, state = None):
 		self.episode_counter += 1
+		if state is None:
+			state = {}
 		self._actor.start(state)
 		self._model.start(state)
 		# reset navi env
-		navi_obs, first_start = self._navi.start()
+		navi_obs, first_state = self._navi.start()
+		state.update(first_state)
 		self._navi_obs = navi_obs.copy()
 		actions = [0] * len(self._navi._actor._actions)
 		rhos = [1] * len(self._actor._actions)
@@ -66,7 +71,6 @@ class AuxEnv(Environment):
 		return aux_obs, state
 
 	def end(self, state=None):
-		self._navi.end(state)
 		self._actor.end(state)
 		self._model.end(state)
 		if self._evaluator is not None:

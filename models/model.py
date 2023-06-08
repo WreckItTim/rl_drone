@@ -8,7 +8,7 @@ from stable_baselines3 import TD3 as sb3TD3
 import gym
 from gym import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
-		
+import copy		
 
 # Generalized actor/critic model with replay buffer
 # must define train() from child model
@@ -169,24 +169,24 @@ class Model(Component):
 			self._sb3model.save(folder + 'sb3model.zip')
 		else:
 			if self._actor is not None:
-				torch.save(self._actor, folder + 'actor.pt')
+				torch.save(self._actor.state_dict(), folder + 'actor.pt')
 			if self._actor_target is not None:
-				torch.save(self._actor_target, folder + 'actor_target.pt')
+				torch.save(self._actor_target.state_dict(), folder + 'actor_target.pt')
 			if self._critics is not None:
 				for i in range(self._nCritics):
-					torch.save(self._critics[i], folder + 'critic_' + str(i) + '.pt')
+					torch.save(self._critics[i].state_dict(), folder + 'critic_' + str(i) + '.pt')
 			if self._critics_target is not None:
 				for i in range(self._nCritics):
-					torch.save(self._critics_target[i], folder + 'critic_target_' + str(i) + '.pt')
+					torch.save(self._critics_target[i].state_dict(), folder + 'critic_target_' + str(i) + '.pt')
 	def load_models(self, folder):
 		if self.sb3:
 			self._sb3model = sb3TD3.load(folder + 'sb3model.zip')
 		else:
-			self._actor = torch.load(folder + 'actor.pt')
-			self._actor_target = torch.load(folder + 'actor_target.pt')
+			self._actor.load_state_dict(copy.deepcopy(torch.load(folder + 'actor.pt')))
+			self._actor_target.load_state_dict(copy.deepcopy(torch.load(folder + 'actor_target.pt')))
 			for i in range(self._nCritics):
-				self._critics[i] = torch.load(folder + 'critic_' + str(i) + '.pt')
-				self._critics_target[i] = torch.load(folder + 'critic_target_' + str(i) + '.pt')
+				self._critics[i].load_state_dict(copy.deepcopy(torch.load(folder + 'critic_' + str(i) + '.pt')))
+				self._critics_target[i].load_state_dict(copy.deepcopy(torch.load(folder + 'critic_target_' + str(i) + '.pt')))
 	def load_replay_buffer(self, folder):
 		self._replay_buffer = np.load(path)
 	# save replay_buffer to path
