@@ -41,7 +41,7 @@ elif use_slim:
 elif use_res:
 	child_project = 'NaviRes'
 else:
-	child_project = 'Navi'
+	child_project = 'NaviFuse'
 motion = 'vert' if vert_motion else 'horz'
 navi_path = child_project + '_' + motion + '.pt'
 airsim_release = 'Blocks'

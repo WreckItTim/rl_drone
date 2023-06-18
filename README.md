@@ -8,7 +8,7 @@ step 2: download repository and run setup.py file. This will create a local fold
 step 3: with the new conda environment active, 
 conda activate airsim, run the conda_env.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter.
 
-step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio - specifically development for desktop C++. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip to default folder name.
+step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime and Microsoft Visual Studio - specifically development for desktop C++. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip to default folder name.
 
 step 5: run the python file run.py to run an example reinforcement learning setup on the Blocks release, using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a TD3 reinforcement learning algorithm to get from objective A to B without colliding. You can copy-paste the train_eval.py file to the newly created run folder in local/runs then run the notebook at any time to evaluate the reinforcement learning algorithm. See paper for more implementation details.
 
