@@ -44,6 +44,11 @@ else:
 	child_project = 'Navi'
 motion = 'vert' if vert_motion else 'horz'
 navi_path = child_project + '_' + motion + '.pt'
+airsim_release = 'Blocks'
+if test_case == 'a':
+	airsim_release = 'AirSimNH'
+if test_case == 'c':
+	airsim_release = 'CityEnviron'
 
 ## set random seeds
 torch.manual_seed(0)
@@ -53,7 +58,6 @@ random.seed(0)
 ## set params
 sb3 = True
 repo_version = 'delta1'
-airsim_release = 'Blocks'
 read_model_path = None
 read_replay_buffer_path = None
 replay_buffer_size = 400_000 # number of recent samples (steps) to save in replay buffer
