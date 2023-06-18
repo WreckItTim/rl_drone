@@ -116,7 +116,7 @@ class AirSimMap(Map):
 		else:
 			utils.speak('Please manually launch Airsim.')
 		# wait for launch
-		time.sleep(20)
+		time.sleep(60)
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_global_parameter('LocalHostIp'),
