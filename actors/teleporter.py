@@ -1,10 +1,6 @@
 from actors.actor import Actor
 from component import _init_wrapper
-from gym import spaces
-import numpy as np
 import rl_utils as utils
-import random
-import math
 
 # uses continuous actions to teleport (set yaw and position)
 # this is much more quicker, precise, and stable than real-time movements

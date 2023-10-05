@@ -16,7 +16,7 @@ class Debug(Controller):
 		configuration = Configuration.get_active()
 		component_names = list(configuration.components.keys())
 		while(True):
-			print('Enter component _name or index to debug, list to see components, or reset')
+			print('Enter component index to debug, list to see components, or reset')
 			user_input = input().lower()
 			if user_input == 'quit':
 				break

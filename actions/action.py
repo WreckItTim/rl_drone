@@ -16,7 +16,7 @@ class Action(Component):
 		pass
 
 	def debug(self, state=None):
-		print('enter rl_output:')
+		print('enter magnitude of action:')
 		user_input = input().lower()
 		try:
 			rl_out = float(user_input)

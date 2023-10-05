@@ -7,6 +7,7 @@ import numpy as np
 from component import _init_wrapper
 import rl_utils as utils
 import os
+import matplotlib.pyplot as plt
 
 # see https://microsoft.github.io/AirSim/image_apis/
 class AirSimCamera(Sensor):

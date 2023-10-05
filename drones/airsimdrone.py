@@ -15,6 +15,9 @@ class AirSimDrone(Drone):
 		super().__init__()
 		self._timeout = 20
 		
+	def debug(self):
+		self.take_off()
+
 	# check if has collided
 	def check_collision(self):
 		collision_info = self._airsim._client.simGetCollisionInfo()
