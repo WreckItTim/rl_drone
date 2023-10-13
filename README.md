@@ -8,7 +8,7 @@ step 3: active the new conda environment, 'conda activate airsim', then run the 
 
 step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime and Microsoft Visual Studio - specifically development for desktop C++. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip contents directly into this folder (do not create additional sub folders when unzipping). For windows the path should be: rl_drone/local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe For linux the path should be: rl_drone/local/airsim_maps/LinuxBlocks1.9.1/LinuxNoEditor/Blocks.sh
 
-step 5: run the sample python file, 'python run.py' or 'python3 run.py', to run an AirSim example that connects components needed for basic control and sensor aquisition.
+step 5: run the sample python file, 'python debug.py' or 'python3 debug.py', to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
 
 step 6: create a clone of the run.py file and edit how you want! happy learning =) NOTE: if you want to create a custom component, this repo is specifically designed for that in mind. To insure everything works properly, including serialization of configuration files and debugging capabilities, follow the steps outlined in the code block at the top of the component.py file.
 
