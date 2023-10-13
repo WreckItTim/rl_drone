@@ -53,7 +53,7 @@ class AirSimCamera(Sensor):
 		)
 		return observation
 
-	# takes a picture with camera
+	# takes a picture with camera, returns channel-first L or BGR
 	def step(self, state=None):
 		img_array = []
 		while len(img_array) <= 0: # loop for dead images (happens some times)
@@ -65,12 +65,12 @@ class AirSimCamera(Sensor):
 			if self.is_gray:
 				img_array = np.reshape(np_flat, (response.height, response.width))
 				if len(img_array) > 0:
-					# make channel-first
+					# add channel dimension to first
 					img_array = np.expand_dims(img_array, axis=0)
 			else:
 				img_array = np.reshape(np_flat, (response.height, response.width, 3))
 				if len(img_array) > 0:
-					# make channel-first
+					# change from channel-last to channel-first
 					img_array = np.moveaxis(img_array, 2, 0)
 			if self.save_scene:
 				# get scene image
@@ -78,13 +78,13 @@ class AirSimCamera(Sensor):
 				# get numpy array
 				img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) 
 				# reshape array to 4 channel image array H X W X 4
-				img_rgb = img1d.reshape(response.height, response.width, 3)
+				img_bgr = img1d.reshape(response.height, response.width, 3)
 				# original image is fliped vertically
-				#img_rgb = np.flipud(img_rgb)
+				#img_bgr = np.flipud(img_bgr)
 		observation = self.create_obj(img_array)
 		transformed = self.transform(observation)
 		if self.save_scene:
 			# write to png 
 			scene_file = utils.get_global_parameter('working_directory') + 'scene_imgs/' + transformed._name + '.png'
-			airsim.write_png(os.path.normpath(scene_file), img_rgb) 
+			airsim.write_png(os.path.normpath(scene_file), img_bgr) 
 		return transformed

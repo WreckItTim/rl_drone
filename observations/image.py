@@ -2,6 +2,7 @@
 from observations.observation import Observation
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image as PImage
 
 class Image(Observation):
 
@@ -23,3 +24,21 @@ class Image(Observation):
 			img[:, :, 2] = temp.copy()
 			plt.imshow(img)
 		plt.show()
+		
+	def write(self, path):
+		# fetch pixel values
+		img = self.to_numpy()
+		# convert to pillow image
+		if self.is_gray:
+			img = (255*img).astype(np.uint8)
+			img = np.vstack(img)
+		else:
+			img = img.astype(np.uint8)
+			img = np.moveaxis(img, 0, 2) # change from channel first to channel last
+			temp = img[:,:,0].copy() # change from BGR to RGB
+			img[:,:,0] = img[:,:,2].copy() # change from BGR to RGB
+			img[:,:,2] = temp # change from BGR to RGB
+		mode = 'L' if self.is_gray else 'RGB'
+		p_img = PImage.fromarray(img, mode)
+		# save to file - should include desired file extension
+		p_img.save(path)
