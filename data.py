@@ -22,6 +22,7 @@ sensors = [
 controller_params = {
 	'drone_component' : 'Drone', # we will create a drone component to connect to our Debug controller
 	'sensors_components' : sensors, # we will create a drone component to connect to our Debug controller
+	'map_component' : 'Map', # we will create a drone component to connect to our Debug controller
 	'points' : [], # we will create a drone component to connect to our Debug controller
 }
 controller = utils.get_controller( # create controller with above arguments
