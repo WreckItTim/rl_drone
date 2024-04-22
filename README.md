@@ -26,3 +26,5 @@ Most of these errors come from AirSim instablities. Since AirSim was depreciated
 4. Occassionaly, AirSim will crash with an RPCError. This just happens some times when running for a long time (hours to a day or two). I have added a restart loop to address this. See issue here: https://github.com/microsoft/AirSim/issues/1757
 
 5. Jupyter notebooks do not work from the conda environment due to the tornado dependency.
+
+6. there is possibly a dependency issue with binvox and numpy -- to fix this change all np.bool to bool values in the binvox source code.
