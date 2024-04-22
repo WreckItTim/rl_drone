@@ -2,15 +2,17 @@
 
 step 1: download and install anaconda, then run from anaconda terminal: 'conda create --name airsim python=3.10'
 
-step 2: download repository and run setup.py file: 'python setup.py'. This will create a 'local' folder that is a .gitignore (so feel free to add anything here that you do not want to sync with gihub). It will also create a global_parameters.json file, with settings for the sim - feel free to edit this as appropriate (name your pc for logging purposes and enable/disable rendering graphics to screen). 
+step 3: install pytorch with conda 
 
-step 3: active the new conda environment, 'conda activate airsim', then run the conda_env.bat file, './conda_env.bat' or 'sh ./conda_env.bat', to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. When running the bat file, you may need to edit the pip install command (but keep the version numbers).
+step 3: download repository and run setup.py file: 'python setup.py'. This will create a 'local' folder that is a .gitignore (so feel free to add anything here that you do not want to sync with gihub). It will also create a global_parameters.json file, with settings for the sim - feel free to edit this as appropriate (name your pc for logging purposes and enable/disable rendering graphics to screen). 
 
-step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime and Microsoft Visual Studio - specifically development for desktop C++. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip contents directly into this folder (do not create additional sub folders when unzipping). For windows the path should be: rl_drone/local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe For linux the path should be: rl_drone/local/airsim_maps/LinuxBlocks1.9.1/LinuxNoEditor/Blocks.sh
+step 4: active the new conda environment, 'conda activate airsim', then run the "conda_env.bat file", to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. When running the bat file, you may need to edit the pip install command (but keep the version numbers).
 
-step 5: run the sample python file, 'python debug.py' or 'python3 debug.py', to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
+step 5: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime and Microsoft Visual Studio - specifically development for desktop C++. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip contents directly into this folder (do not create additional sub folders when unzipping). For windows the path should be: rl_drone/local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe For linux the path should be: rl_drone/local/airsim_maps/LinuxBlocks1.9.1/LinuxNoEditor/Blocks.sh
 
-step 6: create a clone of the run.py file and edit how you want! happy learning =) NOTE: if you want to create a custom component, this repo is specifically designed for that in mind. To insure everything works properly, including serialization of configuration files and debugging capabilities, follow the steps outlined in the code block at the top of the component.py file.
+step 6: run the sample python file, 'python debug.py' or 'python3 debug.py', to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
+
+step 7: create a clone of the run.py file and edit how you want! The default values will use a TD3 RL algorithm to learn basic navigation. happy learning =) NOTE: if you want to create a custom component, this repo is specifically designed for that in mind. To insure everything works properly, including serialization of configuration files and debugging capabilities, follow the steps outlined in the code block at the top of the component.py file.
 
 
 **COMMON ERRORS**
