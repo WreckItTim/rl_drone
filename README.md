@@ -20,17 +20,17 @@ The entire repo is heavily modulated and designed for customization, experimenta
 
 step 1: download and install anaconda, then run from anaconda terminal: 'conda create --name airsim python=3.10'
 
-step 2: install pytorch with the airsim conda environment active. Our current implementation is proven stable for cuda 11.8. 
+step 2: install pytorch with the airsim conda environment active. Our current implementation is proven stable for cuda 11.8. https://pytorch.org/ 
 
 step 3: download repository and run setup.py file: 'python setup.py'. This will create a 'local' folder that is a .gitignore (so feel free to add anything here that you do not want to sync with gihub). It will also create a global_parameters.json file, with settings for the sim - feel free to edit this as appropriate (name your pc for logging purposes and enable/disable rendering graphics to screen). 
 
 step 4: with the airsim conda environment active, then run the "conda_env.bat file", to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. When running the bat file, you may need to edit the pip install command (but keep the version numbers as those are proven stable).
 
-step 5: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime and Microsoft Visual Studio - specifically development for desktop C++. Currently proven stable are the maps Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip contents directly into this folder (do not create additional sub folders when unzipping). For windows the path should be: rl_drone/local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe For linux the path should be: rl_drone/local/airsim_maps/LinuxBlocks1.9.1/LinuxNoEditor/Blocks.sh
+step 5: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also install directx runtime (https://www.microsoft.com/en-gb/download/details.aspx?id=35) and Microsoft Visual Studio (https://visualstudio.microsoft.com/) specifically development for desktop C++ (community version is fine). Currently proven stable are the maps Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip contents directly into this folder (do not create additional sub folders when unzipping). For windows the path should be: rl_drone/local/airsim_maps/Blocks/WindowsNoEditor/Blocks.exe For linux the path should be: rl_drone/local/airsim_maps/LinuxBlocks1.9.1/LinuxNoEditor/Blocks.sh
 
 step 6: run the sample python file "debug.py", to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
 
-step 7: create a clone of the run_navi.py file and edit how you want! The default values will use a TD3 DRL algorithm to learn navigation, using the ground truth depth maps returned from AirSim. happy learning =) 
+step 7: create a copy of the run_navi.py file and edit how you want! This is also ar unning example, where the default values will use a TD3 DRL algorithm to learn navigation, using the ground truth depth maps returned from AirSim. Happy learning =) 
 
 
 **ADVANCED**
