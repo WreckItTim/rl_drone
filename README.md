@@ -1,3 +1,15 @@
+**CURRENT SUPPORT**
+This repository was released opensource with the release of two conference publications:
+T.K. Johnsen,  and M. Levorato, ``NaviSlim: Adaptive Context-Aware Navigation and Sensing via Dynamic Slimmable Networks." Proceedings of the 9th ACM/IEEE Conference on Internet of Things Design and Implementation. 2024.
+
+T.K. Johnsen, I. Harshbarger, Z. Xia,  and M. Levorato, ``NaviSplit: Dynamic Multi-Branch Split DNNs for Efficient Distributed Autonomous Navigation." 2024 IEEE 25th International Symposium on a World of Wireless, Mobile and Multimedia Networks (WoWMoM). IEEE, 2024.
+
+The current version primarily operates with the opensource GitHub version of the drone simulator Microsoft AirSim: https://github.com/microsoft/AirSim
+We also have support for running commands to a real-world drone DJI Tello: https://store.dji.com/shop/tello-series
+
+The current version foccuses on running deep reinforcement learning with stable-baselines3: https://stable-baselines3.readthedocs.io/en/master/
+
+
 **AIRSIM SETUP**
 
 step 1: download and install anaconda, then run from anaconda terminal: 'conda create --name airsim python=3.10'
@@ -12,7 +24,7 @@ step 5: download the Blocks AirSim release file from here: https://github.com/mi
 
 step 6: run the sample python file "debug.py", to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
 
-step 7: create a clone of the run_navi.py file and edit how you want! The default values will use a TD3 DRL algorithm to learn basic navigation. happy learning =) 
+step 7: create a clone of the run_navi.py file and edit how you want! The default values will use a TD3 DRL algorithm to learn navigation, using the ground truth depth maps returned from AirSim. happy learning =) 
 
 
 **ADVANCED**
