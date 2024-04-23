@@ -3,13 +3,15 @@
 This repository was released opensource with the release of two conference publications:
 
 T.K. Johnsen,  and M. Levorato, "NaviSlim: Adaptive Context-Aware Navigation and Sensing via Dynamic Slimmable Networks." Proceedings of the 9th ACM/IEEE Conference on Internet of Things Design and Implementation. 2024.
+
 T.K. Johnsen, I. Harshbarger, Z. Xia,  and M. Levorato, "NaviSplit: Dynamic Multi-Branch Split DNNs for Efficient Distributed Autonomous Navigation." 2024 IEEE 25th International Symposium on a World of Wireless, Mobile and Multimedia Networks (WoWMoM). IEEE, 2024.
+
+Patent pending for commerical use.
 
 The current version primarily operates with the opensource GitHub version of the drone simulator Microsoft AirSim: https://github.com/microsoft/AirSim
 We also have support for running commands to a real-world drone DJI Tello: https://store.dji.com/shop/tello-series
 
 The current version foccuses on running deep reinforcement learning with stable-baselines3: https://stable-baselines3.readthedocs.io/en/master/
-
 
 **AIRSIM SETUP**
 
