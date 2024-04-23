@@ -54,4 +54,4 @@ Most of these errors come from AirSim instablities. Since the opensource GitHub 
 
 5. Jupyter notebooks do not work from the conda environment due to the tornado dependency.
 
-6. there is possibly a dependency issue with binvox and numpy, if using versions outside of that in the conda_env.bat file -- to fix this, change all np.bool to bool in the binvox source code.
+6. There is possibly a dependency issue with binvox and numpy, if using versions outside of that in the conda_env.bat file -- to fix this, change all np.bool to bool in the binvox source code.
