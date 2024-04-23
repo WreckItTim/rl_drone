@@ -9,6 +9,7 @@ T.K. Johnsen, I. Harshbarger, Z. Xia,  and M. Levorato, "NaviSplit: Dynamic Mult
 Patent pending for commerical use.
 
 The current version primarily operates with the opensource GitHub version of the drone simulator Microsoft AirSim: https://github.com/microsoft/AirSim
+
 We also have support for running commands to a real-world drone DJI Tello: https://store.dji.com/shop/tello-series
 
 The current version foccuses on running deep reinforcement learning with stable-baselines3: https://stable-baselines3.readthedocs.io/en/master/
