@@ -18,7 +18,7 @@ The entire repo is heavily modulated and designed for customization, experimenta
 
 **AIRSIM SETUP**
 
-step 1: download and install anaconda, then run from anaconda terminal: 'conda create --name airsim python=3.10'
+step 1: download and install anaconda, then run from anaconda terminal: 'conda create --name airsim python=3.10'. https://www.anaconda.com/
 
 step 2: install pytorch with the airsim conda environment active. Our current implementation is proven stable for cuda 11.8. https://pytorch.org/ 
 
