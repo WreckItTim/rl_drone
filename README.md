@@ -12,7 +12,9 @@ The current version primarily operates with the opensource GitHub version of the
 
 We also have support for running commands to a real-world drone DJI Tello: https://store.dji.com/shop/tello-series
 
-The current version foccuses on running deep reinforcement learning with stable-baselines3: https://stable-baselines3.readthedocs.io/en/master/
+The current version focuses on running deep reinforcement learning with stable-baselines3: https://stable-baselines3.readthedocs.io/en/master/
+
+The entire repo is heavily modulated and designed for customization, experimentation, and sharing. The example source code focuses on using DRL for navigation, however can be generalized to other applications.
 
 **AIRSIM SETUP**
 
