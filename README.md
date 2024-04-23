@@ -37,7 +37,7 @@ step 7: create a clone of the run_navi.py file and edit how you want! The defaul
 
 1. If you want to create a custom component, this repo is specifically designed for that in mind! To insure everything works properly, including serialization of configuration files and debugging capabilities, follow the steps outlined in the code block at the top of the component.py file.
 
-2. AirSim is rather unstable when running for more than an hour or so, which as needed for DRL, especially on linux distros (I have found windows is more stable). Thus there is a crash handling system that is backed into the current implementation. See the goalenv.py file for how it is handled. 
+2. AirSim is rather unstable when running for more than an hour or so, which as needed for DRL, especially on linux distros (I have found windows is more stable). Thus there is a crash handling system that is baked into the current implementation. See the goalenv.py file for how it is handled. 
 
 
 **COMMON ERRORS**
