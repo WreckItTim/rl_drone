@@ -4,43 +4,45 @@ from component import _init_wrapper
 # trains a reinforcment learning algorithm
 # launches learn() from the mdoel object
 	# which links to the train environment
-	# learn() calls step() and start()
+	# learn() calls step() and reset()
 class Train(Controller):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 
-			model_component = 'Model',
-			train_environment_component = 'TrainEnvironment',
-			continue_training = True,
-			max_episodes = 10_000,
-			random_start = 40, # number of episodes to randomize actions
-			train_start = 40, # don't call train() until after train_start episodes
-			train_freq = 1, # then call train() every train_freq episode
-			batch_size = 100, # split training into mini-batches of steps from buffer
-			num_batches = -1, # split training into mini-batches of steps from buffer
-			with_distillation = False, # slims during train() and distills to output of super
-			use_wandb = True, # turns on logging to wandb
-			project_name = 'void', # project name in wandb
+				model_component,
+				environment_component,
+				evaluator_component,
+				continue_training=True,
+				total_timesteps = 1_000_000,
+				log_interval = -1,
+				project_name = 'void',
 		):
 		super().__init__()
 
 	# runs control on components
 	def run(self):
 		# this will continually train model from same learning loop
-		# can be used to checkpoint (pause and continue later)
-		# can be used for transfer./
-		if not self.continue_training:
+		# meaning if you load in an old config, se this to true to not reset before training
+		# this is how curriculum learning is done on other maps
+		# or to pick up from a checkpoint
+		# will read old model weights
+		if self.continue_training:
+			_num_timesteps = self._environment.step_counter
+			_episode_num = self._environment.episode_counter
+			self._model._sb3model.num_timesteps = _num_timesteps
+			self._model._sb3model._episode_num = _episode_num
+			_total_timesteps = self.total_timesteps - _num_timesteps
+		# otherwise will train model from a new learning loop 
+		# calls reset_learning() 
+		# will use new model weights
+		else:
+			_total_timesteps = self.total_timesteps
 			self._configuration.reset_all()
 		# learn baby learn
 		self._model.learn(
-			train_environment = self._train_environment,
-			max_episodes = self.max_episodes,
-			random_start = self.random_start,
-			train_start = self.train_start, # don't call train() until after train_start episodes
-			train_freq = self.train_freq, # then call train() every train_freq episode
-			batch_size = self.batch_size, # split training into mini-batches of steps from buffer
-			num_batches = self.num_batches,
-			with_distillation = self.with_distillation, # slims during train() and distills to output of super
-			use_wandb = self.use_wandb, # turns on logging to wandb
-			project_name = self.project_name, # project name in wandb
-		)
+			total_timesteps = _total_timesteps,
+			log_interval = self.log_interval,
+			reset_num_timesteps = not self.continue_training,
+			evaluator = self._evaluator,
+			project_name = self.project_name,
+			)

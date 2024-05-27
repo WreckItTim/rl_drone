@@ -1,6 +1,7 @@
 from controllers.controller import Controller
 from component import _init_wrapper
 from configuration import Configuration
+import os
 
 # will load at a list of all components
 # allows user to view and debug each component independently 
@@ -10,13 +11,14 @@ class Debug(Controller):
 	@_init_wrapper
 	def __init__(self, drone_component):
 		super().__init__()
+		os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 	# runs control on components
 	def run(self):
 		configuration = Configuration.get_active()
 		component_names = list(configuration.components.keys())
 		while(True):
-			print('Enter component index to debug, list to see components, or reset')
+			print('Enter component _name or index to debug, list to see components, or reset')
 			user_input = input().lower()
 			if user_input == 'quit':
 				break
@@ -25,7 +27,7 @@ class Debug(Controller):
 				for idx, component_name in enumerate(component_names):
 					print(idx, ':', component_name)
 			elif user_input == 'reset':
-				self._drone.start()
+				self._drone.reset()
 			elif user_input == 'move':
 				user_input = input()
 				x, y, z, yaw = [float(_) for _ in user_input.split(' ')]

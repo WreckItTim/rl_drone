@@ -16,7 +16,6 @@ class Controller(Component):
 		raise NotImplementedError
 
 	def connect(self):
-		print('all sensors:', self.sensors_components)
 		super().connect()
 
 	def stop(self):
