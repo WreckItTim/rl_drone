@@ -3,6 +3,8 @@ from component import _init_wrapper
 import numpy as np
 import rl_utils as utils
 import os
+from stable_baselines3.common.type_aliases import TrainFreq
+from gymnasium import spaces
 
 # an environment is the heart of RL algorithms
 # the Goal flavor wants the drone to go to Point A to Point B
@@ -10,6 +12,8 @@ import os
 # steps until termination then resets
 # if a saver modifier is used, will write observations and states
 class AuxEnv(Environment):
+	# even though we do not render, this field is necesary for sb3
+	metadata = {"render.modes": ["rgb_array"]}
 
 	# constructor
 	# if continuing training, step_counter and episode_counter will likely be > 0
@@ -18,61 +22,65 @@ class AuxEnv(Environment):
 				actor_component, 
 				model_component, # aux model for rho-preds
 				navi_component, # goalenv environment for navigation
-				step_counter=0, 
-				episode_counter=0, 
-				evaluator_component=None,
+				step_counter = 0, # total steps
+				episode_counter = 0,
+				start = 100, # turn off noise
 		):
 		super().__init__()
+
+	# just makes the rl_output from SB3 more readible
+	def clean_rl_output(self, rl_output):
+		if np.issubdtype(rl_output.dtype, np.integer):
+			return int(rl_output)
+		if np.issubdtype(rl_output.dtype, np.floating):
+			return rl_output.astype(float).tolist()
 
 	# if reset learning loop
 	def reset_learning(self):
 		self.step_counter = 0 # total steps
 		self.episode_counter = 0
-		
+
+	def connect(self, state=None):
+		super().connect()
+		# even though we do not directly use the observation or action space, these fields are necesary for sb3
+		_output_shape = self._navi._observer._output_shape
+		_output_shape = (_output_shape[0] + len(self._navi._actor._actions) + len(self._actor._actions), )
+		self.observation_space = spaces.Box(0, 1, shape=_output_shape, dtype=float)
+		self.action_space = self._actor.get_space()
+
 	# activate needed components
 	def step(self, rl_output, state=None):
-		rl_output = rl_output.astype(float).tolist()
 		self.step_counter += 1 # total number of steps
 		# clean and save rl_output to state
+		rhos = self.clean_rl_output(rl_output)
 		if state is None:
 			state = {}
-		state['rl_output'] = rl_output.copy()
-		state['rhos'] = rl_output.copy()
+		state['rl_output'] = rhos.copy()
+		state['rhos'] = rhos.copy()
 		# take action 1 - set rho values
 		self._actor.step(state)
 		# take action 2 - navi
 		actions = self._navi._model.predict(self._navi_obs)
 		navi_obs, navi_reward, navi_done, navi_state = self._navi.step(actions, state)
 		self._navi_obs = navi_obs.copy()
-		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rl_output.copy()])
+		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rhos])
 		if navi_done:
-			self.end(state)
+			self.end()
 		# state is passed to stable-baselines3 callbacks
 		return aux_obs, navi_reward, navi_done, navi_state
 
-	def reset(self,state=None):
-		obs_data, first_state = self.start(state)
-		return obs_data
+	def end(self):
+		pass
+
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
-	def start(self, state = None):
+	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
+	def reset(self, seed=42):
 		self.episode_counter += 1
-		if state is None:
-			state = {}
-		self._actor.start(state)
-		self._model.start(state)
 		# reset navi env
-		navi_obs, first_state = self._navi.start()
-		state.update(first_state)
+		navi_obs = self._navi.reset()
 		self._navi_obs = navi_obs.copy()
 		actions = [0] * len(self._navi._actor._actions)
 		rhos = [1] * len(self._actor._actions)
 		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rhos])
-		return aux_obs, state
-
-	def end(self, state=None):
-		self._actor.end(state)
-		self._model.end(state)
-		if self._evaluator is not None:
-			self._model.nEpisodes += 1
-			self._evaluator.update()
+		return aux_obs
