@@ -7,6 +7,9 @@ class Drone(Component):
 	# constructor
 	def __init__(self):
 		pass
+	
+	def debug(self, state=None):
+		self.reset()
 
 	# updates number of collisions and returns same 
 	def check_collision(self):

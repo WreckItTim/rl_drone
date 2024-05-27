@@ -39,7 +39,7 @@ class Tello(Drone):
 		response = self._sock.sendto(msg.encode(encoding="utf-8"), self.address)
 		print(f'command:{msg}', f'response:{response}')
 
-	def start(self, state=None):
+	def reset(self, state=None):
 		self._pos = np.array([0,0,0], dtype=float)
 		self._yaw = 0
 		self.take_off()
