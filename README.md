@@ -30,7 +30,7 @@ step 5: download the Blocks AirSim release file from here: https://github.com/mi
 
 step 6: run the sample python file "debug.py", to run an AirSim example that connects components needed for basic control and sensor aquisition. Use this file to debug components.
 
-step 7: create a copy of the run_navi.py file and edit how you want! This is also ar unning example, where the default values will use a TD3 DRL algorithm to learn navigation, using the ground truth depth maps returned from AirSim. Happy learning =) 
+step 7: create a copy of the train_navi.py file and edit how you want! This is also ar unning example, where the default values will use a TD3 DRL algorithm to learn navigation, using the ground truth depth maps returned from AirSim. Happy learning =) 
 
 
 **ADVANCED**
