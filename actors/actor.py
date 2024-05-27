@@ -16,9 +16,9 @@ class Actor(Component):
 			action._idx = idx # tell action which index it is
 
 	# resets and end of episode to prepare for next
-	def start(self, state=None):
+	def reset(self, state=None):
 		for action in self._actions:
-			action.start(state)
+			action.reset(state)
 			
 	# returns action space for this actor
 	def get_space(self):

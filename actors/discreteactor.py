@@ -3,6 +3,7 @@ from random import randint
 from component import _init_wrapper
 import random
 import rl_utils as utils
+from gymnasium import spaces
 
 # handles discrete actions - RL returns an index specifying which action to take
 class DiscreteActor(Actor):
@@ -52,3 +53,8 @@ class DiscreteActor(Actor):
 			yaw_after = _drone.get_yaw()
 			collision_after = _drone.check_collision()
 			utils.speak(f'after action... position={position_after} yaw={yaw_after} collision={collision_after}')
+
+
+	# returns dioscrete action space of type Discrete
+	def get_space(self):
+		return spaces.Discrete(len(self._actions))
