@@ -75,16 +75,6 @@ def _timer_wrapper(configuration, method):
 		entry_name = module_name + '.' + method.__name__
 		configuration.log_benchmark('time', entry_name, delta_t)
 		return method_output
-	return _wrapper	
-
-# outputs each funciton call
-def _debug_wrapper(configuration, method):
-	def _wrapper(*args, **kwargs):
-		module_name = method.__module__
-		entry_name = module_name + '.' + method.__name__ + '()'
-		utils.speak(entry_name)
-		method_output = method(*args, **kwargs)
-		return method_output
 	return _wrapper
 
 # sets intialization values
@@ -109,8 +99,6 @@ def _init_wrapper(init_method):
 		del kwargs['overide_timer']
 		overide_memory = kwargs['overide_memory']
 		del kwargs['overide_memory']
-		overide_debug = kwargs['overide_debug']
-		del kwargs['overide_debug']
 
 		# GET CONFIGURATION OBJECT
 		if configuration is None:
@@ -172,7 +160,6 @@ def _init_wrapper(init_method):
 		self._part = part
 		self._add_timers = False # change in base init method to false to not add
 		self._add_memories = False # change in base init method to false to not add
-		self._add_debug = False # change in base init method to false to not add
 		self._set_name = True # change in base init method to false to not add
 		self._add_to_configuration = True # change in base init method to false to not add
 		init_method(self, *args, **kwargs)
@@ -180,8 +167,6 @@ def _init_wrapper(init_method):
 			self._add_timers = overide_timer # can override to add timer from constructor
 		if overide_memory is not None:
 			self._add_memories = overide_memory # can override to add memory tracker from constructor
-		if overide_debug is not None:
-			self._add_debug = overide_debug # can override to add memory tracker from constructor
 
 		# SET PIRORITIES for load orders, to default of 0 if not set yet or not passed in as argument
 		if connect_priority is None and getattr(self, "connect_priority", None) is None:
@@ -192,14 +177,8 @@ def _init_wrapper(init_method):
 		# ADD TIMER TO EACH PUBLIC CLASS METHOD
 		if configuration is not None and configuration.add_timers and self._add_timers:
 			for method in dir(self):
-				if callable(getattr(self, method)) and method[0] != '_' and 'actor' not in method and 'critic' not in method:
+				if callable(getattr(self, method)) and method[0] != '_':
 					setattr(self, method, _timer_wrapper(configuration, getattr(self, method)))
-
-		# ADD DEBUG (call stack)
-		if False:
-			for method in dir(self):
-				if callable(getattr(self, method)) and method[0] != '_' and 'actor' not in method and 'critic' not in method:
-					setattr(self, method, _debug_wrapper(configuration, getattr(self, method)))
 
 		# SET UNIQUE NAME
 		if self._set_name:
@@ -228,7 +207,6 @@ def _init_wrapper(init_method):
 					  part = 0,
 					  overide_timer = None,
 					  overide_memory = None,
-					  overide_debug = None,
 					  )
 
 # the component class itself
@@ -245,8 +223,8 @@ class Component():
 	def step(self, state=None):
 		pass
 
-	# called at the beginning of an episode to prepare for next
-	def start(self, state=None):
+	# resets at the beginning of an episode to prepare for next
+	def reset(self, state=None):
 		pass
 
 	# called at the end of an episode to clean up
