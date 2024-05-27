@@ -8,7 +8,7 @@ import airsim
 from others.voxels import Voxels
 import psutil
 import time
-	
+
 # handles airsim release executables
 class AirSimMap(Map):
 
@@ -49,7 +49,7 @@ class AirSimMap(Map):
 			# merge all settings
 			self.settings.update(other_settings)
 			# write to temp file to be read in when launching realease executable
-			self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
+			self._settings_path = os.getcwd() + '/local/temp/overwrite_settings.json'
 			self.write_settings(self.settings, self._settings_path)
 			if 'LocalHostIp' in self.settings:
 				utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
@@ -59,10 +59,6 @@ class AirSimMap(Map):
 				utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
 			else:
 				utils.set_global_parameter('ApiServerPort', 41451)
-			if 'timeout' in self.settings:
-				utils.set_global_parameter('timeout', self.settings['timeout'])
-			else:
-				utils.set_global_parameter('timeout', 20)
 			# pipeline to open for console output
 
 	def make_voxels(self,
@@ -88,50 +84,68 @@ class AirSimMap(Map):
 									)
 
 	# launch airsim map
-	def connect(self, state=None, from_crash=False):
-		if not from_crash:
-			super().connect()
-		else:
+	def connect(self, from_crash=False):
+		if from_crash:
+			utils.speak('Recovering from AirSim crash...')
 			self.disconnect()
-		if self.release_path is not None and os.path.exists(self.release_path):
-			# check OS to determine how to launch map
-			OS = utils.get_global_parameter('OS')
-			# set flags
-			flags = ''
-			if self.console_flags is not None:
-				flags = ' '.join(self.console_flags)
-			# launch map from OS
-			if OS == 'windows':
-				terminal_command = f'{self.release_path} {flags} -settings=\"{self._settings_path}\"'
+		else:
+			super().connect()
+		# auto_key = 'y'
+		# self_key = 'n'
+		# if from_crash:
+		# 	key = auto_key
+		# else:
+		# 	# prompt user to confirm when launch is successful (can launch manually if needs be)
+		# 	key = utils.prompt(f'Enter {auto_key} to automatically launch airsim or {self_key} to launch manually. After AirSim launches, press any key to continue...')
+		# if key == auto_key and self.release_path is not None:
+		# check OS to determine how to launch map
+		OS = utils.get_global_parameter('OS')
+		# set flags
+		flags = ''
+		if self.console_flags is not None:
+			flags = ' '.join(self.console_flags)
+		# launch map from OS
+		if OS == 'Windows':
+			_release_path = self.release_path
+			# send command to terminal to launch the relase executable, if can
+			if os.path.exists(_release_path):
+				utils.speak(f'Launching AirSim at {_release_path}')
+				terminal_command = f'{_release_path} {flags} -settings=\"{self._settings_path}\"'
 				utils.speak(f'Issuing command to OS: {terminal_command}')
 				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 				self._pid = process.pid
-			elif OS == 'linux':
-				terminal_command = f'sh {self.release_path} {flags} -settings=\"{self._settings_path}\"'
+			else:
+				utils.speak(_release_path + ' DNE, Please manually launch Airsim.')
+		elif OS == 'Linux':
+			_release_path = self.release_path
+			# send command to terminal to launch the relase executable, if can
+			if os.path.exists(_release_path):
+				utils.speak(f'Launching AirSim at {_release_path}')
+				terminal_command = f'sh {_release_path} {flags} -settings=\"{self._settings_path}\"'
 				utils.speak(f'Issuing command to OS: {terminal_command}')
 				process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
 				self._pid = process.pid
 			else:
-				utils.speak('Please manually launch Airsim.')
+				utils.speak(_release_path + ' DNE, Please manually launch Airsim.')
 		else:
-			utils.speak('Please manually launch Airsim.')
-		# wait for launch
-		if from_crash:
-			time.sleep(60)
-		else:
-			utils.prompt('Enter any key after AirSim has fully launched...')
-			
+			utils.speak(OS + ' invalid OS, Please manually launch Airsim.')
+		# else:
+		# 	utils.speak('Please manually launch Airsim.')
+		time.sleep(10)
+		# if from_crash:
+		# 	time.sleep(60)
+		# else:
+		# 	utils.prompt(f'After AirSim launches, press any key to continue...')
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_global_parameter('LocalHostIp'),
 			port=utils.get_global_parameter('ApiServerPort'),
-			timeout_value=utils.get_global_parameter('timeout'),
-		)
+			timeout_value = 60,
+										 )
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)
-		utils.speak('Connected to AirSim')
-		self.start() # this seems repetitive but needed to reset state info
+		self.reset() # this seems repetitive but needed to reset state info
 
 	# close airsim map
 	def disconnect(self):
