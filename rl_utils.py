@@ -3,6 +3,16 @@ from time import localtime, time
 import math
 import os
 import shutil
+import torch
+import numpy as np
+import random
+
+def set_seed(random_seed):
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(random_seed)
 
 def read_json(path):
 	return json.load(open(path, 'r'))
@@ -19,20 +29,20 @@ def get_timestamp():
 	)
 	return timestamp
 
-def setup(write_parent, run_prefix):
-	read_global_parameters()
-	run_name = run_prefix 
-	set_global_parameter('run_name',  run_name)
+def setup(write_parent, run_name):
 	working_directory = write_parent + run_name + '/'
+	set_global_parameter('working_directory', working_directory)
+	set_global_parameter('run_name',  run_name)
+	write_global_parameters()
 	set_read_write_paths(working_directory = working_directory)
 	read_global_log()
-	set_operating_system()
+	#set_operating_system()
 
 def set_operating_system():
 	import platform
-	OS = platform.system().lower()
+	OS = platform.system()
 	set_global_parameter('OS', OS)
-	speak(f'detected operating system:{OS}')
+	#speak(f'detected operating system:{OS}')
 	
 # end all folder paths with /
 def fix_directory(directory):
@@ -44,15 +54,12 @@ def fix_directory(directory):
 
 # set up folder paths for file io
 def set_read_write_paths(working_directory):
-	# make temp folder if not exists
-	if not os.path.exists('temp/'):
-		os.makedirs('temp/')
 	# make working directory if not exists
 	working_directory = fix_directory(working_directory)
-	if not os.path.exists(working_directory):
-		os.makedirs(working_directory)
-	# copy over evaluation notebook to directory (just for easy access)
-	shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
+	if os.path.exists(working_directory):
+		shutil.rmtree(working_directory)
+	os.makedirs(working_directory)
+	#shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
 	# save working directory path to global_parameters to be visible by all 
 	set_global_parameter('working_directory', working_directory) # relative to repo
 	# absoulte path on local computer to repo
@@ -60,55 +67,75 @@ def set_read_write_paths(working_directory):
 
 # set up controller to run configuration on
 def get_controller(controller_type, 
-				controller_params,
+				total_timesteps = 1_000_000,
+				continue_training = True,
+				model_component = 'Model',
+				environment_component = 'TrainEnvironment',
+				drone_component = 'Drone',
+				evaluator_component = 'Evaluator',
+				actor_component = 'Actor',
+				log_interval = -1,
+				project_name = 'void',
+				nEpisodes = 6,
 				):
 	# create CONTROLLER - controls all components (mode)
-	controller_type = controller_type.lower()
+	controller = None
+	speak(f'CONTROLLER = {controller_type}')
 	# debug mode will prompt user input for which component(s) to debug
-	if controller_type == 'debug':
+	if controller_type == 'Debug':
 		from controllers.debug import Debug
 		controller = Debug(
-			**controller_params,
+			drone_component=drone_component,
 			)
 	# train will create a new or read in a previously trained model
 	# set continue_training=True to pick up where learning loop last saved
 	# or set continue_training=False to keep weights but start new learning loop
-	elif controller_type == 'train':
+	elif controller_type == 'Train':
 		from controllers.train import Train
 		controller = Train(
-			**controller_params,
+			model_component = model_component,
+			environment_component = environment_component,
+			evaluator_component = evaluator_component,
+			total_timesteps = total_timesteps,
+			log_interval = log_interval,
+			continue_training = continue_training,
+			project_name = project_name,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
-	elif controller_type == 'evaluate':
+	elif controller_type == 'Evaluate':
 		from controllers.evaluate import Evaluate
 		controller = Evaluate(
-			**controller_params,
+				evaluate_environment_component = environment_component,
+				model_path = model_component, 
+				nEpisodes = nEpisodes
 			)
 	# checks will run drift checks
-	elif controller_type == 'airsimchecks':
+	elif controller_type == 'AirSimChecks':
 		from controllers.airsimchecks import AirSimChecks
 		controller = AirSimChecks(
-			**controller_params,
+			drone_component = drone_component,
+			actor_component = actor_component,
 			)
 	# will teleport drone to specified points and collect data
-	elif controller_type == 'data':
+	elif controller_type == 'Data':
 		from controllers.data import Data
 		controller = Data(
-			**controller_params,
+			model_component = model_component,
+			environment_component = environment_component,
+			drone_component = drone_component,
 			)
 	else:
 		from controllers.empty import Empty
 		controller = Empty()
-	speak(f'created controller of type = {type(controller)}')
 	return controller
 
 
 # GLOBAL PARAMS
 global_parameters = {}
-def read_global_parameters(path = 'global_parameters.json'):
+def read_global_parameters(path = 'local/global_parameters.json'):
 	global_parameters.update(read_json(path))
 
-def write_global_parameters(path = 'global_parameters.json'):
+def write_global_parameters(path = 'local/global_parameters.json'):
 	write_json(global_parameters, path)
 
 def del_global_parameter(key):
