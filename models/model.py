@@ -2,8 +2,10 @@
 from component import Component
 import rl_utils as utils
 from os.path import exists
+import wandb
 import torch
 import numpy as np
+from wandb.integration.sb3 import WandbCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.type_aliases import TrainFreq
@@ -15,7 +17,6 @@ from torch import Tensor
 import copy
 import functools
 from numpy.typing import DTypeLike
-import pickle
 
 # CUSTOM SLIM LAYERS
 class Slim(nn.Linear):
@@ -240,7 +241,7 @@ def convert_to_slim(model):
 	new_model.load_state_dict(copy.deepcopy(model.state_dict()))
 	return new_model
 
-class Drl(Component):
+class Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
 		# child init also needs to save the training environment (make environment_component a constructor parameter)
 	# NOTE: env=None as training and evaluation enivornments are handeled by controller
@@ -264,23 +265,7 @@ class Drl(Component):
 		self._sb3model = None
 		self.connect_priority = -1 # environment needs to connect first if creating a new sb3model
 		self._is_slim = False
-		self._back_to_start = None
-		self._loaded_models = []
-		
-	def set_slim(self, rho):
-		for module in self._sb3model.actor.modules():
-			if 'Slim' in str(type(module)):
-				module.slim = rho
 
-	def read_model(self, read_model_path):
-		#self._loaded_models.append(read_model_path)
-		#pickle.dump(self._loaded_models, open(self._name + '_loaded_models.p', 'wb'))
-		self.load_model(read_model_path)
-		self._sb3model.set_env(self._model_arguments['env'])
-		self._sb3model.learning_starts = self._model_arguments['learning_starts']
-		self._sb3model.train_freq = self._model_arguments['train_freq']
-		self._sb3model._convert_train_freq()
-		
 	def connect(self):
 		super().connect()
 		if self._is_hyper:
@@ -289,8 +274,13 @@ class Drl(Component):
 		# create model object
 		if self.read_model_path is not None and exists(self.read_model_path):
 			utils.speak(f'reading model from path {self.read_model_path}')
-			self.read_model(self.read_model_path)
-			self._back_to_start = self.read_model_path
+			self.load_model(self.read_model_path,
+				tensorboard_log = self._model_arguments['tensorboard_log'],
+			)
+			self._sb3model.set_env(self._model_arguments['env'])
+			self._sb3model.learning_starts = self._model_arguments['learning_starts']
+			self._sb3model.train_freq = self._model_arguments['train_freq']
+			self._sb3model._convert_train_freq()
 			utils.speak('loaded model from file')
 		else:
 			self._sb3model = self.sb3Type(**self._model_arguments)
@@ -357,8 +347,6 @@ class Drl(Component):
 		if self.read_replay_buffer_path is not None and exists(self.read_replay_buffer_path):
 			self.load_replay_buffer(self.read_replay_buffer_path)
 			utils.speak('loaded replay buffer from file')
-		print('Neural Network Framework:')
-		print(self._sb3model.actor)
 		
 			
 	# this will toggle if to checkpoint model and replay buffer
@@ -397,17 +385,15 @@ class Drl(Component):
 		self._sb3model.save_replay_buffer(path)
 
 	# load sb3 model from path, must set sb3Load from child
-	def load_model(self, path):
+	def load_model(self, path, tensorboard_log=None):
 		if not exists(path):
 			utils.error(f'invalid Model.load_model() path:{path}')
 		else:
-			self._sb3model = self.sb3Load(path)#, env=env, custom_objects=custom_objects)
+			self._sb3model = self.sb3Load(path, tensorboard_log=tensorboard_log)
 
-	def save_weights(self, actor_path=None, critic_path=None):
-		if actor_path is not None:
-			torch.save(self._sb3model.actor.state_dict(), actor_path)
-		if critic_path is not None:
-			torch.save(self._sb3model.critic.state_dict(), critic_path)
+	def save_weights(self, actor_path, critic_path):
+		torch.save(self._sb3model.actor.state_dict(), actor_path)
+		torch.save(self._sb3model.critic.state_dict(), critic_path)
 
 	def load_weights(self, actor_path):
 		state_dict = torch.load(actor_path)
@@ -432,6 +418,7 @@ class Drl(Component):
 	# runs learning loop on model
 	def learn(self, 
 		total_timesteps=10_000,
+		use_wandb = True,
 		log_interval = -1,
 		reset_num_timesteps = False,
 		evaluator=None,
@@ -442,6 +429,21 @@ class Drl(Component):
 			"total_timesteps": total_timesteps,
 		}
 		callback = None
+		if use_wandb:
+			run = wandb.init(
+				project=project_name,
+				config=config,
+				name = utils.get_global_parameter('run_name'),
+				sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+				monitor_gym=False,  # auto-upload the videos of agents playing the game
+				save_code=False,  # optional
+			)
+			callback = [
+				TensorboardCallback(evaluator),
+				WandbCallback(
+					gradient_save_freq=100,
+					),
+			]
 		# call sb3 learn method
 		self._sb3model.learn(
 			total_timesteps,
@@ -450,6 +452,7 @@ class Drl(Component):
 			tb_log_name = 'tb_log',
 			reset_num_timesteps = reset_num_timesteps,
 		)
+		run.finish()
 		
 	# makes a single prediction given input data
 	def predict(self, rl_input):
@@ -463,5 +466,3 @@ class Drl(Component):
 				if 'Slim' in str(type(module)):
 					module.slim = 1
 			self._sb3model.slim = 1
-		if self._back_to_start is not None:
-			self.read_model(self._back_to_start)

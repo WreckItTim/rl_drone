@@ -3,8 +3,9 @@ from observers.observer import Observer
 from component import _init_wrapper
 from sensors.sensor import Sensor
 from observations.image import Image
+from transformers.transformer import Transformer
 import numpy as np
-from gymnasium import spaces
+from gym import spaces
 
 class Multi(Observer):
 	

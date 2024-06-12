@@ -4,7 +4,6 @@ import numpy as np
 import rl_utils as utils
 import os
 from stable_baselines3.common.type_aliases import TrainFreq
-import msgpackrpc
 
 # an environment is the heart of RL algorithms
 # the Goal flavor wants the drone to go to Point A to Point B
@@ -24,11 +23,13 @@ class GoalEnv(Environment):
 				 rewarder_component, 
 				 goal_component,
 				 model_component,
-				 map_component,
 				 others_components=None,
 				 step_counter=0, 
 				 episode_counter=0, 
 				 save_counter=0,
+				 is_evaluation_env=False,
+				 change_train_freq_after = None,
+				 change_train_freq = (1, 'episode'),
 				 ):
 		super().__init__()
 		self._last_observation_name = 'None'
@@ -57,6 +58,7 @@ class GoalEnv(Environment):
 		self._track_save = track_save
 		self._track_vars = track_vars.copy()
 
+
 	# if reset learning loop
 	def reset_learning(self):
 		self.step_counter = 0 # total steps
@@ -84,9 +86,6 @@ class GoalEnv(Environment):
 			np.savez(path, **self._observations)
 			self._observations = {}
 		self.save_counter += 1
-
-	def handle_crash(self):
-		self._map.connect(from_crash=True)
 	
 	# just makes the rl_output from SB3 more readible
 	def clean_rl_output(self, rl_output):
@@ -100,127 +99,113 @@ class GoalEnv(Environment):
 		# next step
 		self._nSteps += 1 # total number of steps
 		self.step_counter += 1 # total number of steps
-		try_again = True
-		while(try_again):
-			try:
-				took_action = False
-				this_step = 'step_' + str(self._nSteps)
-				if state is None:
-					self._states[this_step] = {}
-				else:
-					self._states[this_step] = state.copy()
-				self._states[this_step]['nSteps'] = self._nSteps
-				# clean and save rl_output to state
-				self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
-				# take action
-				self._actor.step(self._states[this_step])
-				took_action = True
-				# save state kinematics
-				self._states[this_step]['drone_position'] = self._drone.get_position()
-				self._states[this_step]['yaw'] = self._drone.get_yaw()
-				# get observation
-				self._states[this_step]['observation_name'] = self._last_observation_name
-				observation_data, observation_name = self._observer.step(self._states[this_step])
-				self._last_observation_name = observation_name
-				# take step for other components
-				if self._others is not None:
-					for other in self._others:
-						other.step(self._states[this_step])
-				# assign rewards (stores total rewards and individual rewards in state)
-				# also checks if we are done with episode
-				total_reward, done = self._rewarder.step(self._states[this_step])
-				self._states[this_step]['done'] = done
-				# save data?
-				if self._track_save and 'observations' in self._track_vars:
-					self._observations[observation_name] = observation_data.copy()
-				if self._track_save and 'states' in self._track_vars and done: 
-					self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
-				truncated = False
-				if done: 
-					self.end(self._states[this_step])
-					truncated = self._states[this_step]['termination_reason'] in ['steps']
-					#print('TERMINATION STATE', self._states[this_step])
-					#input()
-				try_again = False
-			except msgpackrpc.error.TimeoutError as e:
-				utils.speak(str(e) + ' caught in step()')
-				self.handle_crash()
-				if took_action:
-					self._actor.undo()
+		this_step = 'step_' + str(self._nSteps)
+		if state is None:
+			self._states[this_step] = {}
+		else:
+			self._states[this_step] = state.copy()
+		self._states[this_step]['nSteps'] = self._nSteps
+		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
+		# clean and save rl_output to state
+		self._states[this_step]['rl_output'] = self.clean_rl_output(rl_output)
+		# take action
+		self._actor.step(self._states[this_step])
+		# save state kinematics
+		self._states[this_step]['drone_position'] = self._drone.get_position()
+		self._states[this_step]['yaw'] = self._drone.get_yaw()
+		# get observation
+		self._states[this_step]['observation_name'] = self._last_observation_name
+		observation_data, observation_name = self._observer.step(self._states[this_step])
+		self._last_observation_name = observation_name
+		# take step for other components
+		if self._others is not None:
+			for other in self._others:
+				other.step(self._states[this_step])
+		# assign rewards (stores total rewards and individual rewards in state)
+		# also checks if we are done with episode
+		total_reward, done = self._rewarder.step(self._states[this_step])
+		self._states[this_step]['done'] = done
+		# save data?
+		if self._track_save and 'observations' in self._track_vars:
+			self._observations[observation_name] = observation_data.copy()
+		if self._track_save and 'states' in self._track_vars and done: 
+			self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
+		if done: 
+			self.end(self._states[this_step])
+			#print('TERMINATION STATE', self._states[this_step])
+			#input()
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done, truncated, self._states[this_step].copy()
+		return observation_data, total_reward, done, self._states[this_step].copy()
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
-	def reset(self, seed=None, options=None):    
+	def reset(self, state = None):
 		self.episode_counter += 1
-		try_again = True
-		while(try_again):
-			try:
-				spawned = False
-				#i = input()
-				# init state(s)
-				self._nSteps = 0 # steps this episode
-				this_step = 'step_' + str(self._nSteps)
-				self._states = {this_step:{}}
-				self._states[this_step]['nSteps'] = self._nSteps
+		#print('reset',self.is_evaluation_env, self.episode_counter)
+		if self.change_train_freq_after is not None and not self._freq_changed and self.episode_counter >= self.change_train_freq_after-1:
+			#print('train_freq b4', self._model._sb3model.train_freq)
+			self._model._sb3model.train_freq = self.change_train_freq
+			self._model._sb3model._convert_train_freq()
+			#print('changed train_freq to', self._model._sb3model.train_freq)
+			self._freq_changed = True
+		#i = input()
+		# init state(s)
+		self._nSteps = 0 # steps this episode
+		this_step = 'step_' + str(self._nSteps)
+		if state is None:
+			self._states = {this_step:{}}
+		else:
+			self._states = {this_step:state.copy()}
+		self._states[this_step]['nSteps'] = self._nSteps
+		self._states[this_step]['is_evaluation_env'] = self.is_evaluation_env
 
-				# reset drone and goal components, several reset() methods may be blank
-				# order may matter here, currently no priority queue set-up, may need later
-				if self._model is not None:
-					self._model.reset(self._states[this_step])
-				self._drone.reset(self._states[this_step])
-				self._states[this_step]['drone_position'] = self._drone.get_position()
-				self._states[this_step]['yaw'] = self._drone.get_yaw() 
+		# reset drone and goal components, several reset() methods may be blank
+		# order may matter here, currently no priority queue set-up, may need later
+		self._model.reset(self._states[this_step])
+		self._drone.reset(self._states[this_step])
+		if state is not None and 'spawn_to' in state:
+			self._drone.teleport(*state['spawn_to'], ignore_collision=True)
+		self._states[this_step]['drone_position'] = self._drone.get_position()
+		self._states[this_step]['yaw'] = self._drone.get_yaw() 
 
-				self._goal.reset(self._states[this_step])
-				self._states[this_step]['goal_position'] = self._goal.get_position()
+		self._goal.reset(self._states[this_step])
+		if state is not None and 'goal_at' in state:
+			self._goal.set_position(*state['goal_at'][:3])
+		self._states[this_step]['goal_position'] = self._goal.get_position()
 
-				# reset other components
-				self._actor.reset(self._states[this_step])
-				self._observer.reset(self._states[this_step])
-				self._rewarder.reset(self._states[this_step])
-				if self._model is not None:
-					self._model.reset(self._states[this_step])
-				if self._others is not None:
-					for other in self._others:
-						other.reset(self._states[this_step])
+		# reset other components
+		if self._others is not None:
+			for other in self._others:
+				other.reset(self._states[this_step])
+		self._actor.reset(self._states[this_step])
+		self._observer.reset(self._states[this_step])
+		self._rewarder.reset(self._states[this_step])
 
-				# get first observation
-				observation_data, observation_name = self._observer.step(self._states[this_step])
-				self._last_observation_name = observation_name
+		# get first observation
+		observation_data, observation_name = self._observer.step(self._states[this_step])
+		self._last_observation_name = observation_name
 		
-				# save data?
-				if self._track_save and 'observations' in self._track_vars:
-					self._observations[observation_name] = observation_data.copy()
-				try_again = False
-			except msgpackrpc.error.TimeoutError as e:
-				utils.speak(str(e) + ' caught in start()')
-				self.handle_crash()
+		# save data?
+		if self._track_save and 'observations' in self._track_vars:
+			self._observations[observation_name] = observation_data.copy()
 
-		return observation_data, None
+		#print(self._name, self.episode_counter, self._states[this_step])
+		#p = 'E' if self.is_evaluation_env else 'T'
+		#print(p + str(self.episode_counter), end=' ')
+		return observation_data
 
 	# called at the end of each episode for any clean up, when done=True
 	# normally only reset() is used in OpenAI Gym environments
 	# but end() is much easier/clear/necessary for modifiers and multiple envs
 	# off-by-one errors aggregate when switching between multiple envs
-	def end(self, state=None):    
-		try_again = True
-		while(try_again):
-			try:   
-				# end all components
-				self._drone.end(state)
-				self._goal.end(state)
-				self._actor.end(state)
-				self._observer.end(state)
-				self._rewarder.end(state)
-				if self._model is not None:
-					self._model.end(state)
-				if self._others is not None:
-					for other in self._others:
-						other.end(state)
-				try_again = False
-			except msgpackrpc.error.TimeoutError as e:
-				utils.speak(str(e) + ' caught in end()')
-				self.handle_crash()
+	def end(self, state=None):
+		# end all components
+		self._drone.end(state)
+		self._goal.end(state)
+		if self._others is not None:
+			for other in self._others:
+				other.end(state)
+		self._actor.end(state)
+		self._observer.end(state)
+		self._rewarder.end(state)

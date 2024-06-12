@@ -14,15 +14,15 @@ class RelativeGoal(Other):
 				drone_component, 
 				map_component,
 				bounds_component,
-				use_list=False,
-				_goals=None,
 				static_r = 0, # relative distance for static goal from drone
 				static_dz = 0, # relative z for static goal from drone (this is dz above roof or floor)
 				static_yaw = 0, # relative yaw for static goal from drone
 				random_r = [0,0], # relative distance for random goal from drone
 				random_dz = [0,0], # relative z for random goal from drone (this is dz above roof or floor)
 				random_yaw = [0,0], # relative yaw for random goal from drone
-				random_point = False, # random goal? otherwise will default to static
+				random_point_on_train = False, # random goal when training?
+				random_point_on_evaluate = False, # random goal when evaluating?
+					# otherwise will default to static
 				# these values are stored for amps (do not change) this is for file IO
 				original_static_r = None,
 				original_static_dz = None,
@@ -32,9 +32,6 @@ class RelativeGoal(Other):
 				original_random_yaw = None,
 				vertical = True,
 			 ):
-		if _goals is not None:
-			self._g_idx = 0
-			self._goals = _goals.copy()
 		if original_static_r is None:
 			self.original_static_r = static_r
 		if original_static_dz is None:
@@ -73,29 +70,20 @@ class RelativeGoal(Other):
 	def get_yaw(self):
 		position = self.get_position()
 		return math.atan2(position[1], position[0])
-	
-	def set_goal(self, r, dz, yaw):
-		drone_position = self._drone.get_position()
-		self._x = drone_position[0] + r * np.cos(yaw)
-		self._y = drone_position[1] + r * np.sin(yaw)
-		if self.vertical:
-			self._z = self._map.get_roof(self._x, self._y, dz)
-		else:
-			self._z = -1*dz
 
 	# need to recalculate relative point at each reset
 	def reset(self, state):
-		if self.use_list:
-			self.set_goal(*self._goals[self._g_idx])
-			self._g_idx += 1
-			if self._g_idx >= len(self._goals):
-				self._g_idx = 0
-			return
+		is_evaluation = state['is_evaluation_env']
 		drone_position = self._drone.get_position()
 		drone_yaw = self._drone.get_yaw()
 		# random point?
+		random_point = False
+		if is_evaluation and self.random_point_on_evaluate:
+			random_point = True
+		elif not is_evaluation and self.random_point_on_train:
+			random_point = True
 		valid_point = True
-		if self.random_point:
+		if random_point:
 			# randomize until in bounds
 			attempt = 0
 			while(True):

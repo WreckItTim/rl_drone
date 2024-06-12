@@ -2,8 +2,8 @@
 from component import Component
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
-import gymnasium as gym
-from gymnasium import spaces
+import gym
+from gym import spaces
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3
 class Environment(gym.Env, Component):
@@ -45,7 +45,7 @@ class Environment(gym.Env, Component):
 
 	# called at begin of episode to prepare for next, when step() returns done=True
 	# returns first observation for new episode
-	def reset(self, seed=42):
+	def reset(self):
 		raise NotImplementedError
 
 	# called at end of episode to prepare for next, when step() returns done=True

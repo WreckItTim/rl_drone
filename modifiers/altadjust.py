@@ -17,10 +17,13 @@ class AltAdjust(Modifier):
 			  order, # modify 'pre' or 'post'?
 			  alt_min = -5, # range of allowable altitude
 			  adjust = -4, # will teleport to this altitude if out of range
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0 , # keepts track of number of calls to parent method
-			  ):
-		super().__init__(base_component, parent_method, order, frequency, counter)
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
+			 ):
+		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 
 	# check and adjust altitude
 	def activate(self, state):

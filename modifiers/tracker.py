@@ -19,10 +19,13 @@ class Tracker(Modifier):
 			  write_folder = None, # path to write log to
 			  nActivations = 0,
 			  nParts = 0,
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
-		super().__init__(base_component, parent_method, order, frequency, counter)
+		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self._CONVERSION = float(1024**3) # bytes to GB
 
 	def reset_log(self):

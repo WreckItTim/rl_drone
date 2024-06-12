@@ -1,6 +1,6 @@
 from actors.actor import Actor
 from component import _init_wrapper
-from gymnasium import spaces
+from gym import spaces
 import numpy as np
 import rl_utils as utils
 import random
@@ -18,37 +18,25 @@ class Teleporter(Actor):
 	):
 		super().__init__()
 		self._type = 'continuous'
-		self._last_state = [[0,0,0], 0]
-
-	# backtracks to state before last action
-	def undo(self):
-		self._drone.teleport(self._last_state[0][0], self._last_state[0][1], self._last_state[0][2], self._last_state[1], ignore_collision=False)
-		for idx, action in enumerate(self._actions):
-			action.undo()
 
 
 	# interpret action from RL
 	def step(self, state):
 		current_position = self._drone.get_position() # meters
 		current_yaw = self._drone.get_yaw() # radians
-		self._last_state = [current_position, current_yaw]
 		target = {
 			'x':current_position[0],
 			'y':current_position[1],
 			'z':current_position[2],
 			'yaw':current_yaw,
 			}
-		if 'transcribed_action' not in state:
-			state['transcribed_action'] = {}
 		for idx, action in enumerate(self._actions):
 			action._idx = idx # tell action which index it is
 			this = action.step(state, execute=False) # transcribe action but do not take
-			#state['transcribed_action'].update(this)
-			for key in this:
-				if key in target:
+			state['transcribed_action'].update(this)
+			for key in target:
+				if key in this:
 					target[key] += this[key]
-				else:
-					state['transcribed_action'][key] = this[key]
 		# teleport drone
 		#print('Target:', target)
 		state['transcribed_action'].update(target)

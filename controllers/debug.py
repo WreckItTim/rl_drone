@@ -1,7 +1,6 @@
 from controllers.controller import Controller
 from component import _init_wrapper
 from configuration import Configuration
-import os
 
 # will load at a list of all components
 # allows user to view and debug each component independently 
@@ -11,7 +10,6 @@ class Debug(Controller):
 	@_init_wrapper
 	def __init__(self, drone_component):
 		super().__init__()
-		os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 	# runs control on components
 	def run(self):

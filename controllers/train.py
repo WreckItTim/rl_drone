@@ -14,6 +14,7 @@ class Train(Controller):
 				evaluator_component,
 				continue_training=True,
 				total_timesteps = 1_000_000,
+				use_wandb = True,
 				log_interval = -1,
 				project_name = 'void',
 		):
@@ -42,6 +43,7 @@ class Train(Controller):
 		self._model.learn(
 			total_timesteps = _total_timesteps,
 			log_interval = self.log_interval,
+			use_wandb = self.use_wandb,
 			reset_num_timesteps = not self.continue_training,
 			evaluator = self._evaluator,
 			project_name = self.project_name,

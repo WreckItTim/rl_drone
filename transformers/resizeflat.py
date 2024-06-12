@@ -23,7 +23,6 @@ class ResizeFlat(Transformer):
 	# if observation type is valid, applies transformation
 	def transform(self, observation):
 		img_data = observation.to_numpy()
-		
 		# TEMP CODE TODO:DELETE DELETE DELETE
 		#img_data = np.moveaxis(img_data, 0, 2)
 		#cv2.imwrite(utils.get_global_parameter('working_directory') + 'tello_imgs/' + observation._name + '_post.png', img_data)

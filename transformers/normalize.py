@@ -11,7 +11,7 @@ class Normalize(Transformer):
 	def __init__(self, 
 				 min_input=0, 
 				 max_input=255,
-				 min_output=0,
+				 min_output=0.1, # reserve 0 for no-data
 				 max_output=1,
 				 left = None, # value to set if below min_input (otherwise defaults to min_input)
 				 right = None, # value to set if above max_input (otherwise defaults to max_input)
@@ -23,8 +23,9 @@ class Normalize(Transformer):
 		normalized = np.interp(observation.to_numpy(),
 						 (self.min_input, self.max_input),
 						 (self.min_output, self.max_output),
-                         left=self.left, right=self.right,
-						)
+                       left=self.left,
+                       right=self.right,
+						 )
 		if type(observation) == Vector:
 			normalized = np.reshape(normalized, (len(normalized),))
 		observation.set_data(normalized)

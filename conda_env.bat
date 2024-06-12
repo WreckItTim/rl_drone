@@ -21,22 +21,26 @@ python -m pip install --force-reinstall -v "PyWavelets==1.4.1"
 python -m pip install --force-reinstall -v "scipy==1.10.0"
 python -m pip install --force-reinstall -v "six==1.16.0"
 python -m pip install --force-reinstall -v "tifffile==2022.10.10"
+python -m pip install --force-reinstall -v "torch==1.13.1"
 python -m pip install --force-reinstall -v "tornado==4.5.3"
 python -m pip install --force-reinstall -v "tqdm==4.64.1"
 python -m pip install --force-reinstall -v "typing_extensions==4.4.0"
 python -m pip install --force-reinstall -v "wincertstore==0.2"
 python -m pip install --force-reinstall -v "zipp==3.11.0"
 python -m pip install numpy==1.24.1
+python -m pip install hyperopt==0.2.7
+python -m pip install binvox==0.1.5
 python -m pip install --upgrade msgpack-rpc-python==0.4.1
 python -m pip install airsim==1.8.1
 python -m pip install psutil==5.9.4
 python -m pip install scikit-image==0.19.3
 python -m pip install matplotlib==3.6.3
+python -m pip install gym==0.21.0
+python -m pip install gym-notices==0.0.8
 python -m pip install setuptools==65.5.0
 python -m pip install stable-baselines3==1.7.0
 python -m pip install tensorboard==2.11.2
 python -m pip install nvidia-smi==0.1.3
 python -m pip install nvidia-ml-py3==7.352.0
 python -m pip install nvitop==1.0.0
-python -m pip install stable-baselines3[extra]==2.3.1
-python -m pip install gymnasium==0.29.1
+python -m pip install wandb==0.13.11

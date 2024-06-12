@@ -3,16 +3,6 @@ from time import localtime, time
 import math
 import os
 import shutil
-import torch
-import numpy as np
-import random
-
-def set_seed(random_seed):
-    random.seed(random_seed)
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(random_seed)
 
 def read_json(path):
 	return json.load(open(path, 'r'))
@@ -29,20 +19,20 @@ def get_timestamp():
 	)
 	return timestamp
 
-def setup(write_parent, run_name):
-	working_directory = write_parent + run_name + '/'
-	set_global_parameter('working_directory', working_directory)
+def setup(write_parent, run_prefix):
+	read_global_parameters()
+	run_name = run_prefix # + '_' + get_global_parameter('instance_name')
 	set_global_parameter('run_name',  run_name)
-	write_global_parameters()
+	working_directory = write_parent + run_name + '/'
 	set_read_write_paths(working_directory = working_directory)
 	read_global_log()
-	#set_operating_system()
+	set_operating_system()
 
 def set_operating_system():
 	import platform
-	OS = platform.system()
+	OS = platform.system().lower()
 	set_global_parameter('OS', OS)
-	#speak(f'detected operating system:{OS}')
+	speak(f'detected operating system:{OS}')
 	
 # end all folder paths with /
 def fix_directory(directory):
@@ -54,12 +44,14 @@ def fix_directory(directory):
 
 # set up folder paths for file io
 def set_read_write_paths(working_directory):
+	# make temp folder if not exists
+	if not os.path.exists('temp/'):
+		os.makedirs('temp/')
 	# make working directory if not exists
 	working_directory = fix_directory(working_directory)
-	if os.path.exists(working_directory):
-		shutil.rmtree(working_directory)
-	os.makedirs(working_directory)
-	#shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
+	if not os.path.exists(working_directory):
+		os.makedirs(working_directory)
+	shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
 	# save working directory path to global_parameters to be visible by all 
 	set_global_parameter('working_directory', working_directory) # relative to repo
 	# absoulte path on local computer to repo
@@ -74,9 +66,10 @@ def get_controller(controller_type,
 				drone_component = 'Drone',
 				evaluator_component = 'Evaluator',
 				actor_component = 'Actor',
+				use_wandb = True,
 				log_interval = -1,
+				evaluator = 'Evaluator',
 				project_name = 'void',
-				nEpisodes = 6,
 				):
 	# create CONTROLLER - controls all components (mode)
 	controller = None
@@ -97,6 +90,7 @@ def get_controller(controller_type,
 			environment_component = environment_component,
 			evaluator_component = evaluator_component,
 			total_timesteps = total_timesteps,
+			use_wandb = use_wandb,
 			log_interval = log_interval,
 			continue_training = continue_training,
 			project_name = project_name,
@@ -105,9 +99,7 @@ def get_controller(controller_type,
 	elif controller_type == 'Evaluate':
 		from controllers.evaluate import Evaluate
 		controller = Evaluate(
-				evaluate_environment_component = environment_component,
-				model_path = model_component, 
-				nEpisodes = nEpisodes
+			evaluator_component = evaluator_component,
 			)
 	# checks will run drift checks
 	elif controller_type == 'AirSimChecks':
@@ -132,10 +124,10 @@ def get_controller(controller_type,
 
 # GLOBAL PARAMS
 global_parameters = {}
-def read_global_parameters(path = 'local/global_parameters.json'):
+def read_global_parameters(path = 'global_parameters.json'):
 	global_parameters.update(read_json(path))
 
-def write_global_parameters(path = 'local/global_parameters.json'):
+def write_global_parameters(path = 'global_parameters.json'):
 	write_json(global_parameters, path)
 
 def del_global_parameter(key):

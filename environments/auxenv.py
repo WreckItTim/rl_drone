@@ -4,7 +4,7 @@ import numpy as np
 import rl_utils as utils
 import os
 from stable_baselines3.common.type_aliases import TrainFreq
-from gymnasium import spaces
+from gym import spaces
 
 # an environment is the heart of RL algorithms
 # the Goal flavor wants the drone to go to Point A to Point B
@@ -22,8 +22,7 @@ class AuxEnv(Environment):
 				actor_component, 
 				model_component, # aux model for rho-preds
 				navi_component, # goalenv environment for navigation
-				step_counter = 0, # total steps
-				episode_counter = 0,
+				is_evaluation_env=False,
 				start = 100, # turn off noise
 		):
 		super().__init__()
@@ -64,19 +63,16 @@ class AuxEnv(Environment):
 		navi_obs, navi_reward, navi_done, navi_state = self._navi.step(actions, state)
 		self._navi_obs = navi_obs.copy()
 		aux_obs = np.concatenate([navi_obs, (np.array(actions)+ 1)/2, rhos])
-		if navi_done:
-			self.end()
 		# state is passed to stable-baselines3 callbacks
 		return aux_obs, navi_reward, navi_done, navi_state
-
-	def end(self):
-		pass
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
-	def reset(self, seed=42):
+	def reset(self, state = None):
 		self.episode_counter += 1
+		if not self.is_evaluation_env and self.episode_counter > self.start:
+			self._model._sb3model.action_noise = None 
 		# reset navi env
 		navi_obs = self._navi.reset()
 		self._navi_obs = navi_obs.copy()

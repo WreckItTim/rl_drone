@@ -64,12 +64,6 @@ class Configuration():
 		self.components[component._name] = component
 
 	# keeps track of components
-	def remove_component(self, component_name):
-		if component_name in self.components:
-			del self.components[component_name]
-			
-
-	# keeps track of components
 	def get_component(self, component_name, is_type=None):
 		if component_name not in self.components:
 			utils.error(f'component named {component_name} does not exist')

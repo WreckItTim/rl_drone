@@ -11,7 +11,6 @@ class Image(Observation):
 
 	# displays observation
 	def display(self):
-		cv2.imwrite('img.png', self._data)
-		#cv2.imshow(f'Observation {self._name}:', self._data)
-		#cv2.waitKey(0)
-		#cv2.destroyAllWindows()
+		cv2.imshow(f'Observation {self._name}:', self._data)
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()

@@ -16,10 +16,13 @@ class Spawner(Modifier):
 			  spawns_components, # list of spawn objects
 			  order, # modify 'pre' or 'post'?
 			  random = False, # set true to select randomly from spawn objects
+			  on_evaluate = True, # toggle to run modifier on evaluation environ
+			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			  ):
-		super().__init__(base_component, parent_method, order, frequency, counter)
+			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
+			 ):
+		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
 		self._rotating_index = 0
 
 	# if random, randomly select from list of spawn objects
