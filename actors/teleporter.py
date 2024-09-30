@@ -22,6 +22,8 @@ class Teleporter(Actor):
 
 	# interpret action from RL
 	def step(self, state):
+		if 'transcribed_action' not in state:
+			state['transcribed_action'] = {}
 		current_position = self._drone.get_position() # meters
 		current_yaw = self._drone.get_yaw() # radians
 		target = {

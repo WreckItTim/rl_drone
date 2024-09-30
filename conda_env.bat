@@ -1,5 +1,6 @@
+python -m pip install --force-reisntall -v "pip==21.0"
 python -m pip install --force-reinstall -v "cloudpickle==2.2.0"
-python -m pip install --force-reinstall -v "pip install colorama==0.4.6"
+python -m pip install --force-reinstall -v "colorama==0.4.6"
 python -m pip install --force-reinstall -v "contourpy==1.0.7"
 python -m pip install --force-reinstall -v "cycler==0.11.0"
 python -m pip install --force-reinstall -v "fonttools==4.38.0"

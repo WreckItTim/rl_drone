@@ -124,10 +124,10 @@ def get_controller(controller_type,
 
 # GLOBAL PARAMS
 global_parameters = {}
-def read_global_parameters(path = 'global_parameters.json'):
+def read_global_parameters(path = 'local/global_parameters.json'):
 	global_parameters.update(read_json(path))
 
-def write_global_parameters(path = 'global_parameters.json'):
+def write_global_parameters(path = 'local/global_parameters.json'):
 	write_json(global_parameters, path)
 
 def del_global_parameter(key):
