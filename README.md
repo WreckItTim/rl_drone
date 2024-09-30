@@ -23,7 +23,7 @@ Most of these errors come from AirSim instablities. Since AirSim was depreciated
 1. AirSim has a dependency issue on tornado. If you created the conda environment properly (see above), you should not run into this issue. However if it is related to tornado or msgpack-rpc then pip install this:
 pip install msgpack-rpc-python --upgrade
 
-2. Occasionally, the drone will become unstable and start oscilating around the z-axis. This is an artificat of AirSim that I mitigated by either teleporting the drone and checking oscilations, or adding some stability code after each movement that (temporarily) sets the drone velocities to zero. See issue here: https://github.com/microsoft/AirSim/issues/4780
+2. Occasionally, the drone will become unstable and start oscilating around the z-axis. This is an artificat of AirSim that I mitigated by either teleporting the drone and checking collisions that would have happened on the way, or adding some stability code after each movement that (temporarily) sets the drone velocities to zero. See issue here: https://github.com/microsoft/AirSim/issues/4780
 
 3. If using moveToPositionAsync() or rotateToPositionAsync(), then AirSim will occassionally freeze and constantly output lookahead errors when colliding with an object. I have tried lowering the timeout (to a few seconds) and setting a lower limit for the distance to both 0.5 and 1 - all to no avail. An alternative solution is to handle these errors with a timer and fidelity test, but this comes with high overhead especially in an iterative reinforcement learning training loop. This is why the current release of rl_drone uses moveByVelocityAsync() rotateByYawRateAsync() when not using teleport().
 
@@ -33,4 +33,4 @@ pip install msgpack-rpc-python --upgrade
 
 6. If you are experience excessive lag it is likely because the simulation is being ran purely on cpu. You may need to reinstall nvidia drivers, or to run purely on cpu you can reduce the speedup in the AirSim config file down from the value I typically use of 10.
 
-7. If you can not succesfully run the conda_env.bat file it is likely becasue the the conda environment was not created with the flag python=3.10
+7. If you can not succesfully run the conda_env.bat file it is likely because the the conda environment was not created with the flag python=3.10
