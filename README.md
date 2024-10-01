@@ -12,11 +12,9 @@ DJI Tello
 
 **CITATIONS**
 
-Please cite our NaviSplit paper if using this repository: https://ieeexplore.ieee.org/abstract/document/10562181
+Please cite our NaviSlim paper if using this repository: https://ieeexplore.ieee.org/abstract/document/10562181
 
-_Related works that use this repository:_
-
-https://ieeexplore.ieee.org/abstract/document/10562181
+_Other related works that use this repository:_
 
 https://arxiv.org/abs/2406.13086
 
