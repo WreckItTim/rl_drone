@@ -41,7 +41,7 @@ read_model_path = None
 project_name = parent_project + '_' + child_project
 run_name = child_project + '_' + airsim_release 
 run_name += '_vert' if vert_motion else '_horz' 
-run_name += '_' + init_type + '_' + test_case + '_' + repo_version
+run_name += '_' + init_type + '_' + test_case
 if run_post != '': 
 	run_name += '_' + run_post
 
