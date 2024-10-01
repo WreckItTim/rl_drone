@@ -1,4 +1,4 @@
-This repository links a python interface with drone/robotics simulators and real world controllers. The main purpose of this interface is for control using neural networks trained using various methods such as imitation and reinforcement learning. Thus the repository focuses on training and evaluating such models. It is designed to be customizable, modular, and for tracking various experiments. 
+This repository links a python interface with drone/robotics simulators and real world controllers. The main purpose of this interface is for navigation using neural networks trained using various methods such as imitation and reinforcement learning. Thus the repository focuses on training and evaluating such models. It is designed to be customizable, modular, and for tracking various experiments. 
 
 This repository was released with the publications of _NaviSlim_ at CPS-IoT Week 2024 IoTDI and _NaviSplit_ at WoWMoM 2024. These studies focus on creating adaptable dynamic deep neural networks (ADDNN) for more efficient drone navigation through manipulation of the supporting neural networks. 
 
