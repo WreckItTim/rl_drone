@@ -16,7 +16,7 @@ Please cite our NaviSlim paper if using this repository: https://ieeexplore.ieee
 
 _Other related works that use this repository:_
 
-https://arxiv.org/abs/2406.13086
+NaviSplit - https://arxiv.org/abs/2406.13086
 
 **AIRSIM SETUP**
 
