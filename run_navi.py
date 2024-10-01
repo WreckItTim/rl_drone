@@ -27,8 +27,7 @@ if len(args) > 3:
 
 use_wandb = False
 
-repo_version = 'gamma32'
-parent_project = 'SECON3'
+parent_project = 'NaviSlim'
 airsim_release = 'Blocks'
 action_noise = None
 child_project = 'navi'
@@ -118,7 +117,6 @@ def create_base_components(
 	# SET META DATA (anything you want here, just writes to config file as a dict)
 	meta = {
 		'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
-		'repo_version': repo_version,
 		'run_name': utils.get_global_parameter('run_name'),
 		'timestamp': utils.get_timestamp(),
 		'run_OS': utils.get_global_parameter('OS'),
@@ -549,7 +547,7 @@ def create_base_components(
 			read_model_path = read_model_path,
 			read_replay_buffer_path = read_replay_buffer_path,
 			convert_slim = True,
-			with_distillation = True,
+			with_distillation = False,
 			use_slim = use_slim,
 			action_noise = action_noise,
 			name='Model',
