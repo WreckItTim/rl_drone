@@ -54,3 +54,5 @@ pip install msgpack-rpc-python --upgrade
 6. If you are experience excessive lag it is likely because the simulation is being ran purely on cpu. You may need to reinstall nvidia drivers, or to run purely on cpu you can reduce the speedup in the AirSim config file down from the value I typically use of 10.
 
 7. If you can not succesfully run the conda_env.bat file it is likely because the the conda environment was not created with the flag python=3.10
+
+8. Malloc issues and crashes when launching airsim likely arise from having an instance of Airsim already running (kill the running instance first).
