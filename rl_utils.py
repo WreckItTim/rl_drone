@@ -3,6 +3,13 @@ from time import localtime, time
 import math
 import os
 import shutil
+import pickle as pk
+
+def pk_read(path):
+	return pk.load(open(path, 'rb'))
+
+def pk_write(obj, path):
+	return pk.dump(obj, open(path, 'wb'))
 
 def read_json(path):
 	return json.load(open(path, 'r'))
@@ -19,19 +26,16 @@ def get_timestamp():
 	)
 	return timestamp
 
-def setup(write_parent, run_prefix):
-	read_global_parameters()
-	run_name = run_prefix # + '_' + get_global_parameter('instance_name')
-	set_global_parameter('run_name',  run_name)
-	working_directory = write_parent + run_name + '/'
+def setup(working_directory):
+	read_local_parameters()
 	set_read_write_paths(working_directory = working_directory)
-	read_global_log()
+	read_local_log()
 	set_operating_system()
 
 def set_operating_system():
 	import platform
 	OS = platform.system().lower()
-	set_global_parameter('OS', OS)
+	set_local_parameter('OS', OS)
 	speak(f'detected operating system:{OS}')
 	
 # end all folder paths with /
@@ -51,11 +55,10 @@ def set_read_write_paths(working_directory):
 	working_directory = fix_directory(working_directory)
 	if not os.path.exists(working_directory):
 		os.makedirs(working_directory)
-	shutil.copyfile('train_eval.ipynb', working_directory + 'train_eval.ipynb')
-	# save working directory path to global_parameters to be visible by all 
-	set_global_parameter('working_directory', working_directory) # relative to repo
+	# save working directory path to local_parameters to be visible by all 
+	set_local_parameter('working_directory', working_directory) # relative to repo
 	# absoulte path on local computer to repo
-	set_global_parameter('absolute_path',  os.getcwd() + '/')
+	set_local_parameter('absolute_path',  os.getcwd() + '/')
 
 # set up controller to run configuration on
 def get_controller(controller_type, 
@@ -97,7 +100,7 @@ def get_controller(controller_type,
 			)
 	# evaluate will read in a trained model and evaluate on given environment
 	elif controller_type == 'Evaluate':
-		from controllers.evaluate import Evaluate
+		from controllers.test import Evaluate
 		controller = Evaluate(
 			evaluator_component = evaluator_component,
 			)
@@ -122,44 +125,45 @@ def get_controller(controller_type,
 	return controller
 
 
-# GLOBAL PARAMS
-global_parameters = {}
-def read_global_parameters(path = 'local/global_parameters.json'):
-	global_parameters.update(read_json(path))
+# local PARAMS
+local_parameters = {}
+def read_local_parameters(path = 'local/local_parameters.json'):
+	if os.path.exists(path):
+		local_parameters.update(read_json(path))
 
-def write_global_parameters(path = 'local/global_parameters.json'):
-	write_json(global_parameters, path)
+def write_local_parameters(path = 'local/local_parameters.json'):
+	write_json(local_parameters, path)
 
-def del_global_parameter(key):
-	if key in global_parameters:
-		del global_parameters[key]
+def del_local_parameter(key):
+	if key in local_parameters:
+		del local_parameters[key]
 
-def set_global_parameter(key, value):
-	global_parameters[key] = value
+def set_local_parameter(key, value):
+	local_parameters[key] = value
 
-def get_global_parameter(key):
-	if key not in global_parameters:
+def get_local_parameter(key):
+	if key not in local_parameters:
 		return None
 	else:
-		return global_parameters[key]
+		return local_parameters[key]
 
 
 # COMMUNICATE WITH USER
-global_log = []
+local_log = []
 def add_to_log(msg):
-	global_log.append(get_timestamp() + ': ' + msg)
-	print_global_log()
-def print_global_log():
-	file = open(get_global_parameter('working_directory') + 'log.txt', 'w')
-	for item in global_log:
+	local_log.append(get_timestamp() + ': ' + msg)
+	print_local_log()
+def print_local_log():
+	file = open(get_local_parameter('working_directory') + 'log.txt', 'w')
+	for item in local_log:
 		file.write(item + "\n")
 	file.close()
-def read_global_log():
-	path = get_global_parameter('working_directory') + 'log.txt'
+def read_local_log():
+	path = get_local_parameter('working_directory') + 'log.txt'
 	if os.path.exists(path):
 		with open(path) as file:
 			for line in file:
-				global_log.append(line.rstrip())
+				local_log.append(line.rstrip())
 
 def speak(msg):
 	add_to_log(msg)

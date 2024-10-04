@@ -24,9 +24,9 @@ class MonoDepth2(Transformer):
 		# fetch monodepth2 model
 		self._encoder = networks.ResnetEncoder(18, False)
 		self._depth_decoder = networks.DepthDecoder(num_ch_enc=self._encoder.num_ch_enc, scales=range(4))
-		loaded_dict_enc = torch.load('local/monodepth2/mono_640x192/encoder.pth', map_location='cpu')
+		loaded_dict_enc = torch.load('local/models/monodepth2/mono_640x192/encoder.pth', map_location='cpu')
 		self._encoder.load_state_dict({k: v for k, v in loaded_dict_enc.items() if k in self._encoder.state_dict()})
-		self._depth_decoder.load_state_dict(torch.load('local/monodepth2/mono_640x192/depth.pth', map_location='cpu'))
+		self._depth_decoder.load_state_dict(torch.load('local/models/monodepth2/mono_640x192/depth.pth', map_location='cpu'))
 
 	# if observation type is valid, applies transformation
 	def transform(self, observation):

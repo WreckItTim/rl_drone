@@ -32,11 +32,8 @@ class TD3(Model):
 			init_setup_model = True,
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
-			read_weights_path=None, 
-			with_distillation = False,
 			use_slim = False,
 			convert_slim = False,
-			use_cuda = True,
 		):
 		if type(train_freq) == list or type(train_freq) == set:
 			train_freq = tuple(train_freq)
@@ -60,12 +57,9 @@ class TD3(Model):
 		self.sb3Load = sb3TD3.load
 		self._has_replay_buffer = True
 		super().__init__(
-				   read_model_path=read_model_path, 
-				   read_replay_buffer_path=read_replay_buffer_path, 
-				   read_weights_path=read_weights_path, 
-				   _model_arguments=_model_arguments,
-				   with_distillation=with_distillation,
-				   use_slim=use_slim,
-				   convert_slim=convert_slim,
-				   use_cuda=use_cuda,
+				   read_model_path = read_model_path, 
+				   read_replay_buffer_path =read_replay_buffer_path,
+				   _model_arguments =_model_arguments,
+				   use_slim = use_slim,
+				   convert_slim = convert_slim,
 				   )

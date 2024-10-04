@@ -23,7 +23,7 @@ NaviSplit - https://arxiv.org/abs/2406.13086
 step 1: download and install anaconda, then run from anaconda terminal:
 conda create --name airsim python=3.10
 
-step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here). It will also create a  global_parameters.json file, edit this as appropriate (optionally name your pc for tracking purposes and enable/disable rendering graphics to screen). 
+step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here). It will also create a  local_parameters.json file, edit this as appropriate (optionally name your pc for tracking purposes and enable/disable rendering graphics to screen). 
 
 step 3: with the new conda environment active, 
 conda activate airsim, run the conda_env.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. WARNING: this will force a specific version of pip otherwise the libraries will not install properly!

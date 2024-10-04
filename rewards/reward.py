@@ -1,4 +1,4 @@
-# abstract class used to handle rewards in an RL enivornment
+
 from component import Component
 
 class Reward(Component):

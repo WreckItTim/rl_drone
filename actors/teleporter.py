@@ -40,11 +40,13 @@ class Teleporter(Actor):
 				if key in this:
 					target[key] += this[key]
 		# teleport drone
-		#print('Target:', target)
 		state['transcribed_action'].update(target)
+		if 'end' in state['transcribed_action']:
+			if state['transcribed_action']['end']:
+				state['termination_reason'] = state['transcribed_action']['end_reason']
+				return True
 		self._drone.teleport(target['x'], target['y'], target['z'], target['yaw'], ignore_collision=False)
-		#print('Actual:', self._drone.get_position(), self._drone.get_yaw())
-		#print('Collided?', self._drone.check_collision())
+		return False
 		
 	# randomly sample RL output from action space unless specified
 	def debug(self, state=None):

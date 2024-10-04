@@ -23,12 +23,11 @@ class MaxSteps(Reward):
 
 		done = False
 		value = 0
-		if nSteps >= self._max_steps:
+		if nSteps > self._max_steps:
 			done = True
 			value = -1
-		if done and self.terminate:
+		if done and self.terminate and 'termination_reason' not in state:
 			state['termination_reason'] = 'steps'
-			state['termination_result'] = 'failure'
 		return value, done and self.terminate
 
 	# update max steps based on goal distance

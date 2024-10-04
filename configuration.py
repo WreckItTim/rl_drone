@@ -56,7 +56,7 @@ class Configuration():
 		if self.add_memories:
 			self.benchmark_memory()
 		if write_path is None:
-			write_path = utils.get_global_parameter('working_directory') + 'benchmarks.json'
+			write_path = utils.get_local_parameter('working_directory') + 'benchmarks.json'
 		utils.write_json(self.benchmarks, write_path)
 
 	# keeps track of components
@@ -164,28 +164,56 @@ class Configuration():
 		return configuration_file
 
 	# deserializes a json file into a configuration
+#	@staticmethod
+#	def deserialize(configuration_file, controller):
+#		meta = configuration_file['meta']
+#		misc = configuration_file['misc']
+#		from observations.observation import Observation
+#		Observation.nObservations = misc['nObservations']
+#		configuration = Configuration(meta, controller)
+#		for component_name in configuration_file['components']:
+#			component_arguments = configuration_file['components'][component_name]
+#			_ = Component.deserialize(component_name, component_arguments)
+#		return configuration
+
+	# deserializes a json file into a configuration
 	@staticmethod
-	def deserialize(configuration_file, controller):
+	def deserialize(configuration_file, controller, read_modifiers=True, skip_components=[], change_params={}):
 		meta = configuration_file['meta']
 		misc = configuration_file['misc']
 		from observations.observation import Observation
 		Observation.nObservations = misc['nObservations']
 		configuration = Configuration(meta, controller)
 		for component_name in configuration_file['components']:
+			if component_name in skip_components:
+				continue
 			component_arguments = configuration_file['components'][component_name]
+			types = component_arguments['type'].split('.')
+			parent_type = types[0].lower()
+			if parent_type in ['modifier'] and not read_modifiers:
+				continue
+			for change_key in change_params:
+				if change_key in component_arguments:
+					component_arguments[change_key] = change_params[change_key]
 			_ = Component.deserialize(component_name, component_arguments)
 		return configuration
 
 	def save(self, write_path=None):
 		configuration_file = self.serialize()
 		if write_path is None:
-			write_path = utils.get_global_parameter('working_directory') + 'configuration.json'
+			write_path = utils.get_local_parameter('working_directory') + 'configuration.json'
 		utils.write_json(configuration_file, write_path)
 
+#	@staticmethod
+#	def load(read_path, controller):
+#		configuration_file = utils.read_json(read_path)
+#		configuration = Configuration.deserialize(configuration_file, controller)
+#		return configuration
+				
 	@staticmethod
-	def load(read_path, controller):
+	def load(read_path, controller, read_modifiers=True, skip_components=[], change_params={}):
 		configuration_file = utils.read_json(read_path)
-		configuration = Configuration.deserialize(configuration_file, controller)
+		configuration = Configuration.deserialize(configuration_file, controller, read_modifiers, skip_components, change_params)
 		return configuration
 	
 	@staticmethod

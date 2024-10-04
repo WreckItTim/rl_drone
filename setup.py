@@ -1,17 +1,7 @@
-import rl_utils as utils
 import os
 
-if not os.path.exists('local'):
-    os.mkdir('local')
-if not os.path.exists('local/airsim_maps'):
-    os.mkdir('local/airsim_maps')
-if not os.path.exists('local/runs'):
-    os.mkdir('local/runs')
-
-instance_name = 'MyPC'
-render_screen = True
-
-utils.set_global_parameter('instance_name', instance_name)
-utils.set_global_parameter('render_screen', render_screen)
-
-utils.write_global_parameters()
+os.makedirs('local', exist_ok=True)
+os.makedirs('local/airsim_maps', exist_ok=True)
+os.makedirs('local/astar_paths', exist_ok=True)
+os.makedirs('local/models', exist_ok=True)
+os.makedirs('local/runs', exist_ok=True)

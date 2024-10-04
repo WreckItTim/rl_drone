@@ -19,13 +19,10 @@ class Tracker(Modifier):
 			  write_folder = None, # path to write log to
 			  nActivations = 0,
 			  nParts = 0,
-			  on_evaluate = True, # toggle to run modifier on evaluation environ
-			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
 			  counter = 0, # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			  ):
-		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
+		super().__init__(base_component, parent_method, order, frequency, counter)
 		self._CONVERSION = float(1024**3) # bytes to GB
 
 	def reset_log(self):
@@ -46,7 +43,7 @@ class Tracker(Modifier):
 		super().connect(state)
 		self._devices = Device.all()
 		if self.write_folder is None:
-			self.write_folder = utils.get_global_parameter('working_directory')
+			self.write_folder = utils.get_local_parameter('working_directory')
 			self.write_folder += self._name + '/'
 		if not os.path.exists(self.write_folder):
 				os.makedirs(self.write_folder)

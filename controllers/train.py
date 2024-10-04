@@ -11,12 +11,12 @@ class Train(Controller):
 	def __init__(self, 
 				model_component,
 				environment_component,
-				evaluator_component,
-				continue_training=True,
+				continue_training = False,
 				total_timesteps = 1_000_000,
-				use_wandb = True,
 				log_interval = -1,
-				project_name = 'void',
+				tb_log_name = None,
+				use_wandb = False,
+				wandb_project_name = 'void',
 		):
 		super().__init__()
 
@@ -43,8 +43,8 @@ class Train(Controller):
 		self._model.learn(
 			total_timesteps = _total_timesteps,
 			log_interval = self.log_interval,
-			use_wandb = self.use_wandb,
 			reset_num_timesteps = not self.continue_training,
-			evaluator = self._evaluator,
-			project_name = self.project_name,
+			tb_log_name = self.tb_log_name,
+			use_wandb = self.use_wandb,
+			wandb_project_name = self.wandb_project_name,
 			)

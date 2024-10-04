@@ -1,7 +1,7 @@
 temp/
 local/
 wandb/
-global_parameters.json
+local_parameters.json
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 __pycache__/

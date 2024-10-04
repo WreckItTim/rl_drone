@@ -42,6 +42,6 @@ class PortCamera(Sensor):
 		while not ret:
 			ret, img_array = self._camera.read()
 		observation = self.create_obj(img_array)
-		cv2.imwrite(utils.get_global_parameter('working_directory') + 'tello_imgs/' + observation._name + '_pre.png', img_array)
+		cv2.imwrite(utils.get_local_parameter('working_directory') + 'tello_imgs/' + observation._name + '_pre.png', img_array)
 		transformed = self.transform(observation)
 		return transformed

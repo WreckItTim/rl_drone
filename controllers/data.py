@@ -22,7 +22,7 @@ class Data(Controller):
 
 	# runs control on components
 	def run(self):
-		mdl_path = utils.get_global_parameter('working_directory') + 'random_init_model.zip'
+		mdl_path = utils.get_local_parameter('working_directory') + 'random_init_model.zip'
 		self._model.save_model(mdl_path)
 		# numpy file is 3d:
 			# axis 0 is path number

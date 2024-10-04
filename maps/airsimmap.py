@@ -33,6 +33,8 @@ class AirSimMap(Map):
 				 console_flags = None,
 				 ):
 		super().__init__()
+		if voxels_component is None:
+			self._voxels = None
 		self._pid = None
 		self._client = None
 		# get path to release executable file to launch
@@ -51,13 +53,13 @@ class AirSimMap(Map):
 			self._settings_path = os.getcwd() + '/temp/overwrite_settings.json'
 			self.write_settings(self.settings, self._settings_path)
 			if 'LocalHostIp' in self.settings:
-				utils.set_global_parameter('LocalHostIp', self.settings['LocalHostIp'])
+				utils.set_local_parameter('LocalHostIp', self.settings['LocalHostIp'])
 			else:
-				utils.set_global_parameter('LocalHostIp', '127.0.0.1')
+				utils.set_local_parameter('LocalHostIp', '127.0.0.1')
 			if 'ApiServerPort' in self.settings:
-				utils.set_global_parameter('ApiServerPort', self.settings['ApiServerPort'])
+				utils.set_local_parameter('ApiServerPort', self.settings['ApiServerPort'])
 			else:
-				utils.set_global_parameter('ApiServerPort', 41451)
+				utils.set_local_parameter('ApiServerPort', 41451)
 			# pipeline to open for console output
 
 	def make_voxels(self,
@@ -91,7 +93,7 @@ class AirSimMap(Map):
 		key = utils.prompt(f'Enter {auto_key} to automatically launch airsim or {self_key} to launch manually. After AirSim launches, press any key to continue...')
 		if key == auto_key and self.release_path is not None:
 			# check OS to determine how to launch map
-			OS = utils.get_global_parameter('OS')
+			OS = utils.get_local_parameter('OS')
 			# set flags
 			flags = ''
 			if self.console_flags is not None:
@@ -126,8 +128,8 @@ class AirSimMap(Map):
 		utils.prompt(f'After AirSim launches, press any key to continue...')
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
-			ip=utils.get_global_parameter('LocalHostIp'),
-			port=utils.get_global_parameter('ApiServerPort'),
+			ip=utils.get_local_parameter('LocalHostIp'),
+			port=utils.get_local_parameter('ApiServerPort'),
 										 )
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)

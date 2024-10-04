@@ -17,20 +17,18 @@ class Saver(Modifier):
 			save_config = False, # saves config file with every activate
 			save_benchmarks = False, # saves timer/mem benchmarks with every activate
 			write_folder = None, # will default to working_directory/component_name/
-			on_evaluate = True, # toggle to run modifier on evaluation environ
-			on_train = True, # toggle to run modifier on train environ
 			frequency = 1, # use modifiation after how many calls to parent method?
 			counter = 0, # keepts track of number of calls to parent method
 			activation_counter = 0, # keeps track of number of times activated
 			activate_on_first = True, # will activate on first call otherwise only if % is not 0
 			save_on_exit = True, # save all when program ends
 			):
-		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
+		super().__init__(base_component, parent_method, order, frequency, counter)
 
 	def connect(self, state=None):
 		super().connect(state)
 		if self.write_folder is None:
-			self.write_folder = utils.get_global_parameter('working_directory')
+			self.write_folder = utils.get_local_parameter('working_directory')
 			self.write_folder += self._base._name + '/'
 		self._base.set_save(True, self.track_vars)
 
@@ -58,7 +56,7 @@ class Saver(Modifier):
 			if self.save_config:
 				self._configuration.save()
 				if wandb.run is not None:
-					wandb.save(utils.get_global_parameter('working_directory') + 'configuration.json')
+					wandb.save(utils.get_local_parameter('working_directory') + 'configuration.json')
 			if self.save_benchmarks:
 				self._configuration.save_benchmarks()
 			self.activation_counter += 1

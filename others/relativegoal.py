@@ -66,7 +66,7 @@ class RelativeGoal(Other):
 	def get_position(self):
 		return [self._x, self._y, self._z]
 
-	# gets absolute yaw (relative to 0 origin)
+	# gets yaw
 	def get_yaw(self):
 		position = self.get_position()
 		return math.atan2(position[1], position[0])

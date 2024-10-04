@@ -113,7 +113,7 @@ class AirSimDrone(Drone):
 		pos = self._airsim._client.getMultirotorState().kinematics_estimated.position
 		return [pos.x_val, pos.y_val, pos.z_val]
 
-	# get rotation about the z-axis (yaw), returns in radians
+	# get rotation about the z-axis (yaw), returns in radians between -pi to +pi
 	def get_yaw(self):
 		q = self._airsim._client.getMultirotorState().kinematics_estimated.orientation
 		pitch, roll, yaw = airsim.to_eularian_angles(q)

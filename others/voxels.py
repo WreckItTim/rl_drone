@@ -47,7 +47,7 @@ class Voxels(Other):
 		super().connect()
 		if self.make_new:
 			self._map.make_voxels(
-				absolute_path = utils.get_global_parameter('absolute_path') + self.relative_path,
+				absolute_path = utils.get_local_parameter('absolute_path') + self.relative_path,
 				center = self.center,
 				resolution = self.resolution,
 				x_length = self.x_length,
@@ -55,7 +55,7 @@ class Voxels(Other):
 				z_length = self.z_length,
 				)
 		self.read_voxels(
-				utils.get_global_parameter('absolute_path') + self.relative_path
+				utils.get_local_parameter('absolute_path') + self.relative_path
 				)
 		self.make_roofs()
 			

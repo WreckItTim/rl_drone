@@ -31,7 +31,7 @@ class Orientation(Sensor):
 		data = []
 		if self._misc2 is None:
 			yaw = self._misc.get_yaw()
-			if yaw < 0:
+			while yaw < 0:
 				yaw += 2*math.pi
 			data.append(yaw)
 		else:
@@ -41,9 +41,10 @@ class Orientation(Sensor):
 			yaw_1_2 = math.atan2(distance_vector[1], distance_vector[0])
 			yaw1 = self._misc.get_yaw()
 			yaw_diff = yaw_1_2 - yaw1
-			if yaw_diff < 0:
+			if yaw_diff > math.pi:
+				yaw_diff -= 2*math.pi
+			if yaw_diff < -1*math.pi:
 				yaw_diff += 2*math.pi
-			#yaw_diff = (yaw_diff + math.pi) % (2*math.pi) - math.pi
 			data.append(yaw_diff)
 		observation = self.create_obj(data)
 		transformed = self.transform(observation)

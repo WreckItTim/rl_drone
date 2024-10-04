@@ -6,7 +6,6 @@ import rl_utils as utils
 
 # calculates distance between drone and point relative to starting position/orientation
 class Distance(Reward):
-	# constructor, set the relative point and min-max distances to normalize by
 	@_init_wrapper
 	def __init__(self,
 				drone_component, 
@@ -31,7 +30,8 @@ class Distance(Reward):
 		this_distance = self.get_distance()
 		delta_distance = self._last_distance - this_distance
 
-		d = delta_distance
+		#d = delta_distance
+		d = this_distance
 		
 		value = np.tanh(d)
 

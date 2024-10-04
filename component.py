@@ -27,7 +27,7 @@ from configuration import Configuration
 	# g. if you redefine {Child}.connect() make sure to call super, such as 'def connect(self): super().connect() ...'
 # 3. if you want to have a Component class from {MyComponent} as a member {member} in another Class {MyClass}:
 	# NOTE, so that order of component creation does not matter, the following is done:
-	# NOTE, all global Component instances for a configuration are first created before connecting Component members
+	# NOTE, all local Component instances for a configuration are first created before connecting Component members
 	# NOTE, otherwise order can create conflicts, the following also allows for automatic serialization
 	# a. define an argument named {member}_component in the {MyClass}.__init__() method, such as {MyClass}.__init__(..., {member}_component)
 		# let a Class instance belonging to {MyClass} be {class_instance}

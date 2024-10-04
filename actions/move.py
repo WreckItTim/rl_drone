@@ -13,7 +13,7 @@ class Move(Action):
 				base_x_rel=0, # relative x,y,z to drone
 				base_y_rel=0, 
 				base_z_rel=0, 
-				zero_threshold=0.01, # absolute value of rl_output below this will do nothing (true zero)
+				zero_threshold=0.1, # absolute value of rl_output below this will do nothing (true zero)
 				zero_thresh_abs=True,
 				speed=2, # m/s
 				# set these values for continuous actions
@@ -33,10 +33,10 @@ class Move(Action):
 		# check for true zero
 		if self.zero_thresh_abs:
 			if abs(rl_output) <= self.zero_threshold:
-				return {'x':0, 'y':0, 'z':0}
+				return {}
 		else:
 			if rl_output <= self.zero_threshold:
-				return {'x':0, 'y':0, 'z':0}
+				return {}
 		# calculate rate from rl_output
 		if self.adjust_for_yaw:
 			# must orient self with yaw

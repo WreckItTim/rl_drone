@@ -14,12 +14,13 @@ class Schema(Rewarder):
     # calculates rewards from agent's current state (call to when taking a step)
     def step(self, state):
         total_reward = 0
+        state['reached_goal'] = False
         for idx, reward in enumerate(self._rewards):
             value, done = reward.step(state)
             weighted_value = self.reward_weights[idx] * value
             state['reward_from_' + reward._name] = weighted_value
             total_reward += weighted_value
-            #if done:
-                #break
+            if done:
+                break
         state['total_reward'] = total_reward
         return total_reward, done

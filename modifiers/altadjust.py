@@ -15,22 +15,14 @@ class AltAdjust(Modifier):
 			  parent_method, # name of parent method to modify
 			  drone_component, # drone to spawn
 			  order, # modify 'pre' or 'post'?
-			  alt_min = -5, # range of allowable altitude
 			  adjust = -4, # will teleport to this altitude if out of range
-			  on_evaluate = True, # toggle to run modifier on evaluation environ
-			  on_train = True, # toggle to run modifier on train environ
 			  frequency = 1, # use modifiation after how many calls to parent method?
-			  counter = 0 , # keepts track of number of calls to parent method
-			  activate_on_first = True, # will activate on first call otherwise only if % is not 0
+			  counter = 0, # keepts track of number of calls to parent method
 			 ):
-		super().__init__(base_component, parent_method, order, frequency, counter, activate_on_first)
+		super().__init__(base_component, parent_method, order, frequency, counter)
 
 	# check and adjust altitude
 	def activate(self, state):
 		if self.check_counter(state):
-			while(True):
-				position = self._drone.get_position()
-				if position[2] < self.alt_min:
-					self._drone.teleport(position[0], position[1], self.adjust, self._drone.get_yaw())
-				else:
-					break
+			position = self._drone.get_position()
+			self._drone.teleport(position[0], position[1], self.adjust, self._drone.get_yaw())

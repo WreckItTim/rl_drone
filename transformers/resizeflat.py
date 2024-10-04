@@ -25,7 +25,7 @@ class ResizeFlat(Transformer):
 		img_data = observation.to_numpy()
 		# TEMP CODE TODO:DELETE DELETE DELETE
 		#img_data = np.moveaxis(img_data, 0, 2)
-		#cv2.imwrite(utils.get_global_parameter('working_directory') + 'tello_imgs/' + observation._name + '_post.png', img_data)
+		#cv2.imwrite(utils.get_local_parameter('working_directory') + 'tello_imgs/' + observation._name + '_post.png', img_data)
 		#img_data = np.moveaxis(img_data, 2, 0)
 		# TEMP CODE TODO:DELETE DELETE DELETE
 		#observation.check(Vector)

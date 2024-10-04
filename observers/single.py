@@ -36,7 +36,7 @@ class Single(Observer):
 
 	# gets observations
 	def step(self, state=None):
-		# make observations and stack into global image/vector
+		# make observations and stack into local image/vector
 		next_array = []
 		new_names = []
 		for sensor in self._sensors:
