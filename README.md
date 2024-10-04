@@ -23,16 +23,16 @@ NaviSplit - https://arxiv.org/abs/2406.13086
 step 1: download and install anaconda, then run from anaconda terminal:
 conda create --name airsim python=3.10
 
-step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here). It will also create a  local_parameters.json file, edit this as appropriate (optionally name your pc for tracking purposes and enable/disable rendering graphics to screen). 
+step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here), along with some sub folders in here for organization.  
 
 step 3: with the new conda environment active, 
 conda activate airsim, run the conda_env.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. WARNING: this will force a specific version of pip otherwise the libraries will not install properly!
 
 step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (i.e. after unzipping, the release should have something like the following strucutre: local/airsim_maps/{release_name}/{os_name}/files).
 
-step 5: run the python file run_navi.py to run an example reinforcement learning setup on the Blocks release, using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a TD3 reinforcement learning algorithm to get from objective A to B without colliding. You can copy-paste the train_eval.py file to the newly created run folder in local/runs then run the notebook at any time to evaluate the reinforcement learning algorithm. See paper for more implementation details.
+step 5: run the python file train_example.py to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a TD3 reinforcement learning algorithm to get from objective A to B without colliding. You can copy-paste the train_eval.py file to the newly created run folder in local/runs then run the notebook at any time to evaluate the reinforcement learning algorithm. See paper for more implementation details. When done run the test_example.py file to test your trained model on a set of test paths. Then launch the eval_noteboook.ipynb to evaluate and visualize results.
 
-step 6: edit the run_navi.py fileas needed to train how you want! happy learning =)
+step 6: edit the train_example.py file as needed to train how you want! happy learning =)
 NOTE: if you want to create a custom component, this repo is specifically designed for that in mind. To insure everything works properly, including serialization of configuration files, follow the steps outlined in the code block at the top of the component.py file.
 
 
