@@ -152,18 +152,18 @@ Distance(
 	)
 rewards.append('DistanceReward')
 # intermediate reward for facing goal
-from rewards.orientation import Orientation
-Orientation(
-	drone_component = 'Drone',
-	goal_component = 'Spawner',
-	name = 'OrientationReward',
-	)
-rewards.append('OrientationReward')
+# from rewards.orientation import Orientation
+# Orientation(
+# 	drone_component = 'Drone',
+# 	goal_component = 'Spawner',
+# 	name = 'OrientationReward',
+# 	)
+# rewards.append('OrientationReward')
 # REWARDER
 from rewarders.schema import Schema
 Schema(
 	rewards_components = rewards,
-	reward_weights = [1, 10, 1, .1, .1, .1], 
+	reward_weights = [1, 10, 1, .1, .1], 
 	name = 'Rewarder',
 	)
 
