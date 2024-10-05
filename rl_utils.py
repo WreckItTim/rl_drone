@@ -26,8 +26,10 @@ def get_timestamp():
 	)
 	return timestamp
 
-def setup(working_directory):
+def setup(working_directory, overwrite_directory=True):
 	read_local_parameters()
+	if overwrite_directory and os.path.exists(working_directory):
+		shutil.rmtree(working_directory)
 	set_read_write_paths(working_directory = working_directory)
 	read_local_log()
 	set_operating_system()

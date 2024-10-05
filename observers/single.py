@@ -34,6 +34,12 @@ class Single(Observer):
 			self._history = np.full(self._output_shape, 0, dtype=float)
 		self._old_names = []
 
+	def null_data(self):
+		if self.is_image:
+			np.zeros(self._output_shape, dtype=float)
+		else:
+			np.zeros(self._output_shape, dtype=float)
+
 	# gets observations
 	def step(self, state=None):
 		# make observations and stack into local image/vector

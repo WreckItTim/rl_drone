@@ -7,6 +7,7 @@ import setup_path # need this in same directory as python code for airsim
 import airsim
 from others.voxels import Voxels
 import psutil
+import time
 
 # handles airsim release executables
 class AirSimMap(Map):
@@ -31,6 +32,7 @@ class AirSimMap(Map):
 				 setting_files:list = ['vanilla'],
 				 # optional flags to put in command line when launching
 				 console_flags = None,
+				 remove_animals = True,
 				 ):
 		super().__init__()
 		if voxels_component is None:
@@ -85,52 +87,60 @@ class AirSimMap(Map):
 									)
 
 	# launch airsim map
-	def connect(self):
-		super().connect()
-		# prompt user to confirm when launch is successful (can launch manually if needs be)
-		auto_key = 'y'
-		self_key = 'n'
-		key = utils.prompt(f'Enter {auto_key} to automatically launch airsim or {self_key} to launch manually. After AirSim launches, press any key to continue...')
-		if key == auto_key and self.release_path is not None:
-			# check OS to determine how to launch map
-			OS = utils.get_local_parameter('OS')
-			# set flags
-			flags = ''
-			if self.console_flags is not None:
-				flags = ' '.join(self.console_flags)
-			# launch map from OS
-			if OS == 'windows':
-				_release_path = self.release_path
-				# send command to terminal to launch the relase executable, if can
-				if os.path.exists(_release_path):
-					utils.speak(f'Launching AirSim at {_release_path}')
-					terminal_command = f'{_release_path} {flags} -settings=\"{self._settings_path}\"'
-					utils.speak(f'Issuing command to OS: {terminal_command}')
-					process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-					self._pid = process.pid
-				else:
-					utils.speak('Please manually launch Airsim.')
-			elif OS == 'linux':
-				_release_path = self.release_path
-				# send command to terminal to launch the relase executable, if can
-				if os.path.exists(_release_path):
-					utils.speak(f'Launching AirSim at {_release_path}')
-					terminal_command = f'sh {_release_path} {flags} -settings=\"{self._settings_path}\"'
-					utils.speak(f'Issuing command to OS: {terminal_command}')
-					process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
-					self._pid = process.pid
-				else:
-					utils.speak('Please manually launch Airsim.')
-			else:
-				utils.speak('Please manually launch Airsim.')
+	def connect(self, from_crash=False):
+		if from_crash:
+			utils.speak('Recovering from AirSim crash...')
+			self.disconnect()
 		else:
-			utils.speak('Please manually launch Airsim.')
-		utils.prompt(f'After AirSim launches, press any key to continue...')
+			super().connect()
+		
+		# check OS to determine how to launch map
+		OS = utils.get_local_parameter('OS')
+		# set flags
+		flags = ''
+		if self.console_flags is not None:
+			flags = ' '.join(self.console_flags)
+		# launch map from OS
+		if OS == 'windows':
+			_release_path = self.release_path
+			# send command to terminal to launch the relase executable, if can
+			if os.path.exists(_release_path):
+				utils.speak(f'Launching AirSim at {_release_path}')
+				terminal_command = f'{_release_path} {flags} -settings=\"{self._settings_path}\"'
+				utils.speak(f'Issuing command to OS: {terminal_command}')
+				process = subprocess.Popen(terminal_command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+				self._pid = process.pid
+			else:
+				utils.speak('AirSim release path DNE.')
+		elif OS == 'linux':
+			_release_path = self.release_path
+			# send command to terminal to launch the relase executable, if can
+			if os.path.exists(_release_path):
+				utils.speak(f'Launching AirSim at {_release_path}')
+				terminal_command = f'sh {_release_path} {flags} -settings=\"{self._settings_path}\"'
+				utils.speak(f'Issuing command to OS: {terminal_command}')
+				process = subprocess.Popen(terminal_command, shell=True, start_new_session=True)
+				self._pid = process.pid
+			else:
+				utils.speak('AirSim release path DNE.')
+		else:
+			utils.speak('incompatible OS.')
+				
+		# wait for map to load
+		time.sleep(10)
+
 		# establish communication link with airsim client
 		self._client = airsim.MultirotorClient(
 			ip=utils.get_local_parameter('LocalHostIp'),
 			port=utils.get_local_parameter('ApiServerPort'),
-										 )
+		)
+		
+		# remove animals - sad tear drop (there is a monument in the park to them, not jk)
+		if self.remove_animals:
+			objs = self._client.simListSceneObjects()
+			animals = [name for name in objs if 'Deer' in name or 'Raccoon' in name or 'Animal' in name]
+			_ = [self._client.simDestroyObject(name) for name in animals] # PETA has joined the chat
+		
 		self._client.confirmConnection()
 		self._client.enableApiControl(True)
 		self._client.armDisarm(True)

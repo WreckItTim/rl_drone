@@ -9,7 +9,7 @@ airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/B
 working_directory = 'local/runs/example_run/'
 
 # setup for run, set system vars and prepare file system
-utils.setup(working_directory)
+utils.setup(working_directory, overwrite_directory=True) # WARNING: overwrite_directory will clear all old data in this folder
 
 # make controller to run configuration on (we will train a model)
 from controllers.train import Train
@@ -180,14 +180,14 @@ Move(
 	drone_component = 'Drone', 
 	base_x_rel = 10, # can move forward up to 10 meters
 	adjust_for_yaw = True, # this adjusts movement based on current yaw
-	zero_thresh_abs = False, # any negative action will result in no movement
 	name = 'MoveForward',
 	)
 actions.append('MoveForward')
 from actions.rotate import Rotate 
 Rotate(
 	drone_component = 'Drone',  
-	base_yaw = math.pi, # can rotate yaw by +/- pi
+	min_yaw = 0, # can rotate yaw by +/- pi
+	max_yaw = math.pi, # can rotate yaw by +/- pi
 	name = 'Rotate',
 	)
 actions.append('Rotate')
@@ -276,7 +276,7 @@ from observers.single import Single
 Single(
 	sensors_components = vector_sensors, 
 	vector_length = vector_length,
-	nTimesteps = 1,
+	nTimesteps = 4,
 	name = 'Observer',
 	)
 

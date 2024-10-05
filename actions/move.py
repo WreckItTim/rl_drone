@@ -13,8 +13,6 @@ class Move(Action):
 				base_x_rel=0, # relative x,y,z to drone
 				base_y_rel=0, 
 				base_z_rel=0, 
-				zero_threshold=0.1, # absolute value of rl_output below this will do nothing (true zero)
-				zero_thresh_abs=True,
 				speed=2, # m/s
 				# set these values for continuous actions
 				# # they determine the possible ranges of output from rl algorithm
@@ -31,22 +29,21 @@ class Move(Action):
 			return {}
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if self.zero_thresh_abs:
-			if abs(rl_output) <= self.zero_threshold:
-				return {}
-		else:
-			if rl_output <= self.zero_threshold:
-				return {}
+		if rl_output < 0:
+			return {}
+		x_rel = rl_output * self.base_x_rel
+		y_rel = rl_output * self.base_x_rel
+		z_rel = rl_output * self.base_x_rel
 		# calculate rate from rl_output
 		if self.adjust_for_yaw:
 			# must orient self with yaw
 			yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
-			adjusted_x_rel = float(rl_output * (self.base_x_rel * math.cos(yaw) - self.base_y_rel * math.sin(yaw)))
-			adjusted_y_rel = float(rl_output * (self.base_x_rel * math.sin(yaw) + self.base_y_rel * math.cos(yaw)))
+			adjusted_x_rel = float((x_rel * math.cos(yaw) - y_rel * math.sin(yaw)))
+			adjusted_y_rel = float((x_rel * math.sin(yaw) + y_rel * math.cos(yaw)))
 		else:
-			adjusted_x_rel = float(rl_output * self.base_x_rel)
-			adjusted_y_rel = float(rl_output * self.base_y_rel)
-		adjusted_z_rel = float(rl_output * self.base_z_rel)
+			adjusted_x_rel = float(x_rel)
+			adjusted_y_rel = float(y_rel)
+		adjusted_z_rel = float(z_rel)
 		# move calculated rate
 		if execute:
 			self._drone.move(adjusted_x_rel, adjusted_y_rel, adjusted_z_rel, self.speed)

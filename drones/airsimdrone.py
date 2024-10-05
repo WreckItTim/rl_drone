@@ -1,6 +1,7 @@
 # drone launched through airsim api - requires an airsim relase map
 import setup_path # need this in same directory as python code for airsim
 import airsim
+import rl_utils as utils
 from drones.drone import Drone
 from component import _init_wrapper
 import math
@@ -11,10 +12,11 @@ class AirSimDrone(Drone):
 	@_init_wrapper
 	def __init__(self,
 			  airsim_component,
+			  handle_crashes=True,
 			  ):
 		super().__init__()
-		self._timeout = 4
-		
+		self._timeout = 10 # number of seconds to wait for communication
+	
 	# check if has collided
 	def check_collision(self):
 		collision_info = self._airsim._client.simGetCollisionInfo()
@@ -32,7 +34,6 @@ class AirSimDrone(Drone):
 		self._airsim._client.enableApiControl(True)
 		self._airsim._client.armDisarm(True)
 		#self._airsim._client.pause(False)
-
 		#time.sleep(0.1)
 		self.take_off()
 		self.check_collision()
@@ -43,19 +44,6 @@ class AirSimDrone(Drone):
 		# for w/e reason it is more stable to send command to fly up rather than using takeoff
 		#self._airsim._client.takeoffAsync().join()
 		self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
-		'''
-		self._airsim._client.setVelocityControllerGains(
-			velocity_gains=airsim.VelocityControllerGains(
-				airsim.PIDGains(0.2,0,0),
-				airsim.PIDGains(0.2,0,0),
-				airsim.PIDGains(2,2,0),
-				)
-			)
-		default gains are:
-		airsim.PIDGains(0.2,0,0),
-		airsim.PIDGains(0.2,0,0),
-		airsim.PIDGains(2,2,0),
-		'''
 
 	# returns state from client
 	def get_state(self):
@@ -73,22 +61,21 @@ class AirSimDrone(Drone):
 		self._airsim._client.landAsync().join()
 	
 	# NEW: move to relative position with given speed
-	def move(self, x_rel, y_rel, z_rel, speed=2):
+	def move(self, x_rel, y_rel, z_rel, speed=2, stabelize=True):
 
 		# get current position then move relative
 		current_position = self.get_position()
 		target_position = np.array(current_position) + np.array([x_rel, y_rel, z_rel])
 		self._airsim._client.moveToPositionAsync(target_position[0], target_position[1], target_position[2], speed, timeout_sec = self._timeout ).join()
-
 		#self._airsim._client.moveByVelocityAsync(x_rel, y_rel, z_rel, 4).join()
 
 		# the below lines are a stop_gap to fix AirSim's y-drift problem
 		# see this GitHub ticket, with youtube video showing problem:
 		# https://github.com/microsoft/AirSim/issues/4780
-		#time.sleep(.1)
-		#current_yaw = math.degrees(self.get_yaw())
-		#self._airsim._client.rotateToYawAsync(current_yaw + 0.1, timeout=1).join()
-	
+		if stabelize:
+			self._airsim._client.rotateByYawRateAsync(0, 0.001).join()
+			self._airsim._client.moveByVelocityAsync(0, 0, 0, 0.001).join()
+
 	# teleports to position, yaw in radians
 	def teleport(self, x, y, z, yaw, ignore_collision=True, stabelize=True):
 		pose = airsim.Pose(

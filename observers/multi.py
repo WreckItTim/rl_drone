@@ -17,6 +17,17 @@ class Multi(Observer):
 		image_observer_component,
 		):
 		super().__init__()
+
+	def null_data(self):
+		# get observations
+		vector_data = self._vector_observer.null_data()
+		# cleanup after getting last data fetches
+		image_data = self._image_observer.null_data()
+		data_dict = {
+			"vec": vector_data,
+			"img": image_data,
+			}
+		return data_dict
 		
 	# gets observations
 	def step(self, state=None):
