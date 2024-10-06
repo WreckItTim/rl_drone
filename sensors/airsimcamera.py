@@ -3,6 +3,7 @@ from sensors.sensor import Sensor
 import setup_path # need this in same directory as python code for airsim
 import airsim
 from observations.image import Image
+from observations.array import Array
 import numpy as np
 from component import _init_wrapper
 import rl_utils as utils
@@ -33,21 +34,29 @@ class AirSimCamera(Sensor):
 			  camera_view='0', 
 			  image_type=2, 
 			  as_float=True, 
-			  compress=False, 
-			  is_gray=True,
+			  is_gray=False,
+			  compress=False,
 			  transformers_components=None,
 			  offline = False,
 			  ):
 		super().__init__(offline)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
+		self.is_image = True
 		if image_type in [1, 2, 3, 4]:
+			self.as_float = True
 			self.is_gray = True
+			self.is_image = False
 
 	def create_obj(self, data):
-		observation = Image(
-			_data=data, 
-			is_gray=self.is_gray,
-		)
+		if self.is_image:
+			observation = Image(
+				_data=data, 
+				is_gray=self.is_gray,
+			)
+		else:
+			observation = Array(
+				_data=data,
+			)
 		return observation
 
 	# takes a picture with camera
