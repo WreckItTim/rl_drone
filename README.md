@@ -30,11 +30,15 @@ conda activate airsim, run the conda_env.bat file to install all dependecies. No
 
 step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (i.e. after unzipping, the release should have something like the following strucutre: local/airsim_maps/{release_name}/{os_name}/files).
 
-step 5: run the python file train_example.py to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a TD3 reinforcement learning algorithm to get from objective A to B without colliding. You can copy-paste the train_eval.py file to the newly created run folder in local/runs then run the notebook at any time to evaluate the reinforcement learning algorithm. See paper for more implementation details. When done run the test_example.py file to test your trained model on a set of test paths.
+step 5: run the python file train_example.py to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a TD3 reinforcement learning algorithm to get from objective A to B without colliding. 
 
-step 6: setup the conda environment to run the eval_noteboook.ipynb to evaluate and visualize results. Create a new conda environment with python=3.10, run the conda_env.bat file. Then update tornado and install jupyter, and any other packages as needed. run the eval_notebook.ipynb in jupyter to evaluate the test results.
+_bonus steps:_
 
-step 7: edit the train_example.py, test_example.py, and eval_notebook.ipynb files as needed to train, test, and evaluate how you want! happy learning =) If you want to create a custom component, this repo is specifically designed for that in mind. To insure everything works properly, including serialization of configuration files, follow the steps outlined in the code block at the top of the component.py file.
+Use the test_example.py file to test a trained model on a set of static test paths we have found using an Astar shortest path algorithm, and the eval_noteboook.ipynb to evaluate and visualize results. 
+
+Use the data_example.py file to collect any sensor data using rl_drone, and the data_notebook.ipynb to load and visualize the collected data. 
+
+Note that to use either of the python notebooks, you will need navigate around an AirSim dependency issue with Tornado. To do so, create a new conda environment with python=3.10, then run the same conda_env.bat file. Then pip install jupyter and any other packages as needed. If you install jupyter on the same conda enviornment as before, then it will overwrite the needed version of Tornado and AirSim will no longer work. Make sure to run the same conda_env.bat file before updating tornado though to insure compadibliity with all of the data objects used by, and written from, the other conda environment.
 
 
 **COMMON ERRORS**
