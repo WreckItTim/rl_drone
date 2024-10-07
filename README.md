@@ -34,7 +34,7 @@ step 5: run the python file example_dqn.py ir example_td3 to run an example rein
 
 _bonus steps:_
 
-Use the example_test.py file to test a trained model on a set of static test paths we have found using an Astar shortest path algorithm, and the noteboook_eval.ipynb to evaluate and visualize results. 
+Use the example_test.py file to test a trained model on a set of static test paths we have found using an Astar shortest path algorithm, and the noteboook_eval.ipynb to evaluate and visualize results. You may need to change the variable run_name at the top to direct the test code to which trained config/model you want to test.
 
 Use the example_data.py file to collect any sensor data using rl_drone, and the notebook_data.ipynb to load and visualize the collected data. 
 
