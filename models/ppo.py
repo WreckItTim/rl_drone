@@ -32,6 +32,8 @@ class PPO(Model):
 			init_setup_model = True,
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
+			use_slim = False,
+			convert_slim = False,
 		):
 		kwargs = locals()
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
@@ -41,6 +43,8 @@ class PPO(Model):
 			'init_setup_model',
 			'read_model_path',
 			'read_replay_buffer_path',
+			'use_slim',
+			'convert_slim',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3PPO
@@ -50,4 +54,6 @@ class PPO(Model):
 				   read_model_path=read_model_path, 
 				   read_replay_buffer_path=read_replay_buffer_path, 
 				   _model_arguments=_model_arguments,
+				   use_slim = use_slim,
+				   convert_slim = convert_slim,
 				   )

@@ -15,6 +15,8 @@ class Random(Spawner):
 			bounds_component, # valid range to spawn in 
 			goal_range, # range of distances [meter] to create goal in range [min, max]
 			vertical = False, # if allowed to randomize z spawn, otherwise will randomize x,y
+			discretize = False, # spawns at integer values only
+			yaw_type = 0, # 'face':faces goal, 'random':random, value: specific yaw
 			dz = 4, # height [meter] above ground (or rooftop of object if vertical) to spawn at
 			):
 		super().__init__()
@@ -23,7 +25,12 @@ class Random(Spawner):
 	def reset(self, state=None):
 		self.random_start()
 		self.random_goal(state)
-		self.face_goal()
+		if self.yaw_type in ['face']:
+			self.face_goal()
+		elif self.yaw_type in ['random']:
+			self.random_yaw()
+		else:
+			self.set_yaw(self.yaw_type)
 		start_x, start_y, start_z = self.get_start()
 		start_yaw = self.get_yaw()
 		self._drone.teleport(start_x, start_y, start_z, start_yaw, ignore_collision=True, stabelize=True)
@@ -32,9 +39,13 @@ class Random(Spawner):
 		self._start_x, self._start_y, self._start_z = self.random_location()
 		#self._start_yaw = self.random_yaw()
 
+	# set yaw to static value
+	def set_yaw(self, yaw_val):
+		self._start_yaw = yaw_val
+
 	# uniform distribution of yaws
 	def random_yaw(self):
-		return np.random.uniform(-1*np.pi, np.pi)
+		self._start_yaw = np.random.uniform(-1*np.pi, np.pi)
 
 	# uniform distribution of yaws
 	def face_goal(self):
@@ -48,11 +59,15 @@ class Random(Spawner):
 	def random_location(self):
 		if self.vertical:
 			x, y, z = self._bounds.get_random()
+			if self.discretize:
+				x, y, z = int(x), int(y), int(z)
 			z = self._map.get_roof(x, y, self.dz)
 		else:
 			while (True):
 				x, y, z = self._bounds.get_random()
 				z = -1*self.dz
+				if self.discretize:
+					x, y, z = int(x), int(y), int(z)
 				in_object = self._map.at_object_2d(x, y)
 				if not in_object:
 					break
@@ -75,6 +90,8 @@ class Random(Spawner):
 				goal_z = self._map.get_roof(goal_x, goal_y, self.dz)
 			else:
 				goal_z = -1*self.dz
+			if self.discretize:
+				goal_x, goal_y, goal_z = int(goal_x), int(goal_y), int(goal_z)
 			# need to check if in object for non-vertical motion
 			in_object = False
 			if not self.vertical:

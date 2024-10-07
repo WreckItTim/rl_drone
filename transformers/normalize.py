@@ -9,9 +9,9 @@ class Normalize(Transformer):
 	# min/max output will MinMax normalize to this range
 	@_init_wrapper
 	def __init__(self, 
-				 min_input=0, 
+				 min_input=0,
 				 max_input=255,
-				 min_output=0.1, # reserve 0 for no-data
+				 min_output=0.1, # reserve 0 for missing or erroneous data
 				 max_output=1,
 				 left = None, # value to set if below min_input (otherwise defaults to min_input)
 				 right = None, # value to set if above max_input (otherwise defaults to max_input)

@@ -151,14 +151,6 @@ Distance(
 	name = 'DistanceReward',
 	)
 rewards.append('DistanceReward')
-# intermediate reward for facing goal
-# from rewards.orientation import Orientation
-# Orientation(
-# 	drone_component = 'Drone',
-# 	goal_component = 'Spawner',
-# 	name = 'OrientationReward',
-# 	)
-# rewards.append('OrientationReward')
 # REWARDER
 from rewarders.schema import Schema
 Schema(
@@ -170,32 +162,53 @@ Schema(
 ## ACTION SPACE
 # we will just move forward and rotate for this example
 actions = []
-# from actions.end import End 
-# End(
-# 	name = 'End',
-# 	)
-# actions.append('End')
-from actions.move import Move 
-Move(
+from actions.fixedmove import FixedMove 
+FixedMove(
 	drone_component = 'Drone', 
-	base_x_rel = 10, # can move forward up to 10 meters
+	x_distance = 1, # can move forward up to 10 meters
 	adjust_for_yaw = True, # this adjusts movement based on current yaw
-	name = 'MoveForward',
+	name = 'MoveForward1',
 	)
-actions.append('MoveForward')
-from actions.rotate import Rotate 
-Rotate(
+actions.append('MoveForward1')
+FixedMove(
+	drone_component = 'Drone', 
+	x_distance = 2, # can move forward up to 10 meters
+	adjust_for_yaw = True, # this adjusts movement based on current yaw
+	name = 'MoveForward2',
+	)
+actions.append('MoveForward2')
+FixedMove(
+	drone_component = 'Drone', 
+	x_distance = 4, # can move forward up to 10 meters
+	adjust_for_yaw = True, # this adjusts movement based on current yaw
+	name = 'MoveForward4',
+	)
+actions.append('MoveForward4')
+FixedMove(
+	drone_component = 'Drone', 
+	x_distance = 8, # can move forward up to 10 meters
+	adjust_for_yaw = True, # this adjusts movement based on current yaw
+	name = 'MoveForward8',
+	)
+actions.append('MoveForward8')
+from actions.fixedrotate import FixedRotate 
+FixedRotate(
 	drone_component = 'Drone',  
-	min_yaw = 0, # can rotate yaw by +/- pi
-	max_yaw = math.pi, # can rotate yaw by +/- pi
-	name = 'Rotate',
+	yaw_diff = math.pi/2, # can rotate at 90 deg increments
+	name = 'RotateRight',
 	)
-actions.append('Rotate')
+actions.append('RotateRight')
+FixedRotate(
+	drone_component = 'Drone',  
+	yaw_diff = -1*math.pi/2, # can rotate at 90 deg increments
+	name = 'RotateLeft',
+	)
+actions.append('RotateLeft')
 ## ACTOR
-from actors.teleporter import Teleporter
+from actors.teleporterdiscrete import TeleporterDiscrete
 # we use a teleporter here because it is quicker and more stable
 	# it will check collisions between current point and telported point then move directly to that location
-Teleporter(
+TeleporterDiscrete(
 	drone_component = 'Drone',
 	actions_components = actions,
 	name = 'Actor',
@@ -207,16 +220,12 @@ Teleporter(
 # TRANSFORMERS
 from transformers.normalize import Normalize
 Normalize(
-	#min_input = 0, # min angle
-	#max_input = 2*math.pi, # max angle
 	min_input = -1*math.pi, # min angle
 	max_input = math.pi, # max angle
 	name = 'NormalizeOrientation',
 	)
 Normalize(
-	min_input = 1e-2, # min depth [m] (below this is erroneous)
 	max_input = 100, # max depth
-	left = 0, # set all values below range to this
 	name = 'NormalizeDistance',
 	)
 # SENSORS
@@ -282,8 +291,8 @@ Single(
 
 ## MODEL
 	# we will use a TD3 algorithm from SB3
-from models.td3 import TD3
-TD3(
+from models.dqn import DQN
+DQN(
 	environment_component = 'Environment',
 	policy = 'MlpPolicy',
 	name = 'Model',
@@ -298,6 +307,8 @@ Random(
 	map_component = 'Map', # spawn in this map, not in object from voxels
 	bounds_component = 'MapBounds', # spawn within bounds
 	goal_range = [0, 5], # start close to drone then we will move further with curriculum learning
+	discretize = True, # spawns at integer values only
+	yaw_type = 0, # 'face':faces goal, 'random':random, value: specific yaw
 	name = 'Spawner',
 	)
 

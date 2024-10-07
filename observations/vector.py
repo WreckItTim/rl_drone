@@ -18,13 +18,13 @@ class Vector(Observation):
 			
 	# displays observation
 	def display(self):
-	    for name_idx, name in enumerate(self.names):
-	        print(name, '=', self._data[name_idx])
+		for name_idx, name in enumerate(self.names):
+			print(name, '=', self._data[name_idx])
 		
 	# write data to file as a json
 	def write(self, path_without_ftype, ftype='.json'):
-	    data_dict = {}
-	    list_data = self._data.to_list()
-	    for name_idx, name in enumerate(self.names):
-	        data_dict[name] = list_data[name_idx]
-        write_json(data_dict, path_without_ftype+'.json'):
+		data_dict = {}
+		list_data = self._data.to_list()
+		for name_idx, name in enumerate(self.names):
+			data_dict[name] = list_data[name_idx]
+		utils.write_json(data_dict, path_without_ftype+'.json')

@@ -9,7 +9,7 @@ import math
 # uses continuous actions to teleport (set yaw and position)
 # this is much more quicker, precise, and stable than real-time movements
 # suggested to add noise to simulate more realistic movements
-class Teleporter(Actor):
+class TeleporterDiscrete(Actor):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
@@ -32,13 +32,12 @@ class Teleporter(Actor):
 			'z':current_position[2],
 			'yaw':current_yaw,
 			}
-		for idx, action in enumerate(self._actions):
-			action._idx = idx # tell action which index it is
-			this = action.step(state, execute=False) # transcribe action but do not take
-			state['transcribed_action'].update(this)
-			for key in target:
-				if key in this:
-					target[key] += this[key]
+		rl_output = state['rl_output']
+		this = self._actions[rl_output].step(state, execute=False) # transcribe action but do not take
+		state['transcribed_action'].update(this)
+		for key in target:
+			if key in this:
+				target[key] += this[key]
 		# teleport drone
 		state['transcribed_action'].update(target)
 		if 'end' in state['transcribed_action']:
@@ -65,15 +64,7 @@ class Teleporter(Actor):
 			sampled_output = state['rl_output']
 		utils.speak(f'taking actions from continuous action-space: {sampled_output}...')
 		self.step(state)
-
-
-	# returns continous action space of type Box
-	# defined from action components' min and max space vars
+		
+	# returns dioscrete action space of type Discrete
 	def get_space(self):
-		nActions = len(self._actions)
-		min_space = np.zeros(nActions)
-		max_space = np.zeros(nActions)
-		for idx in range(nActions):
-			min_space[idx] = self._actions[idx].min_space
-			max_space[idx] = self._actions[idx].max_space
-		return spaces.Box(min_space, max_space)
+		return spaces.Discrete(len(self._actions))

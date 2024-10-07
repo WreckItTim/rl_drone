@@ -29,6 +29,8 @@ class DDPG(Model):
 			init_setup_model = True,
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
+			use_slim = False,
+			convert_slim = False,
 		):
 		if type(train_freq) == list or type(train_freq) == set:
 			train_freq = tuple(train_freq)
@@ -41,6 +43,8 @@ class DDPG(Model):
 			'init_setup_model',
 			'read_model_path',
 			'read_replay_buffer_path',
+			'use_slim',
+			'convert_slim',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3DDPG
@@ -50,4 +54,6 @@ class DDPG(Model):
 				   read_model_path=read_model_path, 
 				   read_replay_buffer_path=read_replay_buffer_path, 
 				   _model_arguments=_model_arguments,
+				   use_slim = use_slim,
+				   convert_slim = convert_slim,
 				   )

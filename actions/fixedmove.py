@@ -5,34 +5,33 @@ import math
 import rl_utils as utils
 import numpy as np
 
-# translates forward at given rate (meters/second) for given duration (seconds)
+# translates forward at given distance
 class FixedMove(Action):
-	# constructor takes 4d array where first 3 components are direction and 4th component is speed
-	# note that speed is an arbitrary unit that is defined by the drone
+	# constructor takes 4d array where first 3 components are distance, 4th is at what speed
 	@_init_wrapper
 	def __init__(self, 
 			  drone_component, 
-			  x_speed=0, 
-			  y_speed=0, 
-			  z_speed=0, 
-			  duration=0,
+			  x_distance = 0, 
+			  y_distance = 0, 
+			  z_distance = 0, 
+			  speed = 2, # only used if not teleporting
 			  adjust_for_yaw = False,
 			  ):
 		pass
 
 	# move at fixed rate
-	def step(self, state=None):
+	def step(self, state=None, execute=True):
 		# must orient with yaw
 		yaw = self._drone.get_yaw() # yaw counterclockwise rotation about z-axis
 		if self.adjust_for_yaw:
-			adjusted_x_speed = float(self.x_speed * math.cos(yaw) - self.y_speed * math.sin(yaw))
-			adjusted_y_speed = float(self.x_speed * math.sin(yaw) + self.y_speed * math.cos(yaw))
+			adjusted_x_distance = float(self.x_distance * math.cos(yaw) - self.y_distance * math.sin(yaw))
+			adjusted_y_distance = float(self.x_distance * math.sin(yaw) + self.y_distance * math.cos(yaw))
 		else:
-			adjusted_x_speed = float(self.x_speed)
-			adjusted_y_speed = float(self.y_speed)
-		adjusted_z_speed = float(self.z_speed)
+			adjusted_x_distance= float(self.x_distance)
+			adjusted_y_distance = float(self.y_distance)
+		adjusted_z_distance = float(self.z_distance)
 		# take movement
-		#has_collided = self._drone.move(adjusted_x_speed, adjusted_y_speed, adjusted_z_speed, self.duration)
-		current_position = self._drone.get_position() # meters
-		target_position = current_position + np.array([adjusted_x_speed, adjusted_y_speed, adjusted_z_speed], dtype=float)
-		self._drone.teleport(target_position[0], target_position[1], target_position[2], yaw, ignore_collision=False)
+		if execute:
+			self._drone.move(adjusted_x_distance, adjusted_y_distance, adjusted_z_distance, self.speed)
+		return {'x':adjusted_x_distance, 'y':adjusted_y_distance, 'z':adjusted_z_distance}
+		

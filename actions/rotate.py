@@ -13,6 +13,7 @@ class Rotate(Action):
 				# # they determine the possible ranges of output from rl algorithm
 				min_space = -1,
 				max_space = 1,
+				abs_zero = 0.02, # give some room for error on predicting zero
 			):
 		pass
 		
@@ -20,7 +21,7 @@ class Rotate(Action):
 	def step(self, state, execute=True):
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if rl_output < 0:
+		if abs(rl_output) < self.abs_zero:
 			return {}
 		# rotate calculated rate from rl_output
 		adjusted_yaw = rl_output*(self.max_yaw-self.min_yaw) + self.min_yaw

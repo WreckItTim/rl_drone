@@ -12,11 +12,11 @@ class TD3(Model):
 			learning_rate = 1e-3,
 			buffer_size = 1_000_000,
 			learning_starts = 100,
-			batch_size = 100,
+			batch_size = 256,
 			tau = 0.005,
 			gamma = 0.99,
-			train_freq = (1, "episode"),
-			gradient_steps = -1,
+			train_freq = 1,
+			gradient_steps = 1,
 			action_noise = None,
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
@@ -46,11 +46,8 @@ class TD3(Model):
 			'init_setup_model',
 			'read_model_path',
 			'read_replay_buffer_path',
-			'read_weights_path',
-			'with_distillation',
 			'use_slim',
 			'convert_slim',
-			'use_cuda',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
 		self.sb3Type = sb3TD3
