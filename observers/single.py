@@ -4,7 +4,7 @@ from sensors.sensor import Sensor
 from component import _init_wrapper
 from sensors.sensor import Sensor
 from transformers.transformer import Transformer
-from gym import spaces
+from gymnasium import spaces
 import numpy as np
 import rl_utils as utils
 

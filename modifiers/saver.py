@@ -2,7 +2,6 @@ from modifiers.modifier import Modifier
 from component import _init_wrapper
 import rl_utils as utils
 import os
-import wandb
 
 # this will call save at
 class Saver(Modifier):
@@ -55,8 +54,6 @@ class Saver(Modifier):
 			self._base.save(state)
 			if self.save_config:
 				self._configuration.save()
-				if wandb.run is not None:
-					wandb.save(utils.get_local_parameter('working_directory') + 'configuration.json')
 			if self.save_benchmarks:
 				self._configuration.save_benchmarks()
 			self.activation_counter += 1

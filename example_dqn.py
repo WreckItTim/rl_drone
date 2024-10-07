@@ -6,7 +6,7 @@ import math
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 
 # write run files to this directory
-working_directory = 'local/runs/example_run/'
+working_directory = 'local/runs/example_dqn/'
 
 # setup for run, set system vars and prepare file system
 utils.setup(working_directory, overwrite_directory=True) # WARNING: overwrite_directory will clear all old data in this folder
@@ -291,9 +291,10 @@ Single(
 
 ## MODEL
 	# we will use a TD3 algorithm from SB3
-from models.dqn import DQN
+from sb3models.dqn import DQN
 DQN(
 	environment_component = 'Environment',
+	learning_starts = 1_000, # default value is 50k (you may want to increase from 1k)
 	policy = 'MlpPolicy',
 	name = 'Model',
 )

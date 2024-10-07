@@ -6,7 +6,7 @@ import math
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 
 # write run files to this directory
-working_directory = 'local/runs/example_run/'
+working_directory = 'local/runs/example_td3/'
 
 # setup for run, set system vars and prepare file system
 utils.setup(working_directory, overwrite_directory=True) # WARNING: overwrite_directory will clear all old data in this folder
@@ -165,7 +165,8 @@ actions = []
 from actions.move import Move 
 Move(
 	drone_component = 'Drone', 
-	base_x_rel = 8, # can move forward up to 10 meters
+	min_space = 0, # only move forward not backwards
+	base_x_rel = 8, # can move forward up to this many meters
 	adjust_for_yaw = True, # this adjusts movement based on current yaw
 	name = 'MoveForward',
 	)
@@ -173,8 +174,7 @@ actions.append('MoveForward')
 from actions.rotate import Rotate 
 Rotate(
 	drone_component = 'Drone',  
-	min_yaw = -1*math.pi, # can rotate yaw by +/- 90 deg
-	max_yaw = 1*math.pi, # can rotate yaw by +/- 90 deg
+	base_yaw = math.pi/2, # can rotate yaw by +/- this many radians
 	name = 'Rotate',
 	)
 actions.append('Rotate')
@@ -265,7 +265,7 @@ Single(
 
 ## MODEL
 	# we will use a TD3 algorithm from SB3
-from models.td3 import TD3
+from sb3models.td3 import TD3
 TD3(
 	environment_component = 'Environment',
 	policy = 'MlpPolicy',

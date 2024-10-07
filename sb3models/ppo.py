@@ -1,9 +1,9 @@
 # abstract class used to handle RL model
-from models.model import Model
+from sb3models.sb3model import SB3Model
 from stable_baselines3 import PPO as sb3PPO
 from component import _init_wrapper
 
-class PPO(Model):
+class PPO(SB3Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self, 

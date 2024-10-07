@@ -2,10 +2,8 @@
 from component import Component
 import rl_utils as utils
 from os.path import exists
-import wandb
 import torch
 import numpy as np
-from wandb.integration.sb3 import WandbCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.type_aliases import TrainFreq
@@ -77,7 +75,7 @@ def convert_to_slim(model):
 	new_model.load_state_dict(copy.deepcopy(model.state_dict()))
 	return new_model
 
-class Model(Component):
+class SB3Model(Component):
 	# WARNING: child init must set sb3Type, and should have any child-model-specific parameters passed through model_arguments
 		# child init also needs to save the training environment (make environment_component a constructor parameter)
 	# NOTE: env=None as training and evaluation enivornments are handeled by controller
@@ -174,24 +172,8 @@ class Model(Component):
 		log_interval = -1,
 		reset_num_timesteps = False,
 		tb_log_name = None,
-		use_wandb = False,
-		wandb_project_name = 'void',
 		):
 		callback = None
-		if use_wandb:
-			wandb_config = {
-				"policy_type": self.policy,
-				"total_timesteps": total_timesteps,
-			}
-			run = wandb.init(
-				project = wandb_project_name,
-				config = wandb_config,
-				name = utils.get_local_parameter('run_name'),
-				sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-				monitor_gym=False,  # auto-upload the videos of agents playing the game
-				save_code=False,  # optional
-			)
-			callback = [WandbCallback(gradient_save_freq=100)]
 		# call sb3 learn method
 		self._sb3model.learn(
 			total_timesteps,
@@ -200,8 +182,6 @@ class Model(Component):
 			tb_log_name = tb_log_name,
 			reset_num_timesteps = reset_num_timesteps,
 		)
-		if use_wandb:
-			run.finish()
 		
 	# makes a single prediction given input data
 	def predict(self, rl_input):

@@ -1,6 +1,6 @@
 from actors.actor import Actor
 from component import _init_wrapper
-from gym import spaces
+from gymnasium import spaces
 import numpy as np
 import rl_utils as utils
 import random

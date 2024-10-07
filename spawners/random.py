@@ -16,7 +16,7 @@ class Random(Spawner):
 			goal_range, # range of distances [meter] to create goal in range [min, max]
 			vertical = False, # if allowed to randomize z spawn, otherwise will randomize x,y
 			discretize = False, # spawns at integer values only
-			yaw_type = 0, # 'face':faces goal, 'random':random, value: specific yaw
+			yaw_type = 0, # 'face': faces goal, 'random': random full range, value: specific yaw
 			dz = 4, # height [meter] above ground (or rooftop of object if vertical) to spawn at
 			):
 		super().__init__()

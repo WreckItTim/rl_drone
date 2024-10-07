@@ -1,9 +1,9 @@
 # abstract class used to handle RL model
-from models.model import Model
-from stable_baselines3 import SAC as sb3SAC
+from sb3models.sb3model import SB3Model
+from stable_baselines3 import TD3 as sb3TD3
 from component import _init_wrapper
 
-class SAC(Model):
+class TD3(SB3Model):
 	# constructor
 	@_init_wrapper
 	def __init__(self,
@@ -21,12 +21,9 @@ class SAC(Model):
 			replay_buffer_class = None,
 			replay_buffer_kwargs = None,
 			optimize_memory_usage = False,
-			ent_coef = "auto",
-			target_update_interval = 1,
-			target_entropy = "auto",
-			use_sde = False,
-			sde_sample_freq = -1,
-			use_sde_at_warmup = False,
+			policy_delay = 2,
+			target_policy_noise = 0.2,
+			target_noise_clip = 0.5,
 			tensorboard_log = None,
 			policy_kwargs = None,
 			verbose = 0,
@@ -38,7 +35,10 @@ class SAC(Model):
 			use_slim = False,
 			convert_slim = False,
 		):
+		if type(train_freq) == list or type(train_freq) == set:
+			train_freq = tuple(train_freq)
 		kwargs = locals()
+
 		_model_arguments = {key:kwargs[key] for key in kwargs.keys() if key not in [
 			'self', 
 			'__class__',
@@ -50,13 +50,13 @@ class SAC(Model):
 			'convert_slim',
 			]}
 		_model_arguments['_init_setup_model'] = kwargs['init_setup_model']
-		self.sb3Type = sb3SAC
-		self.sb3Load = sb3SAC.load
+		self.sb3Type = sb3TD3
+		self.sb3Load = sb3TD3.load
 		self._has_replay_buffer = True
 		super().__init__(
-				   read_model_path=read_model_path, 
-				   read_replay_buffer_path=read_replay_buffer_path, 
-				   _model_arguments=_model_arguments,
+				   read_model_path = read_model_path, 
+				   read_replay_buffer_path =read_replay_buffer_path,
+				   _model_arguments =_model_arguments,
 				   use_slim = use_slim,
 				   convert_slim = convert_slim,
 				   )

@@ -5,7 +5,7 @@ from sensors.sensor import Sensor
 from observations.image import Image
 from transformers.transformer import Transformer
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 class Multi(Observer):
 	

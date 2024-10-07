@@ -5,11 +5,11 @@ import pickle
 import numpy as np
 
 # test params
+run_name = 'example_dqn' #  'example_td3'
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 render_screen = True # render graphics to screen?
 clock_speed = 8 # adjust this to your device (8 is stable on most modern devices)
 device = 'cuda:0' # run model on this device
-run_name = 'example_run'
 read_config_file = 'local/runs/'+run_name+'/configuration.json' # make components from this config file
 read_model_file = 'local/runs/'+run_name+'/model.zip' # sb3 model that contains actor to use
 write_test_dir = 'local/runs/'+run_name+'/test/' # write test results to this directory

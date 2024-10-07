@@ -133,8 +133,11 @@ class GoalEnv(Environment):
 				self._observations[observation_name] = observation_data.copy()
 			if self._track_save and 'states' in self._track_vars and done: 
 				self._all_states['episode_' + str(self.episode_counter)] = self._states.copy()
+			truncated = False
 			if done: 
 				self.end(self._states[this_step])
+				if 'truncated' in self._states[this_step] and self._states[this_step]['truncated']:
+					truncated = True
 		except msgpackrpc.error.TimeoutError as e:
 			utils.speak('*** crashed **')
 			self.handle_crash()
@@ -144,13 +147,15 @@ class GoalEnv(Environment):
 			observation_data = self._observer.null_data # fill with erroneous data (Zeros)
 			total_reward = 0 # 0 reward
 			done = True # finish this episode
+			truncated = True
 		# state is passed to stable-baselines3 callbacks
-		return observation_data, total_reward, done, self._states[this_step].copy()
+		### return observation_data, total_reward, done, self._states[this_step].copy()
+		return observation_data, total_reward, done, truncated, self._states[this_step].copy()
 
 	# called at beginning of each episode to prepare for next
 	# returns first observation for new episode
 	# spawn_to will overwrite previous spawns and force spawn at that x,y,z,yaw
-	def reset(self, state = None):
+	def reset(self, state = None, seed=None):
 		self.episode_counter += 1
 		try_again = True
 		while(try_again):
@@ -199,7 +204,8 @@ class GoalEnv(Environment):
 				self.handle_crash()
 				utils.speak('*** recovered **')
 
-		return observation_data
+		### return observation_data
+		return observation_data, self._states[this_step].copy()
 
 	# called at the end of each episode for any clean up, when done=True
 	# normally only reset() is used in OpenAI Gym environments

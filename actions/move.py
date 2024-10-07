@@ -30,7 +30,7 @@ class Move(Action):
 			return {}
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if rl_output < self.abs_zero:
+		if abs(rl_output) < self.abs_zero:
 			return {}
 		x_rel = rl_output * self.base_x_rel
 		y_rel = rl_output * self.base_x_rel

@@ -7,10 +7,9 @@ class Rotate(Action):
 	@_init_wrapper
 	def __init__(self, 
 				drone_component, 
-				min_yaw, # radians to rotate in range (angle to sweep, relative to drone)
-				max_yaw, # radians to rotate in range (angle to sweep, relative to drone)
+				base_yaw, # radians to rotate in range (angle to sweep, relative to drone)
 				# set these values for continuous actions
-				# # they determine the possible ranges of output from rl algorithm
+				## they determine the possible ranges of output from rl algorithm
 				min_space = -1,
 				max_space = 1,
 				abs_zero = 0.02, # give some room for error on predicting zero
@@ -24,7 +23,7 @@ class Rotate(Action):
 		if abs(rl_output) < self.abs_zero:
 			return {}
 		# rotate calculated rate from rl_output
-		adjusted_yaw = rl_output*(self.max_yaw-self.min_yaw) + self.min_yaw
+		adjusted_yaw = rl_output*self.base_yaw
 		if execute:
 			self._drone.rotate(adjusted_yaw)
 		return {'yaw':adjusted_yaw}

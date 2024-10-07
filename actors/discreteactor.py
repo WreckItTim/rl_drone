@@ -3,7 +3,7 @@ from random import randint
 from component import _init_wrapper
 import random
 import rl_utils as utils
-from gym import spaces
+from gymnasium import spaces
 
 # handles discrete actions - RL returns an index specifying which action to take
 class DiscreteActor(Actor):

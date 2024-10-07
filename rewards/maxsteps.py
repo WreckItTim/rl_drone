@@ -28,6 +28,7 @@ class MaxSteps(Reward):
 			value = -1
 		if done and self.terminate and 'termination_reason' not in state:
 			state['termination_reason'] = 'steps'
+			state['truncated'] = True # indicate this terminated from taking too long
 		return value, done and self.terminate
 
 	# update max steps based on goal distance

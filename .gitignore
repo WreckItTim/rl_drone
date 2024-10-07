@@ -1,6 +1,5 @@
 temp/
 local/
-wandb/
 local_parameters.json
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/

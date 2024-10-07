@@ -15,8 +15,6 @@ class Train(Controller):
 				total_timesteps = 1_000_000,
 				log_interval = -1,
 				tb_log_name = None,
-				use_wandb = False,
-				wandb_project_name = 'void',
 		):
 		super().__init__()
 
@@ -45,6 +43,4 @@ class Train(Controller):
 			log_interval = self.log_interval,
 			reset_num_timesteps = not self.continue_training,
 			tb_log_name = self.tb_log_name,
-			use_wandb = self.use_wandb,
-			wandb_project_name = self.wandb_project_name,
 			)
