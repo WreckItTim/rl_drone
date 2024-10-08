@@ -21,7 +21,7 @@ NaviSplit - https://arxiv.org/abs/2406.13086
 **AIRSIM SETUP**
 
 step 1: download and install anaconda, then run from anaconda terminal:
-conda create --name airsim python=3.10
+conda create --name airsim python=3.12.7
 
 step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here), along with some sub folders in here for organization.  
 
@@ -34,12 +34,11 @@ step 5: run the python file example_dqn.py ir example_td3 to run an example rein
 
 _bonus steps:_
 
+To run the jupyter notebooks below you will need to create a new conda environment due to dependency issues with AirSim: "conda create --name jupyter python=3.12.7" then execute the env_jupyter.bat file with the new conda env active.
+
 Use the example_test.py file to test a trained model on a set of static test paths we have found using an Astar shortest path algorithm, and the noteboook_eval.ipynb to evaluate and visualize results. You may need to change the variable run_name at the top to direct the test code to which trained config/model you want to test.
 
 Use the example_data.py file to collect any sensor data using rl_drone, and the notebook_data.ipynb to load and visualize the collected data. 
-
-Note that to use either of the python notebooks, you will need navigate around an AirSim dependency issue with Tornado. To do so, create a new conda environment with python=3.10, then run the same conda_env.bat file. Then pip install jupyter and any other packages as needed. If you install jupyter on the same conda enviornment as before, then it will overwrite the needed version of Tornado and AirSim will no longer work. Make sure to run the same conda_env.bat file before updating tornado though to insure compadibliity with all of the data objects used by, and written from, the other conda environment.
-
 
 **COMMON ERRORS**
 
