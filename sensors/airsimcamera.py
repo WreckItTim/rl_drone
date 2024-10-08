@@ -36,12 +36,12 @@ class AirSimCamera(Sensor):
 			  as_float=True, 
 			  is_gray=False,
 			  compress=False,
+			  is_image = True,
 			  transformers_components=None,
 			  offline = False,
 			  ):
 		super().__init__(offline)
 		self._image_request = airsim.ImageRequest(camera_view, image_type, as_float, compress)
-		self.is_image = True
 		if image_type in [1, 2, 3, 4]:
 			self.as_float = True
 			self.is_gray = True

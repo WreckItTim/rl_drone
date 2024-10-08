@@ -23,7 +23,7 @@ working_directory = utils.get_local_parameter('working_directory')
 os.makedirs(write_test_dir, exist_ok=True)
 astar_paths = pickle.load(open(astar_paths_file, 'rb'))
 num_sublevels = np.sum([len(astar_paths['levels'][level]) for level in range(start_level,end_level+1)])
-num_episodes = int(num_evals_per_sublevel * num_sublevels)
+num_episodes = 4# int(num_evals_per_sublevel * num_sublevels)
 console_flags = ['-Windowed'] # launch in windowed mode if rendering
 if not render_screen:
 	console_flags = ['-RenderOffscreen'] # else do not render

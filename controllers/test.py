@@ -27,7 +27,7 @@ class Test(Controller):
 	# steps through one evaluation episode
 	def evaluate_episode(self):
 		# reset environment, returning first observation
-		observation_data = self._environment.reset()
+		observation_data, state = self._environment.reset()
 		# start episode
 		done = False
 		rewards = []
@@ -35,7 +35,7 @@ class Test(Controller):
 		while(not done):
 			rl_output = self._model.predict(observation_data)
 			# take next step
-			observation_data, reward, done, state = self._environment.step(rl_output)
+			observation_data, reward, done, truncated, state = self._environment.step(rl_output)
 			rewards.append(reward)
 		q = 0
 		for i, reward in enumerate(rewards):

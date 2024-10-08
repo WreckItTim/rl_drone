@@ -29,8 +29,6 @@ class Slim(Action):
 		self._rho = rho # give access to other components to last rho
 		self._model._sb3model.slim = rho
 		for module in self._model._sb3model.actor.modules():
-			#print(type(module))
 			if 'Slim' in str(type(module)):
 				module.slim = rho
-		#utils.speak(f'set slim:{rho}')
 		return {'slim':rho}

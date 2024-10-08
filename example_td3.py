@@ -199,7 +199,9 @@ Normalize(
 	name = 'NormalizeOrientation',
 	)
 Normalize(
+	min_input = 1,
 	max_input = 100, # max depth
+	left = 0,
 	name = 'NormalizeDistance',
 	)
 # SENSORS
