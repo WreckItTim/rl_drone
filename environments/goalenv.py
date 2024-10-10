@@ -23,6 +23,7 @@ class GoalEnv(Environment):
 				rewarder_component, 
 				spawner_component,
 				model_component,
+				map_component,
 				others_components=None,
 				step_counter=0, 
 				episode_counter=0, 

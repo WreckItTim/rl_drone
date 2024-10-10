@@ -68,6 +68,7 @@ GoalEnv(
 	observer_component = 'Observer', 
 	rewarder_component = 'Rewarder',
 	model_component = 'Model',
+	map_component = 'Map',
 	spawner_component = 'Spawner',
 	name = 'Environment',
 	)
