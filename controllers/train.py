@@ -12,7 +12,7 @@ class Train(Controller):
 				model_component,
 				environment_component,
 				continue_training = False,
-				total_timesteps = 1_000_000,
+				total_timesteps = 10_000_000,
 				log_interval = -1,
 				tb_log_name = None,
 		):

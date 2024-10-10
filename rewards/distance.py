@@ -28,11 +28,10 @@ class Distance(Reward):
 	# get reward based on distance to point 
 	def step(self, state):
 		this_distance = self.get_distance()
+		#d = this_distance
 
-		#delta_distance = self._last_distance - this_distance
-		#d = delta_distance
-
-		d = this_distance
+		delta_distance = self._last_distance - this_distance
+		d = delta_distance
 		
 		value = np.tanh(d)
 

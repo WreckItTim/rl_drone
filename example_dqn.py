@@ -5,8 +5,30 @@ import math
 # path to airsim release file - precompiled binary
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 
+# render_screen=True will render AirSim graphics to screen using Unreal engine, 
+	# set to false if running from SSH or want to save resources
+render_screen = True
+
+# clock speed to run simulation at 
+clock_speed = 8
+
+# set path to read rooftops from to determine collidable surface positions
+rooftops_path = 'rooftops/Blocks.p' # match to map or use voxels if not available
+
 # write run files to this directory
 working_directory = 'local/runs/example_dqn/'
+
+# load pytorch models onto this device
+device = 'cuda:0'
+
+# set policy type (either mlp for vec inputs, CNN for img inputs, or multi for both)
+policy_type = 'MultiInputPolicy' # MlpPolicy CnnPolicy MultiInputPolicy
+
+# how many previous timesteps to capture at each step
+nTimesteps = 4
+
+# may need to change according to your available memory
+buffer_size = 10_000
 
 # setup for run, set system vars and prepare file system
 utils.setup(working_directory, overwrite_directory=True) # WARNING: overwrite_directory will clear all old data in this folder
@@ -16,7 +38,6 @@ from controllers.train import Train
 controller = Train(
 	model_component = 'Model',
 	environment_component = 'Environment',
-	total_timesteps = 100_000,
 	)
 
 # set meta data (anything you want here, just writes to config file as a dict)
@@ -54,19 +75,16 @@ GoalEnv(
 ## create map component to handle things such as simulation phsyics and graphics rendering
 	# we will use Airsim here
 from maps.airsimmap import AirSimMap
-# render screen? This should be false if SSH-ing from remote or wanting to save resource
 console_flags = [] # add any desired airsim commands here
-render_screen = True
 if render_screen:
 	console_flags.append('-Windowed') # render in windowed mode for more flexibility
 else:
 	console_flags.append('-RenderOffscreen') # do not render graphics, only handle logic in background
 # create airsim map object
 AirSimMap(
-	voxels_component = 'Voxels',
 	release_path = airsim_release_path,
 	settings = {
-		'ClockSpeed': 8, # reduce this value if experiencing lag
+		'ClockSpeed': clock_speed, # reduce this value if experiencing lag
 		},
 	setting_files = [
 		'lightweight', # see maps/airsim_settings
@@ -74,27 +92,22 @@ AirSimMap(
 	console_flags = console_flags.copy(),
 	name = 'Map',
 	)
-# voxels grabs locations of objects from airsim map
-# used to validate spawn and goal points (insure not inside an object)
-# also used to visualize flight paths after running, and can be used for lots of good stuff
-# WARNING: airsim has issues when getting anything other than a cube and when using anything larger than 200m
-from others.voxels import Voxels
-Voxels(
-	relative_path = working_directory + 'map_voxels.binvox', # writex voxels file to this location
-	map_component = 'Map', # which map to get voxels from
-	x_length = 200, # total x-axis meters (split around center)
-	y_length = 200, # total y-axis  meters (split around center)
-	z_length = 200, # total z-axis  meters (split around center)
-	name = 'Voxels',
-	)
-# component that sets bounds drone can go to
-# note this is restricted by the voxels cube if using it to check where objects are
+# read rooftops data struct to determine z-height of nearest collidable object below or above x,y coords
+from others.rooftops import Rooftops
+rooftops = Rooftops(
+	read_path = rooftops_path,
+	name = 'Rooftops',
+)
+# component that sets bounds drone can spawn in for training
+# this depends on two things:
+	# (1) the dimensions of the map being used
+	# (2) the target area being used for training
 from others.boundscube import BoundsCube
 BoundsCube(
 	center = [0, 0, 0],
-	x = [0, 100], # training bounds are in top half of map
-	y = [-100, 100],
-	z = [-40, -1],
+	x = [0, 100], # training bounds are in top half of map, bottom half is reserved for testing
+	y = [-140, 140], # full horizontal range is used for training
+	z = [-30, -2], # tallest object in blocks in 23 meters, do not spawn less than 2 meters off ground
 	name = 'MapBounds'
 	)	
 
@@ -225,10 +238,18 @@ Normalize(
 	name = 'NormalizeOrientation',
 	)
 Normalize(
-	min_input = 1,
-	max_input = 100, # max depth
+	min_input = 1, # in front of sensor
+	max_input = 100, # horizon
 	left = 0,
 	name = 'NormalizeDistance',
+	)
+Normalize(
+	min_input = 1, # in front of sensor
+	max_input = 100, # horizon
+	min_output = 1,
+	max_output = 255,
+	left = 0,
+	name = 'NormalizeDistanceImg',
 	)
 # SENSORS
 # sense horz distance to goal
@@ -254,31 +275,34 @@ Orientation(
 		],
 	name = 'GoalOrientation',
 	)
-# get flattened depth map (obsfucated front facing distance sensors)
-from transformers.resizeflat import ResizeFlat
-# airsim camera's image pixel size default is  "Width": 256, "Height": 144,
-max_cols = [32*(i+1) for i in range(8)] # splits depth map by columns
-max_rows = [24*(i+1) for i in range(6)] # splits depth map by rows
-ResizeFlat(
-	max_cols = max_cols,
-	max_rows = max_rows,
-	name = 'ResizeFlat',
-	)
+depth_transformers_components = []
+if policy_type in ['MlpPolicy']:
+	# get flattened depth map (obsfucated front facing distance sensors)
+	from transformers.resizeflat import ResizeFlat
+	# airsim camera's image pixel size default is  "Width": 256, "Height": 144,
+	max_cols = [32*(i+1) for i in range(8)] # splits depth map by columns
+	max_rows = [24*(i+1) for i in range(6)] # splits depth map by rows
+	ResizeFlat(
+		max_cols = max_cols,
+		max_rows = max_rows,
+		name = 'ResizeFlat',
+		)
+	depth_transformers_components.append('ResizeFlat')
+	depth_transformers_components.append('NormalizeDistance')
+depth_transformers_components.append('NormalizeDistanceImg')
 from sensors.airsimcamera import AirSimCamera
 AirSimCamera(
 	airsim_component = 'Map',
-	transformers_components = [
-		'ResizeFlat',
-		'NormalizeDistance',
-		],
-	name = 'FlattenedDepth',
+	transformers_components = depth_transformers_components,
+	name = 'DepthMap',
 	)
 # OBSERVER
 # currently must count vector size of sensor output
 vector_sensors = []
 vector_length = 0
-vector_sensors.append('FlattenedDepth')
-vector_length +=  len(max_cols) * len(max_rows) # several more vector elements
+if policy_type in ['MlpPolicy']:
+	vector_sensors.append('DepthMap')
+	vector_length +=  len(max_cols) * len(max_rows) # several more vector elements
 vector_sensors.append('GoalDistance')
 vector_length +=  1
 vector_sensors.append('GoalOrientation')
@@ -287,17 +311,36 @@ from observers.single import Single
 Single(
 	sensors_components = vector_sensors, 
 	vector_length = vector_length,
-	nTimesteps = 4,
-	name = 'Observer',
+	nTimesteps = nTimesteps,
+	name = 'Observer' if policy_type in ['MlpPolicy'] else 'VecObserver',
 	)
+if policy_type not in ['MlpPolicy']:
+	img_sensors = []
+	img_sensors.append('DepthMap')
+	Single(
+		sensors_components = img_sensors, 
+		is_image = True,
+		image_height = 144, 
+		image_width = 256,
+		image_bands = 1,
+		nTimesteps = nTimesteps,
+		name = 'ImgObserver',
+		)
+	from observers.multi import Multi
+	Multi(
+		vector_observer_component = 'VecObserver',
+		image_observer_component = 'ImgObserver',
+		name = 'Observer',
+		)
 
 ## MODEL
 	# we will use a TD3 algorithm from SB3
 from sb3models.dqn import DQN
 DQN(
 	environment_component = 'Environment',
-	learning_starts = 1_000, # default value is 50k (you may want to increase from 1k)
-	policy = 'MlpPolicy',
+	policy = policy_type,
+	buffer_size = buffer_size,
+	device = device,
 	name = 'Model',
 )
 
@@ -307,11 +350,10 @@ DQN(
 from spawners.random import Random
 Random(
 	drone_component = 'Drone',
-	map_component = 'Map', # spawn in this map, not in object from voxels
+	roof_component = 'Rooftops', # checks spawn points for collisions
 	bounds_component = 'MapBounds', # spawn within bounds
 	goal_range = [0, 5], # start close to drone then we will move further with curriculum learning
 	discretize = True, # spawns at integer values only
-	yaw_type = 0, # 'face':faces goal, 'random':random, value: specific yaw
 	name = 'Spawner',
 	)
 
@@ -325,7 +367,7 @@ Curriculum(
 	base_component = 'Environment',
 	parent_method = 'end',
 	goal_component = 'Spawner', # which component to level up
-	level_up_amount = [5, 5], # will increase min,max goal distance by these many meters
+	level_up_amount = [4, 4], # will increase min,max goal distance by these many meters
 	level_up_criteria = 0.9, # percent of succesfull paths needed to level up
 	level_up_buffer = 20, # number of previous episodes to look at to measure level_up_criteria
 	max_level = 20, # can level up this many times after will terminate DRL learning loop

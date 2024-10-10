@@ -11,13 +11,13 @@ class Random(Spawner):
 	@_init_wrapper
 	def __init__(self,
 			drone_component, # drone to spawn
-			map_component, # map to spawn in
+			roof_component, # used to detect highest collidable surface, get_roof(x,y) needs to be defined
 			bounds_component, # valid range to spawn in 
 			goal_range, # range of distances [meter] to create goal in range [min, max]
 			vertical = False, # if allowed to randomize z spawn, otherwise will randomize x,y
 			discretize = False, # spawns at integer values only
 			yaw_type = 0, # 'face': faces goal, 'random': random full range, value: specific yaw
-			dz = 4, # height [meter] above ground (or rooftop of object if vertical) to spawn at
+			dz = -4, # z-axis [meter] above ground (or rooftop of object if vertical) to spawn at
 			):
 		super().__init__()
 
@@ -37,7 +37,6 @@ class Random(Spawner):
 	
 	def random_start(self):
 		self._start_x, self._start_y, self._start_z = self.random_location()
-		#self._start_yaw = self.random_yaw()
 
 	# set yaw to static value
 	def set_yaw(self, yaw_val):
@@ -61,14 +60,16 @@ class Random(Spawner):
 			x, y, z = self._bounds.get_random()
 			if self.discretize:
 				x, y, z = int(x), int(y), int(z)
-			z = self._map.get_roof(x, y, self.dz)
+			# spawn above object
+			z = self._roof.get_roof(x, y) + self.dz
 		else:
 			while (True):
 				x, y, z = self._bounds.get_random()
-				z = -1*self.dz
+				z = self.dz
 				if self.discretize:
 					x, y, z = int(x), int(y), int(z)
-				in_object = self._map.at_object_2d(x, y)
+				# check if spawned in object
+				in_object = self._roof.in_object(x, y, z)
 				if not in_object:
 					break
 		return x, y, z
@@ -87,15 +88,16 @@ class Random(Spawner):
 			goal_y = drone_position[1] + delta_y
 			# add vertical position to be on top of highest collidable object
 			if self.vertical:
-				goal_z = self._map.get_roof(goal_x, goal_y, self.dz)
+				goal_z = self._roof.get_roof(goal_x, goal_y) + self.dz
 			else:
-				goal_z = -1*self.dz
+				goal_z = self.dz
 			if self.discretize:
 				goal_x, goal_y, goal_z = int(goal_x), int(goal_y), int(goal_z)
 			# need to check if in object for non-vertical motion
 			in_object = False
 			if not self.vertical:
-				in_object = self._map.at_object_2d(goal_x, goal_y)
+				# check if spawned in object
+				in_object = self._roof.in_object(goal_x, goal_y, goal_z)
 			# check if valid goal position
 			if not in_object and self._bounds.check_bounds(goal_x, goal_y, goal_z):
 				valid_point = True

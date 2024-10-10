@@ -12,6 +12,9 @@ release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.s
 # render screen? This should be false if SSH-ing from remote (edit here or in global_parameters.json)
 render_screen = True
 
+# set path to read rooftops from to determine collidable surface positions
+rooftops_path = 'rooftops/Blocks.p' # match to map or use voxels if not available
+
 # write run files to this directory
 working_directory = 'local/runs/example_data/'
 
@@ -30,9 +33,17 @@ controller = Data(
 	map_component = 'Map', # map to move around in
 	points = [], # list of points to visit
 )
+# SET META DATA (anything you want here, just writes to config file as a dict)
+meta = {
+	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
+	'timestamp': utils.get_timestamp(),
+	'run_OS': utils.get_local_parameter('OS'),
+	'absolute_path' : utils.get_local_parameter('absolute_path'),
+	'working_directory' : working_directory,
+	}
 
 # make configuration object to add components to
-configuration = Configuration(None, controller)
+configuration = Configuration(meta, controller)
 
 
 ##  **** CREATE COMPONENTS ****
@@ -47,7 +58,6 @@ else:
 	console_flags.append('-RenderOffscreen')
 # create airsim map object
 map1 = AirSimMap(
-	voxels_component = 'Voxels',
 	release_path = release_path,
 	settings = {
 		'ClockSpeed': 1, # speed up, >1, or slow down, <1. For aisrim, generally don't go higher than 10 - but this is dependent on your setup
@@ -58,16 +68,12 @@ map1 = AirSimMap(
 	console_flags = console_flags.copy(),
 	name = 'Map',
 )
-# voxels grabs locations of objects from airsim map
-from others.voxels import Voxels
-distance_param = 100 # AirSim+Voxels only works with cubes. The distance param sets your map bounds
-Voxels(
-	relative_path = working_directory + 'map_voxels.binvox',
-	map_component = 'Map',
-	x_length = 2 * distance_param, # total x-axis meters (split around center)
-	y_length = 2 * distance_param, # total y-axis  meters (split around center)
-	z_length = 2 * distance_param, # total z-axis  meters (split around center)
-	name = 'Voxels',
+
+# read rooftops data struct to determine z-height of nearest collidable object below or above x,y coords
+from others.rooftops import Rooftops
+rooftops = Rooftops(
+	read_path = rooftops_path,
+	name = 'Rooftops',
 )
 
 # create drone actor to move around map
@@ -118,17 +124,17 @@ dummy_points = [
 	[102,24,-10,math.pi],
 ]
 # here is how to generate random poitns and check if an object is at that point...
-# use map1.at_object_2d(x, y), map1.at_object_3d(x, y, z), and/or map1.get_roof(x, y) to find valid points on map - see maps/map.py 
-	# this requires a voxels object to be loaded in, and you can only check for points on map within the given voxels range
+# use rooftops object to detect z-coordinate of collidable surface at x,y location
 random_points = []
 n_random_points = 100
 for i in range(n_random_points):
 	# randomly create point until not inside of an object
 	while len(random_points) == i:
-		x = np.random.uniform(-1*distance_param, distance_param)
-		y = np.random.uniform(-1*distance_param, distance_param)
+		x = np.random.uniform(-125, 125)
+		y = np.random.uniform(-125, 125)
 		z = np.random.uniform(-20, 0) # max height of 20 meters
-		if map1.at_object_3d(x, y, z): # check if point in object
+		in_object = rooftops.in_object(x, y, z)
+		if in_object: # check if point in object
 			continue
 		yaw = np.random.uniform(-math.pi, math.pi) # random full motion of yaw
 		random_points.append([x, y, z, yaw])

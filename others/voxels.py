@@ -38,6 +38,7 @@ class Voxels(Other):
 			  x_length = 250, # total x-axis meters (split around center)
 			  y_length = 250, # total y-axis  meters (split around center)
 			  z_length = 250, # total z-axis  meters (split around center)
+			  buffer = -2, # z-displacement buffer to add to roof to determine if collided with surface
 			  ):
 		super().__init__()
 		self._map_2d = None
@@ -109,22 +110,25 @@ class Voxels(Other):
 
 	# will get lowest z-point without being inside object at given x,y
 	# this includes the floor (which will be lowest point found)
-	# dz is height above roof point (also creates smallest z-point to return)
-	# note that voxels is not perfect in detecting floors - thus dz is needed as a highest z-point
-	def get_roof(self, x, y, dz):
+	def get_roof(self, x, y):
 		# need to convert from drone-coords to map-coords
 		x_len = self.get_x_length()
 		y_len = self.get_y_length()
-		z_len = self.get_z_length()
 		yi = self._y_to_yi(y)
 		xi = self._x_to_xi(x)
 		if xi < 0 or xi >= x_len:
-			return dz
+			return 0
 		if yi < 0 or yi >= y_len:
-			return dz
+			return 0
 		# grab nearest roof
-		z = self._roofs[yi, xi] + dz
+		z = self._roofs[yi, xi]
 		return z
+
+	def in_object(self, x, y, z):
+		roof = self.get_roof(x, y)
+		# check if spawned in object
+		in_object = roof + self.buffer < z # drone z coords are negative uggghhh
+		return in_object
 
 
 	def get_map_2d(self):

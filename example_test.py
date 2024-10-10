@@ -18,9 +18,8 @@ num_evals_per_sublevel = 1 # how many evaluations to do from above path, there c
 start_level, end_level = 1, 10 # range of levels to test on from astar paths
 
 # setup
-utils.setup(working_directory = write_test_dir)
-working_directory = utils.get_local_parameter('working_directory')
-os.makedirs(write_test_dir, exist_ok=True)
+working_directory = write_test_dir
+utils.setup(working_directory)
 astar_paths = pickle.load(open(astar_paths_file, 'rb'))
 num_sublevels = np.sum([len(astar_paths['levels'][level]) for level in range(start_level,end_level+1)])
 num_episodes = 4# int(num_evals_per_sublevel * num_sublevels)
@@ -35,17 +34,16 @@ from controllers.test import Test
 controller = Test(
 		environment_component = 'Environment', # environment to run test in
 		model_component = 'Model', # used to make predictions
-		results_directory = write_test_dir,
+		results_directory = working_directory,
 		num_episodes = num_episodes,
 	)
 # SET META DATA (anything you want here, just writes to config file as a dict)
 meta = {
 	'author_info': 'Timothy K Johnsen, tim.k.johnsen@gmail.com',
-	'repo_version': 'navislim_ext',
 	'timestamp': utils.get_timestamp(),
 	'run_OS': utils.get_local_parameter('OS'),
 	'absolute_path' : utils.get_local_parameter('absolute_path'),
-	'working_directory' : write_test_dir,
+	'working_directory' : working_directory,
 	}
 
 ## read old CONFIGURATION 
@@ -53,7 +51,7 @@ configuration = Configuration.load(
 	read_config_file, # read all components in this config file
 	controller, # evaluate
 	read_modifiers=False, # no modifiers from train data - we will make new ones
-	skip_components = ['Map', 'Voxels', 'Spawner'], # change map we launch in, and we wont need a voxels component, will control spawns
+	skip_components = ['Map', 'Spawner'], # change map we launch in, change how we spawn
 	change_params={'device':device} # change device we run on
 	)
 configuration.update_meta(meta)
@@ -63,7 +61,6 @@ from maps.airsimmap import AirSimMap
 # create airsim map object
 AirSimMap(
 	release_path = airsim_release_path, 
-	voxels_component = None,
 	settings = {
 		'ClockSpeed': clock_speed,
 		},

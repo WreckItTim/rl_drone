@@ -5,8 +5,18 @@ import math
 # path to airsim release file - precompiled binary
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 
+# render_screen=True will render AirSim graphics to screen using Unreal engine, 
+	# set to false if running from SSH or want to save resources
+render_screen = True
+
+# set path to read rooftops from to determine collidable surface positions
+rooftops_path = 'rooftops/Blocks.p' # match to map or use voxels if not available
+
 # write run files to this directory
 working_directory = 'local/runs/example_td3/'
+
+# load pytorch models onto this device
+device = 'cuda:0'
 
 # setup for run, set system vars and prepare file system
 utils.setup(working_directory, overwrite_directory=True) # WARNING: overwrite_directory will clear all old data in this folder
@@ -16,7 +26,6 @@ from controllers.train import Train
 controller = Train(
 	model_component = 'Model',
 	environment_component = 'Environment',
-	total_timesteps = 100_000,
 	)
 
 # set meta data (anything you want here, just writes to config file as a dict)
@@ -54,16 +63,13 @@ GoalEnv(
 ## create map component to handle things such as simulation phsyics and graphics rendering
 	# we will use Airsim here
 from maps.airsimmap import AirSimMap
-# render screen? This should be false if SSH-ing from remote or wanting to save resource
 console_flags = [] # add any desired airsim commands here
-render_screen = True
 if render_screen:
 	console_flags.append('-Windowed') # render in windowed mode for more flexibility
 else:
 	console_flags.append('-RenderOffscreen') # do not render graphics, only handle logic in background
 # create airsim map object
 AirSimMap(
-	voxels_component = 'Voxels',
 	release_path = airsim_release_path,
 	settings = {
 		'ClockSpeed': 8, # reduce this value if experiencing lag
@@ -74,27 +80,22 @@ AirSimMap(
 	console_flags = console_flags.copy(),
 	name = 'Map',
 	)
-# voxels grabs locations of objects from airsim map
-# used to validate spawn and goal points (insure not inside an object)
-# also used to visualize flight paths after running, and can be used for lots of good stuff
-# WARNING: airsim has issues when getting anything other than a cube and when using anything larger than 200m
-from others.voxels import Voxels
-Voxels(
-	relative_path = working_directory + 'map_voxels.binvox', # writex voxels file to this location
-	map_component = 'Map', # which map to get voxels from
-	x_length = 200, # total x-axis meters (split around center)
-	y_length = 200, # total y-axis  meters (split around center)
-	z_length = 200, # total z-axis  meters (split around center)
-	name = 'Voxels',
-	)
-# component that sets bounds drone can go to
-# note this is restricted by the voxels cube if using it to check where objects are
+# read rooftops data struct to determine z-height of nearest collidable object below or above x,y coords
+from others.rooftops import Rooftops
+rooftops = Rooftops(
+	read_path = rooftops_path,
+	name = 'Rooftops',
+)
+# component that sets bounds drone can spawn in for training
+# this depends on two things:
+	# (1) the dimensions of the map being used
+	# (2) the target area being used for training
 from others.boundscube import BoundsCube
 BoundsCube(
 	center = [0, 0, 0],
-	x = [0, 100], # training bounds are in top half of map
-	y = [-100, 100],
-	z = [-40, -1],
+	x = [0, 100], # training bounds are in top half of map, bottom half is reserved for testing
+	y = [-140, 140], # full horizontal range is used for training
+	z = [-30, -2], # tallest object in blocks in 23 meters, do not spawn less than 2 meters off ground
 	name = 'MapBounds'
 	)	
 
@@ -271,6 +272,7 @@ from sb3models.td3 import TD3
 TD3(
 	environment_component = 'Environment',
 	policy = 'MlpPolicy',
+	device = device,
 	name = 'Model',
 )
 
@@ -280,7 +282,7 @@ TD3(
 from spawners.random import Random
 Random(
 	drone_component = 'Drone',
-	map_component = 'Map', # spawn in this map, not in object from voxels
+	roof_component = 'Rooftops', # checks spawn points for collisions
 	bounds_component = 'MapBounds', # spawn within bounds
 	goal_range = [0, 5], # start close to drone then we will move further with curriculum learning
 	name = 'Spawner',
