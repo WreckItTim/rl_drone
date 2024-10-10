@@ -29,6 +29,8 @@ class Curriculum(Modifier):
 		super().connect()
 		if self.start_range is None:
 			self.start_range = self._goal.goal_range.copy()
+		if len(self.track_record) == 0:
+			self.reset_track()
 
 	# reset learning loop 
 	def reset_learning(self):
@@ -38,9 +40,10 @@ class Curriculum(Modifier):
 
 	# modifier activate()	
 	def activate(self, state):
-		self.update_track(state)
-		if self.evaluate(state):
-			self._configuration.controller.stop()
+		if self.check_counter(state):
+			self.update_track(state)
+			if self.evaluate(state):
+				self._configuration.controller.stop()
 
 	# evaluates all episodes for this next set
 	def evaluate(self, state):
@@ -76,5 +79,5 @@ class Curriculum(Modifier):
 		percent_success = total_success / len(self.track_record)
 		termination_reason = state['termination_reason']
 		reached_goal = state['reached_goal']
-		utils.speak(f'termination:{termination_reason} goal:{reached_goal} level:{self.level} track_success:{percent_success}')
+		utils.speak(f'episode:{self.counter} end:{termination_reason} level:{self.level} track:{percent_success}')
 		return percent_success >= self.level_up_criteria
