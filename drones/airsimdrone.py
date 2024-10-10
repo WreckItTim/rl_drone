@@ -38,12 +38,13 @@ class AirSimDrone(Drone):
 		self.take_off()
 		self.check_collision()
 
+	# TODO: take_off outputs lookahead errors to the terminal frequenlty...
 	def take_off(self):
 		# take-off has some issues in airsim (sometimes the move after takeoff will fall to ground)
 		# also prints outs lookahead values to console some times 
 		# for w/e reason it is more stable to send command to fly up rather than using takeoff
-		#self._airsim._client.takeoffAsync().join()
-		self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
+		self._airsim._client.takeoffAsync().join()
+		#self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
 
 	# returns state from client
 	def get_state(self):
