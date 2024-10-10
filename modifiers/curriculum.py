@@ -17,6 +17,8 @@ class Curriculum(Modifier):
 				max_level,
 				start_range = None,
 				level = 1,
+				track_record=[],
+				track_idx=0,
 				frequency = 1, # use modifiation after how many calls to parent method?
 				counter = 0, # keepts track of number of calls to parent method
 			): 
