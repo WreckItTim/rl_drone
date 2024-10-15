@@ -25,7 +25,7 @@ class Levels(Spawner):
 				drone_component,
 				levels_path,
 				random_path = False,
-				random_yaw = False,
+				yaw_type = 0, # 'face': faces goal, 'random': random full range, value: specific yaw
 				rotating_idx = 0,
 				paths_per_sublevel=1,
 				level = 1,
@@ -77,14 +77,17 @@ class Levels(Spawner):
 		path = self._paths[path_idx]
 		nonlinearity = self._nonlinearitys[path_idx]
 		linearity = self._linearitys[path_idx]
-		self._start_x, self._start_y, self._start_z = path[0]
-		self._goal_x, self._goal_y, self._goal_z = path[-1]
+		self._start_x, self._start_y, self._start_z = path[0]['position']
+		self._goal_x, self._goal_y, self._goal_z = path[-1]['position']
 		
-		if self.random_yaw:
-			self._start_yaw = np.random.uniform(-1*math.pi, math.pi)
-		else:
+		if self.yaw_type in ['face']:
 			distance_vector = np.array([self._goal_x, self._goal_y, self._goal_z]) - np.array([self._start_x, self._start_y, self._start_z])
 			self._start_yaw = math.atan2(distance_vector[1], distance_vector[0])
+		elif self.yaw_type in ['random']:
+			self._start_yaw = np.random.uniform(-1*math.pi, math.pi)
+		else:
+			self._start_yaw = self.yaw_type
+			
 		self._drone.teleport(self._start_x, self._start_y, self._start_z, self._start_yaw, ignore_collision=True, stabelize=True)
 		
 		return linearity, nonlinearity

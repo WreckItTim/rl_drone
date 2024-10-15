@@ -13,6 +13,7 @@ class AirSimDrone(Drone):
 	def __init__(self,
 			  airsim_component,
 			  handle_crashes=True,
+			  skip_takeoff=True, # set true to skip takeoff (runs quicker if using teleport to spawn)
 			  ):
 		super().__init__()
 		self._timeout = 10 # number of seconds to wait for communication
@@ -40,10 +41,12 @@ class AirSimDrone(Drone):
 
 	# TODO: take_off outputs lookahead errors to the terminal frequenlty...
 	def take_off(self):
+		if self.skip_takeoff:
+			return
 		# take-off has some issues in airsim (sometimes the move after takeoff will fall to ground)
 		# also prints outs lookahead values to console some times 
 		# for w/e reason it is more stable to send command to fly up rather than using takeoff
-		self._airsim._client.takeoffAsync().join()
+		self._airsim._client.takeoffAsync(timeout_sec = self._timeout).join()
 		#self._airsim._client.moveByVelocityAsync(0, 0, -1, 2).join()
 
 	# returns state from client

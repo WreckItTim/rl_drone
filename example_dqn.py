@@ -280,6 +280,11 @@ else:
 		left = 0,
 		name = 'NormalizeDistanceImg',
 		)
+	from transformers.datatype import DataType
+	DataType(
+		to_type = np.float32,
+		name = 'DataType',
+		)
 	# SENSORS
 	# sense horz distance to goal
 	from sensors.distance import Distance
@@ -317,7 +322,9 @@ else:
 			name = 'ResizeFlat',
 			)
 		depth_transformers_components.append('ResizeFlat')
+		depth_transformers_components.append('DataType')
 		depth_transformers_components.append('NormalizeDistance')
+	depth_transformers_components.append('DataType')
 	depth_transformers_components.append('NormalizeDistanceImg')
 	from sensors.airsimcamera import AirSimCamera
 	AirSimCamera(

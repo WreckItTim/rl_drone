@@ -10,6 +10,7 @@ class Distance(Reward):
 	def __init__(self,
 				drone_component, 
 				goal_component, 
+				max_distance=8, # largest movement drone can make
 				include_z=True,
 		):
 		super().__init__()
@@ -28,11 +29,9 @@ class Distance(Reward):
 	# get reward based on distance to point 
 	def step(self, state):
 		this_distance = self.get_distance()
-		#d = this_distance
-
-		delta_distance = self._last_distance - this_distance
-		d = delta_distance
+		delta_distance = (self._last_distance - this_distance)/self.max_distance
 		
+		d = delta_distance
 		value = np.tanh(d)
 
 		self._last_distance = this_distance

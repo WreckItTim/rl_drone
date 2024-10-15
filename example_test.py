@@ -15,14 +15,14 @@ read_model_file = 'local/runs/'+run_name+'/model.zip' # sb3 model that contains 
 write_test_dir = 'local/runs/'+run_name+'/test/' # write test results to this directory
 astar_paths_file = 'astar_paths/Blocks_2d_test.p' # read these Astar shortest paths to evaluate config on
 num_evals_per_sublevel = 1 # how many evaluations to do from above path, there can be up to  hundreds of sublevels depending on the levels file
-start_level, end_level = 1, 8 # range of levels to test on from astar paths
 
 # setup
 working_directory = write_test_dir
 utils.setup(working_directory)
 astar_paths = pickle.load(open(astar_paths_file, 'rb'))
+start_level, end_level = 1, len(astar_paths['levels']) # range of levels to test on from astar paths
 num_sublevels = np.sum([len(astar_paths['levels'][level]) for level in range(start_level,end_level+1)])
-num_episodes = int(num_evals_per_sublevel * num_sublevels)
+num_episodes = 100 # int(num_evals_per_sublevel * num_sublevels)
 console_flags = ['-Windowed'] # launch in windowed mode if rendering
 if not render_screen:
 	console_flags = ['-RenderOffscreen'] # else do not render
@@ -52,7 +52,9 @@ configuration = Configuration.load(
 	controller, # evaluate
 	read_modifiers=False, # no modifiers from train data - we will make new ones
 	skip_components = ['Map', 'Spawner'], # change map we launch in, change how we spawn
-	change_params={'device':device} # change device we run on
+	change_params={
+	'device':device, # change device we run on
+	},
 	)
 configuration.update_meta(meta)
 
