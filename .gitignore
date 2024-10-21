@@ -1,9 +1,9 @@
 temp/
 local/
-local_parameters.json
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 __pycache__/
 **/__pycache__/
 .vs/
 **/.vs/
+**_
