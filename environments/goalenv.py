@@ -84,19 +84,7 @@ class GoalEnv(Environment):
 			np.savez(path, **self._observations)
 			self._observations = {}
 		self.save_counter += 1
-	
-	# just makes the rl_output from SB3 more readible
-	def clean_rl_output(self, rl_output):
-		if np.issubdtype(rl_output.dtype, np.integer):
-			return int(rl_output)
-		if np.issubdtype(rl_output.dtype, np.floating):
-			return rl_output.astype(float).tolist()
-
-	# Crashes happen -- this will undo a step when triggered and reconnect to the map
-		# this is especially needed for AirSim which is particulary unstable 
-	def handle_crash(self):
-		self._map.connect(from_crash=True)
-
+		
 	# activate needed components
 	def step(self, rl_output, state=None):
 		try:

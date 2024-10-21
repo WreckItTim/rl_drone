@@ -39,7 +39,7 @@ class AirSimDrone(Drone):
 		self.take_off()
 		self.check_collision()
 
-	# TODO: take_off outputs lookahead errors to the terminal frequenlty...
+	# TODO: _airsim._client.takeoffAsync() outputs lookahead errors to the terminal frequenlty...
 	def take_off(self):
 		if self.skip_takeoff:
 			return

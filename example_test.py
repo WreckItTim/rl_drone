@@ -5,7 +5,8 @@ import pickle
 import numpy as np
 
 # test params
-run_name = 'example_dqn' #  'example_td3'
+#run_name = 'example_dqn' #  'example_td3'
+run_name = 'slim_Blocks_horz_None_pre1_s2_gamma32'
 airsim_release_path = 'local/airsim_maps/Blocks/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh'
 render_screen = True # render graphics to screen?
 clock_speed = 8 # adjust this to your device (8 is stable on most modern devices)

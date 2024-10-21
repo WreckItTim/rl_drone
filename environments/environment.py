@@ -4,6 +4,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 import gymnasium
 from gymnasium import spaces
+import numpy as np
 
 # OpenAI Gym enviornment needed to run Stable_Baselines3
 class Environment(gymnasium.Env, Component):
@@ -52,3 +53,15 @@ class Environment(gymnasium.Env, Component):
 	# returns first observation for new episode
 	def end(self):
 		raise NotImplementedError
+
+	# Crashes happen -- this will undo a step when triggered and reconnect to the map
+		# this is especially needed for AirSim which is particulary unstable 
+	def handle_crash(self):
+		self._map.connect(from_crash=True)
+
+	# just makes the rl_output from SB3 more readible
+	def clean_rl_output(self, rl_output):
+		if np.issubdtype(rl_output.dtype, np.integer):
+			return int(rl_output)
+		if np.issubdtype(rl_output.dtype, np.floating):
+			return rl_output.astype(float).tolist()

@@ -32,6 +32,7 @@ class TD3(SB3Model):
 			init_setup_model = True,
 			read_model_path=None, 
 			read_replay_buffer_path=None, 
+			read_weights_path=None, 
 			use_slim = False,
 			convert_slim = False,
 		):
@@ -46,6 +47,7 @@ class TD3(SB3Model):
 			'init_setup_model',
 			'read_model_path',
 			'read_replay_buffer_path',
+			'read_weights_path',
 			'use_slim',
 			'convert_slim',
 			]}
@@ -56,6 +58,7 @@ class TD3(SB3Model):
 		super().__init__(
 				   read_model_path = read_model_path, 
 				   read_replay_buffer_path =read_replay_buffer_path,
+				   read_weights_path=read_weights_path, 
 				   _model_arguments =_model_arguments,
 				   use_slim = use_slim,
 				   convert_slim = convert_slim,

@@ -86,22 +86,24 @@ class Random(Spawner):
 			delta_y = r * np.sin(theta)
 			goal_x = drone_position[0] + delta_x
 			goal_y = drone_position[1] + delta_y
-			# add vertical position to be on top of highest collidable object
-			if self.vertical:
-				goal_z = self._roof.get_roof(goal_x, goal_y) + self.dz
-			else:
-				goal_z = self.dz
-			if self.discretize:
-				goal_x, goal_y, goal_z = int(goal_x), int(goal_y), int(goal_z)
-			# need to check if in object for non-vertical motion
-			in_object = False
-			if not self.vertical:
-				# check if spawned in object
-				in_object = self._roof.in_object(goal_x, goal_y, goal_z)
-			# check if valid goal position
-			if not in_object and self._bounds.check_bounds(goal_x, goal_y, goal_z):
-				valid_point = True
-				break
+			# check x,y bounds
+			if self._bounds.check_bounds2D(goal_x, goal_y):
+				# add vertical position to be on top of highest collidable object
+				if self.vertical:
+					goal_z = self._roof.get_roof(goal_x, goal_y) + self.dz
+				else:
+					goal_z = self.dz
+				if self.discretize:
+					goal_x, goal_y, goal_z = int(goal_x), int(goal_y), int(goal_z)
+				# need to check if in object for non-vertical motion
+				in_object = False
+				if not self.vertical:
+					# check if spawned in object
+					in_object = self._roof.in_object(goal_x, goal_y, goal_z)
+				# check if valid goal position
+				if not in_object and self._bounds.check_bounds(goal_x, goal_y, goal_z):
+					valid_point = True
+					break
 			# otherwise recheck (check for number of attempts and throw warning if exceeded)
 			attempt += 1
 			if attempt > 1000:

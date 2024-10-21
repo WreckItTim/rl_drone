@@ -21,6 +21,7 @@ class Move(Action):
 				adjust_for_yaw = False,
 				active = True, # False will just return default behavior
 				abs_zero = 0.02, # give some room for error on predicting zero
+				zero_thresh_abs=True,
 			):
 		pass
 		
@@ -30,8 +31,12 @@ class Move(Action):
 			return {}
 		rl_output = state['rl_output'][self._idx]
 		# check for true zero
-		if abs(rl_output) < self.abs_zero:
-			return {}
+		if self.zero_thresh_abs:
+			if abs(rl_output) < self.abs_zero:
+				return {}
+		else:
+			if rl_output <= self.abs_zero:
+				return {}
 		x_rel = rl_output * self.base_x_rel
 		y_rel = rl_output * self.base_x_rel
 		z_rel = rl_output * self.base_x_rel

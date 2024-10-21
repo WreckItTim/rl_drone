@@ -115,6 +115,10 @@ class SB3Model(Component):
 			#self._sb3model.actor_target.mu = convert_to_slim(self._sb3model.actor_target.mu)
 			self._sb3model.slim = 1
 			utils.speak('converted model to slimmable')
+		# load weights?
+		if self.read_weights_path is not None:
+			self.load_weights(self.read_weights_path)
+			utils.speak(f'read weights from path {self.read_weights_path}')
 		# use slim layers
 		if self.use_slim:
 			self._is_slim = True
@@ -156,6 +160,15 @@ class SB3Model(Component):
 			utils.error(f'invalid Model.load_model() path:{path}')
 		else:
 			self._sb3model = self.sb3Load(path, tensorboard_log=tensorboard_log)
+
+	# load weights from pytorch .pt file (currently supports only the actor network)
+	def load_weights(self, actor_path):
+		state_dict = torch.load(actor_path)
+		if actor_path is not None and exists(actor_path):
+			self._sb3model.actor.mu.load_state_dict(copy.deepcopy(state_dict))
+			self._sb3model.actor_target.mu.load_state_dict(copy.deepcopy(state_dict))
+		#self._sb3model.critic.load_state_dict(torch.load(critic_path))
+		#self._sb3model.critic_target.load_state_dict(torch.load(critic_path))
 
 	# load sb3 replay buffer from path
 	def load_replay_buffer(self, path):
