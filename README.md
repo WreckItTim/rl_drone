@@ -26,11 +26,11 @@ conda create --name airsim python=3.12.7
 step 2: download repository and run setup.py file. This will create a local folder that is a .gitignore (so feel free to add anything here), along with some sub folders in here for organization.  
 
 step 3: with the new conda environment active, 
-conda activate airsim, run the conda_env.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. WARNING: this will force a specific version of pip otherwise the libraries will not install properly!
+conda activate airsim, run the env_airsim.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. WARNING: this will force a specific version of pip otherwise the libraries will not install properly!
 
-step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio and DirectX. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip (i.e. after unzipping, the release should have something like the following strucutre: local/airsim_maps/{release_name}/{os_name}/files).
+step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio and DirectX. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip. After unzipping, the release should have the following path: local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh. Otherwise you will need to change the path to the release file in the example py files at the top.
 
-step 5: run the python file example_dqn.py ir example_td3 to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using either a DQN or TD3 reinforcement learning algorithm to get from objective A to B without colliding. 
+step 5: run the python file example_dqn.py to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a DQN reinforcement learning algorithm to get from objective A to B without colliding. 
 
 _bonus steps:_
 
