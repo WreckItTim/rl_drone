@@ -35,9 +35,7 @@ buffer_size = 10_000
 overwrite_directory = False
 
 # check if we continue training from previous run
-continue_training = False
-if os.path.exists(working_directory) and not overwrite_directory:
-	continue_training = True
+continue_training = False # set to True will load previous model and config.json file
 
 # setup for run, set system vars and prepare file system
 utils.setup(
