@@ -1,4 +1,4 @@
-This repository links a python interface with drone/robotics simulators and real world controllers. The main purpose of this interface is for navigation using neural networks trained using various methods such as imitation and reinforcement learning. Thus the repository focuses on training and evaluating such models. It is designed to be customizable, modular, and for tracking various experiments. 
+This repository links a python interface with drone/robotics simulators and real world controllers. The main purpose of this interface is for navigation using neural networks trained using various methods such as imitation and reinforcement learning. It is designed to be customizable, modular, and for tracking/sharing various experiments. 
 
 This repository was released with the publications of _NaviSlim_ at CPS-IoT Week 2024 IoTDI and _NaviSplit_ at WoWMoM 2024. These studies focus on creating adaptable dynamic deep neural networks (ADDNN) for more efficient drone navigation through manipulation of the supporting neural networks. 
 
@@ -28,7 +28,7 @@ step 2: download repository and run setup.py file. This will create a local fold
 step 3: with the new conda environment active, 
 conda activate airsim, run the env_airsim.bat file to install all dependecies. Note that a requirements.txt file is not used because the syntax and order of pip installs matter. WARNING: this will force a specific version of pip otherwise the libraries will not install properly!
 
-step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio and DirectX. Currently supported is Blocks and AirSimNH for both windows and linux, and CityEnviron for windows. Move any release zip files to local/airsim_maps and unzip. After unzipping, the release should have the following path: local/airsim_maps/LinuxBlocks1.8.1/LinuxNoEditor/Blocks.sh. Otherwise you will need to change the path to the release file in the example py files at the top.
+step 4: download the Blocks AirSim release file from here: https://github.com/microsoft/AirSim/releases. If running on windows, also download and install Microsoft Visual Studio and DirectX. Unpack the downloaded zip file and set the variable at the top of the example_dqn.py file called airsim_release_path, to the file oarh of the AirSim executable file (.sh for linux and .exe for windows).
 
 step 5: run the python file example_dqn.py to run an example reinforcement learning setup on the Blocks release (make sure the paths are correct), using a flattened depth map as input into an MLP, with the vertical axis locked. It is trained using a DQN reinforcement learning algorithm to get from objective A to B without colliding. 
 
