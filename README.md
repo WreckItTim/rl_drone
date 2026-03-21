@@ -1,4 +1,4 @@
-This repository has been depreciated in favor of: https://github.com/WreckItTim/map_tool_box
+This repository has been depreciated in favor of: https://github.com/WreckItTim/NaviPy-VLA-DRL
 
 This repository links a python interface with drone/robotics simulators and real world controllers. The main purpose of this interface is for navigation using neural networks trained using various methods such as imitation and reinforcement learning. It is designed to be customizable, modular, and for tracking/sharing various experiments. 
 
